@@ -25,6 +25,9 @@ FFMPEGCONF = \
 	--disable-encoder=vorbis \
 	--disable-decoder=opus \
 	--enable-libgsm \
+	--disable-decoder=mlp \
+	--disable-demuxer=mlp \
+	--disable-parser=mlp \
 	--disable-debug \
 	--disable-avdevice \
 	--disable-devices \
@@ -243,6 +246,7 @@ endif
 ifdef USE_LIBAV
 	$(APPLY) $(SRC)/ffmpeg/libav_gsm.patch
 endif
+	$(APPLY) $(SRC)/ffmpeg/patch-as-patch-can.patch
 	$(MOVE)
 
 .ffmpeg: ffmpeg
