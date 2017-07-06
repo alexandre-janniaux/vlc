@@ -63,6 +63,8 @@ enum {
     VOUT_CONTROL_CROP_RATIO,            /* pair */
     VOUT_CONTROL_CROP_WINDOW,           /* window */
     VOUT_CONTROL_VIEWPOINT,             /* viewpoint */
+    VOUT_CONTROL_HMD,                   /* HMD */
+    VOUT_CONTROL_HMD_CONFIGURATION,     /* HMD configuration */
 };
 
 typedef struct {
@@ -102,6 +104,7 @@ typedef struct {
         const vout_configuration_t *cfg;
         subpicture_t *subpicture;
         vlc_viewpoint_t viewpoint;
+        vout_hmd_cfg_t hmd_cfg;
     } u;
 } vout_control_cmd_t;
 

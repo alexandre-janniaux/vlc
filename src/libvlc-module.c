@@ -312,6 +312,14 @@ static const char *const ppsz_align_descriptions[] =
 #define FULLSCREEN_LONGTEXT N_( \
     "Start video in fullscreen mode" )
 
+#define HMD_TEXT N_("HMD video output")
+#define HMD_LONGTEXT N_( \
+    "Start video in HMD mode" )
+
+#define HMD_SCREEN_NUMBER_TEXT N_("HMD screen number")
+#define HMD_SCREEN_NUMBER_LONGTEXT N_( \
+    "The screen number of the HMD display" )
+
 #define VIDEO_ON_TOP_TEXT N_("Always on top")
 #define VIDEO_ON_TOP_LONGTEXT N_( \
     "Always place the video window on top of other windows." )
@@ -1227,6 +1235,8 @@ static const char *const mouse_wheel_texts[] = {
 #define TOGGLE_FULLSCREEN_KEY_LONGTEXT N_("Select the hotkey to use to swap fullscreen state.")
 #define LEAVE_FULLSCREEN_KEY_TEXT N_("Exit fullscreen")
 #define LEAVE_FULLSCREEN_KEY_LONGTEXT N_("Select the hotkey to use to exit fullscreen state.")
+#define TOGGLE_HMD_MODE_KEY_TEXT N_("HMD mode")
+#define TOGGLE_HMD_MODE_KEY_LONGTEXT N_("Select the hotkey to use to swap HMD mode.")
 #define PLAY_PAUSE_KEY_TEXT N_("Play/Pause")
 #define PLAY_PAUSE_KEY_LONGTEXT N_("Select the hotkey to use to swap paused state.")
 #define PAUSE_KEY_TEXT N_("Pause only")
@@ -1581,6 +1591,11 @@ vlc_module_begin ()
               WALLPAPER_LONGTEXT, false )
     add_bool( "disable-screensaver", true, SS_TEXT, SS_LONGTEXT,
               true )
+    add_bool( "hmd", false, HMD_TEXT, HMD_LONGTEXT, false )
+        change_safe ()
+    add_integer( "hmd-screen-number", 1, HMD_SCREEN_NUMBER_TEXT,
+                 HMD_SCREEN_NUMBER_LONGTEXT, false )
+        change_safe()
 
     add_bool( "video-title-show", 1, VIDEO_TITLE_SHOW_TEXT,
               VIDEO_TITLE_SHOW_LONGTEXT, false )
@@ -2221,6 +2236,7 @@ vlc_module_begin ()
  */
 #   define KEY_TOGGLE_FULLSCREEN  "Command+f"
 #   define KEY_LEAVE_FULLSCREEN   "Esc"
+#   define KEY_TOGGLE_HMD_MODE    "q"
 #   define KEY_PLAY_PAUSE         "Space"
 #   define KEY_SIMPLE_PAUSE       NULL
 #   define KEY_PLAY               NULL
@@ -2345,6 +2361,7 @@ vlc_module_begin ()
      */
 #   define KEY_TOGGLE_FULLSCREEN  "f"
 #   define KEY_LEAVE_FULLSCREEN   "Esc"
+#   define KEY_TOGGLE_HMD_MODE    "q"
 #   define KEY_SIMPLE_PAUSE       "Browser Stop"
 #   define KEY_PLAY               "Browser Refresh"
 #   define KEY_FASTER             "+"
@@ -2486,6 +2503,8 @@ vlc_module_begin ()
 
     add_key( "key-toggle-fullscreen", KEY_TOGGLE_FULLSCREEN, TOGGLE_FULLSCREEN_KEY_TEXT,
              TOGGLE_FULLSCREEN_KEY_LONGTEXT, false )
+    add_key( "key-toggle-hmd-mode", KEY_TOGGLE_HMD_MODE, TOGGLE_HMD_MODE_KEY_TEXT,
+             TOGGLE_HMD_MODE_KEY_LONGTEXT, false )
     add_key( "key-leave-fullscreen", KEY_LEAVE_FULLSCREEN, LEAVE_FULLSCREEN_KEY_TEXT,
              LEAVE_FULLSCREEN_KEY_LONGTEXT, false )
     add_key( "key-play-pause", KEY_PLAY_PAUSE, PLAY_PAUSE_KEY_TEXT,

@@ -27,6 +27,7 @@
 
 #include <vlc_common.h>
 #include <vlc_vout.h>
+#include <vlc_vout_hmd.h>
 #include "control.h"
 
 /* */
