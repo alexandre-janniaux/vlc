@@ -62,6 +62,7 @@ enum vout_window_control {
     VOUT_WINDOW_SET_STATE, /* unsigned state */
     VOUT_WINDOW_SET_SIZE,   /* unsigned i_width, unsigned i_height */
     VOUT_WINDOW_SET_FULLSCREEN, /* int b_fullscreen */
+    VOUT_WINDOW_SET_HMD_MODE, /* int b_fullscreen, unsigned i_numScreen */
     VOUT_WINDOW_HIDE_MOUSE, /* int b_hide */
 };
 
@@ -265,6 +266,15 @@ static inline int vout_window_SetSize(vout_window_t *window,
 static inline int vout_window_SetFullScreen(vout_window_t *window, bool full)
 {
     return vout_window_Control(window, VOUT_WINDOW_SET_FULLSCREEN, full);
+}
+
+/**
+ * Sets HMD mode.
+ */
+static inline int vout_window_SetHMDMode(vout_window_t *window, bool full,
+                                         unsigned hmdScreen)
+{
+    return vout_window_Control(window, VOUT_WINDOW_SET_HMD_MODE, full, hmdScreen);
 }
 
 /**

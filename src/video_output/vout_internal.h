@@ -28,6 +28,7 @@
 #include <vlc_picture_fifo.h>
 #include <vlc_picture_pool.h>
 #include <vlc_vout_display.h>
+#include <vlc_vout_hmd.h>
 #include <vlc_vout_wrapper.h>
 #include "snapshot.h"
 #include "statistic.h"
@@ -94,9 +95,15 @@ struct vout_thread_sys_t
     } display;
 
     struct {
+        vout_hmd_t  *hmd;
+        int         hmd_screen_number;
+    } hmd;
+
+    struct {
         mtime_t     date;
         mtime_t     timestamp;
         bool        is_interlaced;
+        bool        is_360;
         picture_t   *decoded;
         picture_t   *current;
         picture_t   *next;
@@ -201,6 +208,8 @@ void vout_ControlChangeSubSources(vout_thread_t *, const char *);
 void vout_ControlChangeSubFilters(vout_thread_t *, const char *);
 void vout_ControlChangeSubMargin(vout_thread_t *, int);
 void vout_ControlChangeViewpoint( vout_thread_t *, const vlc_viewpoint_t *);
+void vout_ControlChangeHMD(vout_thread_t *, bool hmd);
+void vout_ControlChangeHMDConfiguration(vout_thread_t* vout, vout_hmd_cfg_t* p_hmd_cfg);
 
 /* */
 void vout_IntfInit( vout_thread_t * );

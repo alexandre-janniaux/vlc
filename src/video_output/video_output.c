@@ -54,6 +54,7 @@
 #include "display.h"
 #include "window.h"
 #include "../misc/variables.h"
+#include "hmd.h"
 
 /*****************************************************************************
  * Local prototypes
@@ -566,6 +567,21 @@ void vout_ControlChangeViewpoint(vout_thread_t *vout,
     vout_control_Push(&vout->p->control, &cmd);
 }
 
+void vout_ControlChangeHMD(vout_thread_t* vout, bool hmd)
+{
+    vout_control_PushBool(&vout->p->control, VOUT_CONTROL_HMD,
+                          hmd);
+}
+
+void vout_ControlChangeHMDConfiguration(vout_thread_t* vout, vout_hmd_cfg_t* p_hmd_cfg)
+{
+    vout_control_cmd_t cmd;
+    vout_control_cmd_Init(&cmd, VOUT_CONTROL_HMD_CONFIGURATION);
+    cmd.u.hmd_cfg = *p_hmd_cfg;
+    vout_control_Push(&vout->p->control, &cmd);
+}
+
+
 /* */
 static void VoutGetDisplayCfg(vout_thread_t *vout, vout_display_cfg_t *cfg, const char *title)
 {
@@ -574,8 +590,14 @@ static void VoutGetDisplayCfg(vout_thread_t *vout, vout_display_cfg_t *cfg, cons
     cfg->is_fullscreen = var_GetBool(vout, "fullscreen")
                          || var_GetBool(vout, "video-wallpaper");
 #endif
-    cfg->viewpoint = vout->p->original.pose;
 
+    cfg->hmd = var_GetBool(vout, "hmd");
+    cfg->hmd_screen_number = var_GetInteger(vout, "hmd-screen-number");
+    const vlc_viewpoint_t *p_viewpoint = var_GetAddress(vout, "viewpoint");
+    if (p_viewpoint != NULL)
+        cfg->viewpoint = *p_viewpoint;
+    else
+        cfg->viewpoint = vout->p->original.pose;
     cfg->display.title = title;
     const int display_width = var_GetInteger(vout, "width");
     const int display_height = var_GetInteger(vout, "height");
@@ -893,6 +915,7 @@ static int ThreadDisplayPreparePicture(vout_thread_t *vout, bool reuse, bool fra
         vout->p->displayed.decoded       = picture_Hold(decoded);
         vout->p->displayed.timestamp     = decoded->date;
         vout->p->displayed.is_interlaced = !decoded->b_progressive;
+        vout->p->displayed.is_360        = decoded->format.projection_mode != PROJECTION_MODE_RECTANGULAR;
 
         picture = filter_chain_VideoFilter(vout->p->filter.chain_static, decoded);
     }
@@ -1171,7 +1194,7 @@ static int ThreadDisplayRenderPicture(vout_thread_t *vout, bool is_forced)
     if (delay < 1000)
         msg_Warn(vout, "picture is late (%lld ms)", delay / 1000);
 #endif
-    if (!is_forced)
+    if (!is_forced && !sys->displayed.is_360)
         mwait(todisplay->date);
 
     /* Display the direct buffer returned by vout_RenderPicture */
@@ -1226,7 +1249,9 @@ static int ThreadDisplayPicture(vout_thread_t *vout, mtime_t *deadline)
     }
     bool force_refresh = !drop_next_frame && refresh;
 
-    if (!first && !refresh && !drop_next_frame) {
+    bool b_highFPS = true;
+
+    if (!first && !refresh && !drop_next_frame && !b_highFPS) {
         if (!frame_by_frame) {
             if (date_refresh != VLC_TS_INVALID)
                 *deadline = date_refresh;
@@ -1486,6 +1511,30 @@ static void ThreadExecuteViewpoint(vout_thread_t *vout,
     vout_SetDisplayViewpoint(vout->p->display.vd, p_viewpoint);
 }
 
+static void ThreadChangeHMD(vout_thread_t *vout, bool hmd)
+{
+    vout_window_t *window = vout->p->window;
+
+    if (hmd)
+    {
+        vout_openHMD(vout);
+        vout_window_SetHMDMode(window, true, vout->p->hmd.hmd_screen_number);
+    }
+    else
+    {
+        vout_window_SetHMDMode(window, false, 1);
+        if (vout->p->hmd.hmd)
+            vout_stopHMD(vout);
+        vout->p->hmd.hmd = NULL;
+    }
+}
+
+static void ThreadChangeHMDConfiguration(vout_thread_t* vout, vout_hmd_cfg_t* p_hmd_cfg)
+{
+    vout_SetHMDConfiguration(vout->p->display.vd, p_hmd_cfg);
+}
+
+
 static int ThreadStart(vout_thread_t *vout, vout_display_state_t *state)
 {
     vlc_mouse_Init(&vout->p->mouse);
@@ -1537,12 +1586,20 @@ static int ThreadStart(vout_thread_t *vout, vout_display_state_t *state)
     }
     assert(vout->p->decoder_pool && vout->p->private_pool);
 
+    vout->p->hmd.hmd_screen_number = state->cfg.hmd_screen_number;
+    if (state->cfg.hmd)
+    {
+        vout_openHMD(vout);
+        vout_window_SetHMDMode(vout->p->window, true, vout->p->hmd.hmd_screen_number);
+    }
+
     vout->p->displayed.current       = NULL;
     vout->p->displayed.next          = NULL;
     vout->p->displayed.decoded       = NULL;
     vout->p->displayed.date          = VLC_TS_INVALID;
     vout->p->displayed.timestamp     = VLC_TS_INVALID;
     vout->p->displayed.is_interlaced = false;
+    vout->p->displayed.is_360        = false;
 
     vout->p->step.last               = VLC_TS_INVALID;
     vout->p->step.timestamp          = VLC_TS_INVALID;
@@ -1568,6 +1625,12 @@ error:
 
 static void ThreadStop(vout_thread_t *vout, vout_display_state_t *state)
 {
+    if (vout->p->hmd.hmd)
+    {
+        vout_window_SetHMDMode(vout->p->window, false, 1);
+        vout_stopHMD(vout);
+    }
+
     if (vout->p->spu_blend)
         filter_DeleteBlend(vout->p->spu_blend);
 
@@ -1772,6 +1835,11 @@ static int ThreadControl(vout_thread_t *vout, vout_control_cmd_t cmd)
     case VOUT_CONTROL_VIEWPOINT:
         ThreadExecuteViewpoint(vout, &cmd.u.viewpoint);
         break;
+    case VOUT_CONTROL_HMD:
+        ThreadChangeHMD(vout, cmd.u.boolean);
+        break;
+    case VOUT_CONTROL_HMD_CONFIGURATION:
+        ThreadChangeHMDConfiguration(vout, &cmd.u.hmd_cfg);
     default:
         break;
     }
@@ -1798,8 +1866,9 @@ static void *Thread(void *object)
 
         if (wait)
         {
-            const mtime_t max_deadline = mdate() + CLOCK_FREQ/10;
-            deadline = deadline == VLC_TS_INVALID ? max_deadline : __MIN(deadline, max_deadline);
+            unsigned i_delay = sys->displayed.is_360 ? CLOCK_FREQ/1000 : CLOCK_FREQ/10;
+            const mtime_t max_deadline = mdate() + i_delay;
+            deadline = deadline <= VLC_TS_INVALID ? max_deadline : __MIN(deadline, max_deadline);
         } else {
             deadline = VLC_TS_INVALID;
         }
