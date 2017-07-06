@@ -101,6 +101,7 @@ pluginsinclude_HEADERS = \
 	../include/vlc_video_splitter.h \
 	../include/vlc_vout.h \
 	../include/vlc_vout_display.h \
+	../include/vlc_vout_hmd.h \
 	../include/vlc_vout_osd.h \
 	../include/vlc_vout_window.h \
 	../include/vlc_xml.h \
@@ -279,6 +280,7 @@ libvlccore_la_SOURCES = \
 	video_output/control.h \
 	video_output/display.c \
 	video_output/display.h \
+	video_output/hmd.c \
 	video_output/inhibit.c \
 	video_output/inhibit.h \
 	video_output/interlacing.c \

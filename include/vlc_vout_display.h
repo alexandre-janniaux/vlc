@@ -99,6 +99,8 @@ typedef struct {
     } zoom;
 
     vlc_viewpoint_t viewpoint;
+    bool hmd;
+    int hmd_screen_number;
 } vout_display_cfg_t;
 
 /**
@@ -156,6 +158,9 @@ enum {
     /* Ask the module to acknowledge/refuse VR/360° viewing direction after
      * being requested externally */
     VOUT_DISPLAY_CHANGE_VIEWPOINT,   /* const vout_display_cfg_t *p_cfg */
+
+    /* Ask the module to acknowledge/refuse HMD configuration change */
+    VOUT_DISPLAY_CHANGE_HMD_CONFIGURATION, /* const vout_hmd_cfg_t *p_hmd_cfg */
 };
 
 /**

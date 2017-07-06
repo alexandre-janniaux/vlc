@@ -1046,6 +1046,18 @@ static int PutAction( intf_thread_t *p_intf, input_thread_t *p_input,
             break;
         }
 
+        case ACTIONID_TOGGLE_HMD_MODE:
+        {
+            if( p_vout )
+            {
+                bool fs = var_ToggleBool( p_vout, "hmd" );
+                var_SetBool( p_playlist, "hmd", fs );
+            }
+            else
+                var_ToggleBool( p_playlist, "hmd" );
+            break;
+        }
+
         case ACTIONID_LEAVE_FULLSCREEN:
             if( p_vout )
                 var_SetBool( p_vout, "fullscreen", false );

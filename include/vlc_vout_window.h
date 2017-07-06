@@ -64,6 +64,7 @@ enum vout_window_control {
     VOUT_WINDOW_SET_FULLSCREEN, /* void */
     VOUT_WINDOW_UNSET_FULLSCREEN, /* void */
     VOUT_WINDOW_HIDE_MOUSE VLC_DEPRECATED_ENUM,
+    VOUT_WINDOW_SET_HMD_MODE, /* int b_fullscreen, unsigned i_numScreen */
 };
 
 /**
@@ -290,9 +291,17 @@ static inline int vout_window_SetFullScreen(vout_window_t *window,
 }
 
 /**
- * Requests windowed mode.
- *
- * \return \see vout_window_SetFullScreen()
+ * Sets HMD mode.
+ */
+static inline int vout_window_SetHMDMode(vout_window_t *window, bool full,
+                                         unsigned hmdScreen)
+{
+    return vout_window_Control(window, VOUT_WINDOW_SET_HMD_MODE, full, hmdScreen);
+}
+
+/**
+ * Hide the mouse cursor
+>>>>>>> core: handle HMDs
  */
 static inline int vout_window_UnsetFullScreen(vout_window_t *window)
 {

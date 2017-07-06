@@ -34,6 +34,7 @@
 #include <vlc_video_splitter.h>
 #include <vlc_vout_display.h>
 #include <vlc_vout.h>
+#include <vlc_vout_hmd.h>
 #include <vlc_block.h>
 #include <vlc_modules.h>
 #include <vlc_filter.h>
@@ -351,6 +352,9 @@ typedef struct {
         unsigned num;
         unsigned den;
     } crop;
+
+    bool ch_hmd_cfg;
+    vout_hmd_cfg_t p_hmd_cfg;
 
     /* */
     video_format_t source;
@@ -709,6 +713,18 @@ bool vout_ManageDisplay(vout_display_t *vd, bool allow_reset_pictures)
                                  &osys->crop.right, &osys->crop.bottom,
                                  &fmt, crop_num, crop_den);
         }
+        if (osys->ch_hmd_cfg) {
+            vout_hmd_cfg_t cfg = osys->p_hmd_cfg;
+
+            osys->cfg.hmd = cfg.b_HMDEnabled;
+
+            if (vout_display_Control(vd, VOUT_DISPLAY_CHANGE_HMD_CONFIGURATION, &cfg)) {
+                msg_Err(vd, "Failed to change the HMD configuration");
+            }
+
+            osys->ch_hmd_cfg = false;
+        }
+
 
         const int right_max  = osys->source.i_x_offset + osys->source.i_visible_width;
         const int bottom_max = osys->source.i_y_offset + osys->source.i_visible_height;
@@ -943,6 +959,14 @@ void vout_SetDisplayViewpoint(vout_display_t *vd,
             osys->cfg.viewpoint = old_vp;
         }
     }
+}
+
+void vout_SetHMDConfiguration(vout_display_t *vd, vout_hmd_cfg_t *p_hmd_cfg)
+{
+    vout_display_owner_sys_t *osys = vd->owner.sys;
+
+    osys->ch_hmd_cfg = true;
+    osys->p_hmd_cfg = *p_hmd_cfg;
 }
 
 static vout_display_t *DisplayNew(vout_thread_t *vout,

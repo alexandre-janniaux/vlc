@@ -467,6 +467,7 @@ static void VariablesInit( playlist_t *p_playlist )
 
     /* Variables to preserve video output parameters */
     var_Create( p_playlist, "fullscreen", VLC_VAR_BOOL | VLC_VAR_DOINHERIT );
+    var_Create( p_playlist, "hmd", VLC_VAR_BOOL | VLC_VAR_DOINHERIT );
     var_Create( p_playlist, "video-on-top", VLC_VAR_BOOL | VLC_VAR_DOINHERIT );
     var_Create( p_playlist, "video-wallpaper", VLC_VAR_BOOL | VLC_VAR_DOINHERIT );
 

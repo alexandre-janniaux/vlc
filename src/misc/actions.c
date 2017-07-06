@@ -357,6 +357,7 @@ static const struct name2action
     { "title-prev", ACTIONID_TITLE_PREV, },
     { "toggle-autoscale", ACTIONID_TOGGLE_AUTOSCALE, },
     { "toggle-fullscreen", ACTIONID_TOGGLE_FULLSCREEN, },
+    { "toggle-hmd-mode", ACTIONID_TOGGLE_HMD_MODE, },
     { "uncrop-bottom", ACTIONID_UNCROP_BOTTOM, },
     { "uncrop-left", ACTIONID_UNCROP_LEFT, },
     { "uncrop-right", ACTIONID_UNCROP_RIGHT, },
