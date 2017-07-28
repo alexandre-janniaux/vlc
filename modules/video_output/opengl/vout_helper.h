@@ -237,8 +237,4 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 int vout_display_opengl_ChangeHMDConfiguration(vout_display_opengl_t *vgl,
                                                const vout_hmd_cfg_t *p_hmd_cfg);
 
-int vout_display_opengl_UpdateViewport(vout_display_opengl_t *vgl,
-                                       vout_display_place_t place,
-                                       unsigned displayWidth, unsigned displayHeight);
-
 #endif
