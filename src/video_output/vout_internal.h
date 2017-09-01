@@ -212,6 +212,7 @@ void vout_ControlChangeSubMargin(vout_thread_t *, int);
 void vout_ControlChangeViewpoint( vout_thread_t *, const vlc_viewpoint_t *);
 void vout_ControlChangeHMD(vout_thread_t *, bool hmd);
 void vout_ControlChangeHMDConfiguration(vout_thread_t* vout, vout_hmd_cfg_t* p_hmd_cfg);
+void vout_ControlChangeHMDController(vout_thread_t *, vlc_hmd_controller_t *);
 
 /* */
 void vout_IntfInit( vout_thread_t * );

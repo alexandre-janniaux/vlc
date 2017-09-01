@@ -161,6 +161,9 @@ enum {
 
     /* Ask the module to acknowledge/refuse HMD configuration change */
     VOUT_DISPLAY_CHANGE_HMD_CONFIGURATION, /* const vout_hmd_cfg_t *p_hmd_cfg */
+
+    /* Ask the module to acknowledge/refuse HMD controller change */
+    VOUT_DISPLAY_CHANGE_HMD_CONTROLLER, /* const picture_t *p_hmd_cont */
 };
 
 /**

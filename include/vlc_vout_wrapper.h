@@ -93,6 +93,7 @@ void vout_SetDisplayCrop(vout_display_t *, unsigned num, unsigned den,
                          unsigned left, unsigned top, int right, int bottom);
 void vout_SetDisplayViewpoint(vout_display_t *, const vlc_viewpoint_t *);
 void vout_SetHMDConfiguration(vout_display_t *vd, vout_hmd_cfg_t *p_hmd_cfg);
+void vout_SetHMDController(vout_display_t *vd, vlc_hmd_controller_t *p_ctl);
 
 #endif /* VLC_VOUT_WRAPPER_H */
 
