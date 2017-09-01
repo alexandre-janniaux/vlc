@@ -47,7 +47,7 @@ int vout_openHMD(vout_thread_t *p_vout)
     vout_SendEventViewpointChangeable(p_vout, true);
     /* Ugly hack to update the hotkeys module. */
     if (p_vout->p->input != NULL)
-        input_SendEventVout(p_vout->p->input);
+        input_SendEventVout((input_thread_t *)p_vout->p->input);
 
     // Ugly!
     if (p_vout->p->input != NULL)
@@ -84,6 +84,8 @@ int vout_stopHMD(vout_thread_t *p_vout)
 
 void HMDEvent(vout_hmd_t *p_hmd, int query, va_list args)
 {
+    VLC_UNUSED(args);
+
     switch (query)
     {
         case VOUT_DISPLAY_HMD_UPDATE_CONFIGURATION:

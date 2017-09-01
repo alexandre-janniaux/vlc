@@ -38,6 +38,7 @@
 #include <vlc_modules.h>
 #include <vlc_filter.h>
 #include <vlc_picture_pool.h>
+#include <vlc_hmd_controller.h>
 
 #include <libvlc.h>
 
@@ -371,6 +372,9 @@ typedef struct {
 
     bool ch_hmd_cfg;
     vout_hmd_cfg_t p_hmd_cfg;
+
+    bool ch_hmd_cont;
+    vlc_hmd_controller_t hmd_cont;
 
     /* */
     video_format_t source;
@@ -800,7 +804,8 @@ bool vout_ManageDisplay(vout_display_t *vd, bool allow_reset_pictures)
             !osys->ch_sar &&
             !osys->ch_crop &&
             !osys->ch_viewpoint &&
-            !osys->ch_hmd_cfg) {
+            !osys->ch_hmd_cfg &&
+            !osys->ch_hmd_cont) {
 
             if (osys->fit_window != 0) {
                 VoutDisplayFitWindow(vd, osys->fit_window == -1);
@@ -961,6 +966,17 @@ bool vout_ManageDisplay(vout_display_t *vd, bool allow_reset_pictures)
             }
 
             osys->ch_hmd_cfg = false;
+        }
+        if (osys->ch_hmd_cont) {
+            vlc_hmd_controller_t ctl = osys->hmd_cont;
+
+            ctl.b_visible = ctl.b_visible && osys->p_hmd_cfg.b_HMDEnabled;
+            if (vout_display_Control(vd, VOUT_DISPLAY_CHANGE_HMD_CONTROLLER, &ctl)) {
+                msg_Err(vd, "Failed to change the HMD controller");
+            }
+
+            osys->ch_hmd_cont = false;
+            picture_Release(ctl.p_pic);
         }
 
 
@@ -1144,6 +1160,14 @@ void vout_SetHMDConfiguration(vout_display_t *vd, vout_hmd_cfg_t *p_hmd_cfg)
 
     osys->ch_hmd_cfg = true;
     osys->p_hmd_cfg = *p_hmd_cfg;
+}
+
+void vout_SetHMDController(vout_display_t *vd, vlc_hmd_controller_t *p_ctl)
+{
+    vout_display_owner_sys_t *osys = vd->owner.sys;
+
+    osys->ch_hmd_cont = true;
+    osys->hmd_cont = *p_ctl;
 }
 
 static vout_display_t *DisplayNew(vout_thread_t *vout,

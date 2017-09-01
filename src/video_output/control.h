@@ -26,6 +26,7 @@
 
 #include <vlc_vout_window.h>
 #include <vlc_viewpoint.h>
+#include <vlc_hmd_controller.h>
 
 /* */
 enum {
@@ -65,6 +66,7 @@ enum {
     VOUT_CONTROL_VIEWPOINT,             /* viewpoint */
     VOUT_CONTROL_HMD,                   /* HMD */
     VOUT_CONTROL_HMD_CONFIGURATION,     /* HMD configuration */
+    VOUT_CONTROL_HMD_CONTROLLER         /* HMD controller */
 };
 
 typedef struct {
@@ -105,6 +107,7 @@ typedef struct {
         subpicture_t *subpicture;
         vlc_viewpoint_t viewpoint;
         vout_hmd_cfg_t hmd_cfg;
+        vlc_hmd_controller_t hmd_controller;
     } u;
 } vout_control_cmd_t;
 
