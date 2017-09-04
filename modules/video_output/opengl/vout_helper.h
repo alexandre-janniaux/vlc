@@ -237,4 +237,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 int vout_display_opengl_ChangeHMDConfiguration(vout_display_opengl_t *vgl,
                                                const vout_hmd_cfg_t *p_hmd_cfg);
 
+int vout_display_opengl_UpdateHMDControllerPicture(vout_display_opengl_t *vgl,
+                                                   vlc_hmd_controller_t *p_ctl);
+
 #endif

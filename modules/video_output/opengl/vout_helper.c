@@ -39,6 +39,7 @@
 #include <vlc_modules.h>
 #include <vlc_vout.h>
 #include <vlc_viewpoint.h>
+#include <vlc_hmd_controller.h>
 #include <vlc_vout_hmd.h>
 
 #include "vout_helper.h"
@@ -146,9 +147,10 @@ struct vout_display_opengl_t {
     picture_pool_t *pool;
 
     /* One YUV program and one RGBA program (for subpics) */
-    struct prgm prgms[3];
+    struct prgm prgms[4];
     struct prgm *prgm; /* Main program */
     struct prgm *sub_prgm; /* Subpicture program */
+    struct prgm *ctl_prgm; /* HMD controller program */
     struct prgm *stereo_prgm; /* Stereo program */
 
     unsigned nb_indices;
@@ -158,6 +160,12 @@ struct vout_display_opengl_t {
 
     GLuint *subpicture_buffer_object;
     int    subpicture_buffer_object_count;
+
+    GLuint hmd_controller_buffer_object[2];
+    GLuint hmd_controller_texture;
+    GLsizei hmd_controller_width, hmd_controller_height;
+    bool b_show_hmd_controller;
+    hmd_controller_pos_t hmdCtlPos;
 
     struct {
         unsigned int i_x_offset;
@@ -754,7 +762,7 @@ opengl_init_program(vout_display_opengl_t *vgl, struct prgm *prgm,
         tc->fmt.i_chroma = VLC_CODEC_RGB32;
         /* Normal orientation and no projection for subtitles */
         tc->fmt.orientation = ORIENT_NORMAL;
-        tc->fmt.projection_mode = PROJECTION_MODE_RECTANGULAR;
+        //tc->fmt.projection_mode = PROJECTION_MODE_RECTANGULAR;
         tc->fmt.primaries = COLOR_PRIMARIES_UNDEF;
         tc->fmt.transfer = TRANSFER_FUNC_UNDEF;
         tc->fmt.space = COLOR_SPACE_UNDEF;
@@ -1201,6 +1209,7 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     vgl->prgm = &vgl->prgms[0];
     vgl->sub_prgm = &vgl->prgms[1];
     vgl->stereo_prgm = &vgl->prgms[2];
+    vgl->ctl_prgm = &vgl->prgms[3];
 
     GL_ASSERT_NOERROR();
     int ret;
@@ -1225,7 +1234,21 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
         free(vgl);
         return NULL;
     }
+
     GL_ASSERT_NOERROR();
+    ret = opengl_init_program(vgl, vgl->ctl_prgm, extensions, fmt, true);
+    if (ret != VLC_SUCCESS)
+    {
+        msg_Warn(gl, "could not init hmd controller tex converter for %4.4s",
+                 (const char *) &fmt->i_chroma);
+        opengl_deinit_program(vgl, vgl->prgm);
+        opengl_deinit_program(vgl, vgl->sub_prgm);
+        free(vgl);
+        return NULL;
+    }
+
+    GL_ASSERT_NOERROR();
+
     /* Update the fmt to main program one */
     vgl->fmt = vgl->prgm->tc->fmt;
     /* The orientation is handled by the orientation matrix */
@@ -1339,10 +1362,12 @@ void vout_display_opengl_Delete(vout_display_opengl_t *vgl)
         picture_pool_Release(vgl->pool);
     opengl_deinit_program(vgl, vgl->prgm);
     opengl_deinit_program(vgl, vgl->sub_prgm);
+    opengl_deinit_program(vgl, vgl->ctl_prgm);
 
     vgl->vt.DeleteBuffers(1, &vgl->vertex_buffer_object);
     vgl->vt.DeleteBuffers(1, &vgl->index_buffer_object);
     vgl->vt.DeleteBuffers(main_tex_count, vgl->texture_buffer_object);
+    vgl->vt.DeleteBuffers(2, vgl->hmd_controller_buffer_object);
 
     if (vgl->subpicture_buffer_object_count > 0)
         vgl->vt.DeleteBuffers(vgl->subpicture_buffer_object_count,
@@ -1351,6 +1376,8 @@ void vout_display_opengl_Delete(vout_display_opengl_t *vgl)
 
     if (main_del_texs)
         vgl->vt.DeleteTextures(main_tex_count, vgl->texture);
+
+    vgl->vt.DeleteTextures(1, &vgl->hmd_controller_texture);
 
     for (int i = 0; i < vgl->region_count; i++)
     {
@@ -2094,6 +2121,92 @@ static void TextureCropForStereo(vout_display_opengl_t *vgl,
     }
 }
 
+static void DrawHMDController(vout_display_opengl_t *vgl, side_by_side_eye eye)
+{
+    // Change the program for overlays
+    struct prgm *prgm = vgl->ctl_prgm;
+    GLuint program = prgm->id;
+    opengl_tex_converter_t *tc = prgm->tc;
+    vgl->vt.UseProgram(program);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    vgl->vt.ActiveTexture(GL_TEXTURE0 + 0);
+    {
+        const GLfloat vertexCoord[] = {
+            vgl->hmdCtlPos.f_depth,      vgl->hmdCtlPos.f_top,   vgl->hmdCtlPos.f_right,
+            vgl->hmdCtlPos.f_depth,   vgl->hmdCtlPos.f_bottom,   vgl->hmdCtlPos.f_right,
+            vgl->hmdCtlPos.f_depth,      vgl->hmdCtlPos.f_top,    vgl->hmdCtlPos.f_left,
+            vgl->hmdCtlPos.f_depth,   vgl->hmdCtlPos.f_bottom,    vgl->hmdCtlPos.f_left,
+        };
+
+        const GLfloat textureCoord[] = {
+            0.0,   0.0,
+            0.0,   1.0,
+            1.0,   0.0,
+            1.0,   1.0,
+        };
+
+        assert(vgl->hmd_controller_texture != 0);
+        vgl->vt.BindTexture(tc->tex_target, vgl->hmd_controller_texture);
+
+        tc->pf_prepare_shader(tc, &vgl->hmd_controller_width, &vgl->hmd_controller_height, 1.0);
+
+        vgl->vt.BindBuffer(GL_ARRAY_BUFFER, vgl->hmd_controller_buffer_object[0]);
+        vgl->vt.BufferData(GL_ARRAY_BUFFER, sizeof(textureCoord), textureCoord, GL_STATIC_DRAW);
+        vgl->vt.EnableVertexAttribArray(prgm->aloc.MultiTexCoord[0]);
+        vgl->vt.VertexAttribPointer(prgm->aloc.MultiTexCoord[0], 2, GL_FLOAT,
+                                     0, 0, 0);
+
+        vgl->vt.BindBuffer(GL_ARRAY_BUFFER, vgl->subpicture_buffer_object[1]);
+        vgl->vt.BufferData(GL_ARRAY_BUFFER, sizeof(vertexCoord), vertexCoord, GL_STATIC_DRAW);
+        vgl->vt.EnableVertexAttribArray(prgm->aloc.VertexPosition);
+        vgl->vt.VertexAttribPointer(prgm->aloc.VertexPosition, 3, GL_FLOAT,
+                                     0, 0, 0);
+
+        if (eye == LEFT_EYE)
+        {
+            memcpy(prgm->var.ModelViewMatrix, vgl->hmd_cfg.modelview.left, 16 * sizeof(float));
+            memcpy(prgm->var.ProjectionMatrix, vgl->hmd_cfg.projection.left, 16 * sizeof(float));
+        }
+        else if (eye == RIGHT_EYE)
+        {
+            memcpy(prgm->var.ModelViewMatrix, vgl->hmd_cfg.modelview.right, 16 * sizeof(float));
+            memcpy(prgm->var.ProjectionMatrix, vgl->hmd_cfg.projection.right, 16 * sizeof(float));
+        }
+
+        memcpy(prgm->var.OrientationMatrix, vgl->prgm->var.OrientationMatrix, 16 * sizeof(float));
+        memcpy(prgm->var.ZRotMatrix, vgl->prgm->var.ZRotMatrix, 16 * sizeof(float));
+        memcpy(prgm->var.YRotMatrix, vgl->prgm->var.YRotMatrix, 16 * sizeof(float));
+        memcpy(prgm->var.XRotMatrix, vgl->prgm->var.XRotMatrix, 16 * sizeof(float));
+        memcpy(prgm->var.ZoomMatrix, vgl->prgm->var.ZoomMatrix, 16 * sizeof(float));
+
+        vgl->vt.UniformMatrix4fv(prgm->uloc.OrientationMatrix, 1, GL_FALSE,
+                                 prgm->var.OrientationMatrix);
+        vgl->vt.UniformMatrix4fv(prgm->uloc.ProjectionMatrix, 1, GL_FALSE,
+                                 prgm->var.ProjectionMatrix);
+        vgl->vt.UniformMatrix4fv(prgm->uloc.ModelViewMatrix, 1, GL_FALSE,
+                                 prgm->var.ModelViewMatrix);
+        vgl->vt.UniformMatrix4fv(prgm->uloc.ZRotMatrix, 1, GL_FALSE,
+                                 prgm->var.ZRotMatrix);
+        vgl->vt.UniformMatrix4fv(prgm->uloc.YRotMatrix, 1, GL_FALSE,
+                                 prgm->var.YRotMatrix);
+        vgl->vt.UniformMatrix4fv(prgm->uloc.XRotMatrix, 1, GL_FALSE,
+                                 prgm->var.XRotMatrix);
+        vgl->vt.UniformMatrix4fv(prgm->uloc.ZoomMatrix, 1, GL_FALSE,
+                                 prgm->var.ZoomMatrix);
+
+        getSbSParams(vgl, prgm, eye);
+        vgl->vt.Uniform2fv(prgm->uloc.SbSCoefs, 1, prgm->var.SbSCoefs);
+        vgl->vt.Uniform2fv(prgm->uloc.SbSOffsets, 1, prgm->var.SbSOffsets);
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
+    glBlendFunc(GL_ONE, GL_ZERO);
+    glDisable(GL_BLEND);
+}
+
 static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, side_by_side_eye eye)
 {
     vgl->vt.UseProgram(vgl->prgm->id);
@@ -2147,6 +2260,9 @@ static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, s
         vgl->b_lastSideBySide = vgl->b_sideBySide;
     }
     DrawWithShaders(vgl, vgl->prgm, eye);
+
+    if (vgl->b_show_hmd_controller)
+        DrawHMDController(vgl, eye);
 
     /* Draw the subpictures */
     // Change the program for overlays
@@ -2360,4 +2476,41 @@ int vout_display_opengl_ChangeHMDConfiguration(vout_display_opengl_t *vgl, const
     getViewpointMatrixes(vgl, vgl->fmt.projection_mode, vgl->prgm);
 
     return VLC_SUCCESS;
+}
+
+int vout_display_opengl_UpdateHMDControllerPicture(vout_display_opengl_t *vgl,
+                                                   vlc_hmd_controller_t *p_ctl)
+{
+    // Change the HMD controller picture.
+
+    opengl_tex_converter_t *tc = vgl->ctl_prgm->tc;
+
+    int ret = VLC_SUCCESS;
+    vgl->hmdCtlPos = p_ctl->pos;
+
+    if (p_ctl->b_visible)
+    {
+        picture_t *p_pic = p_ctl->p_pic;
+
+        vgl->hmd_controller_width = p_pic->format.i_width;
+        vgl->hmd_controller_height = p_pic->format.i_height;
+
+        if (vgl->hmd_controller_texture == 0)
+        {
+            vgl->vt.GenBuffers(2, vgl->hmd_controller_buffer_object);
+            GenTextures(vgl->ctl_prgm->tc, &vgl->hmd_controller_width,
+                        &vgl->hmd_controller_height, &vgl->hmd_controller_texture);
+        }
+
+        ret = tc->pf_update(tc, &vgl->hmd_controller_texture,
+                            &vgl->hmd_controller_width, &vgl->hmd_controller_height,
+                            p_pic, NULL);
+        vgl->b_show_hmd_controller = true;
+    }
+    else
+    {
+        vgl->b_show_hmd_controller = false;
+    }
+
+    return ret;
 }
