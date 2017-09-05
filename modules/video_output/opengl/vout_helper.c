@@ -1243,7 +1243,8 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     }
 
     GL_ASSERT_NOERROR();
-    ret = opengl_init_program(vgl, vgl->ctl_prgm, extensions, fmt, true);
+    ret = opengl_init_program(vgl, vgl->ctl_prgm, extensions, fmt, true,
+                              b_dump_shaders);
     if (ret != VLC_SUCCESS)
     {
         msg_Warn(gl, "could not init hmd controller tex converter for %4.4s",
@@ -2137,8 +2138,8 @@ static void DrawHMDController(vout_display_opengl_t *vgl, side_by_side_eye eye)
     opengl_tex_converter_t *tc = prgm->tc;
     vgl->vt.UseProgram(program);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    vgl->vt.Enable(GL_BLEND);
+    vgl->vt.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     vgl->vt.ActiveTexture(GL_TEXTURE0 + 0);
     {
@@ -2205,14 +2206,18 @@ static void DrawHMDController(vout_display_opengl_t *vgl, side_by_side_eye eye)
         vgl->vt.UniformMatrix4fv(prgm->uloc.ZoomMatrix, 1, GL_FALSE,
                                  prgm->var.ZoomMatrix);
 
-        getSbSParams(vgl, prgm, eye);
-        vgl->vt.Uniform2fv(prgm->uloc.SbSCoefs, 1, prgm->var.SbSCoefs);
-        vgl->vt.Uniform2fv(prgm->uloc.SbSOffsets, 1, prgm->var.SbSOffsets);
+        float *SbSCoefs = prgm->var.SbSCoefs;
+        float *SbSOffsets = prgm->var.SbSOffsets;
+        SbSCoefs[0] = 1.f; SbSCoefs[1] = 1.f;
+        SbSOffsets[0] = 0.f; SbSOffsets[1] = 0.f;
 
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        vgl->vt.Uniform2fv(prgm->uloc.SbSCoefs, 1, SbSCoefs);
+        vgl->vt.Uniform2fv(prgm->uloc.SbSOffsets, 1, SbSOffsets);
+
+        vgl->vt.DrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
-    glBlendFunc(GL_ONE, GL_ZERO);
-    glDisable(GL_BLEND);
+    vgl->vt.BlendFunc(GL_ONE, GL_ZERO);
+    vgl->vt.Disable(GL_BLEND);
 }
 
 static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, side_by_side_eye eye)
