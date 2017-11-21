@@ -43,6 +43,7 @@
 #include "components/playlist/playlist.hpp"     // plWidget
 #include "dialogs/firstrun.hpp"                 // First Run
 #include "dialogs/playlist.hpp"                 // PlaylistDialog
+#include "dialogs/hmd_mode_helper.hpp"          // HMDModeHelper
 
 #include "menus.hpp"                            // Menu creation
 #include "recents.hpp"                          // RecentItems when DnD
@@ -105,6 +106,7 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
     cryptedLabel         = NULL;
     controls             = NULL;
     inputC               = NULL;
+    hmdModeHelper        = NULL;
 
     b_hideAfterCreation  = false; // --qt-start-minimized
     playlistVisible      = false;
@@ -223,6 +225,10 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
 
         CONNECT( this, askVideoSetFullScreen( bool ),
                  this, setVideoFullScreen( bool ) );
+        CONNECT( this, askVideoSetHMDMode( bool, int ),
+                 this, setVideoHMDMode( bool, int ) );
+        CONNECT( this, askHideMouse( bool ),
+                 this, setHideMouse( bool ) );
     }
 
     CONNECT( THEDP, toolBarConfUpdated(), this, toolBarConfUpdated() );
@@ -235,6 +241,10 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf )
 
 
     connect( THEDP, &DialogsProvider::releaseMouseEvents, this, &MainInterface::voutReleaseMouseEvents ) ;
+
+    connect( QApplication::desktop(), SIGNAL( screenCountChanged(int) ),
+             this, SLOT( updateHMDMode(int) ) );
+
     /** END of CONNECTS**/
 
 
@@ -282,6 +292,9 @@ MainInterface::~MainInterface()
     delete fullscreenControls;
 
     RendererManager::killInstance();
+
+    /* Delete the HMD mode helper if needed */
+    delete hmdModeHelper;
 
     /* Save states */
 
@@ -865,74 +878,42 @@ void MainInterface::videoSizeChanged( int w, int h )
 void MainInterface::setVideoFullScreen( bool fs )
 {
     b_videoFullScreen = fs;
-    if( fs )
+    setWindowFullScreen( fs, -1 );
+}
+
+void MainInterface::setVideoHMDMode( bool HMDMode, int i_screenNumber )
+{
+    b_videoHMDMode = HMDMode;
+    setWindowFullScreen( HMDMode, i_screenNumber );
+    i_hmdModeScreenNumber = i_screenNumber;
+
+    if ( b_videoHMDMode )
     {
-        int numscreen = var_InheritInteger( p_intf, "qt-fullscreen-screennumber" );
-
-        if ( numscreen >= 0 && numscreen < QApplication::desktop()->screenCount() )
-        {
-            if( fullscreenControls )
-                fullscreenControls->setTargetScreen( numscreen );
-
-            QRect screenres = QApplication::desktop()->screenGeometry( numscreen );
-            lastWinScreen = windowHandle()->screen();
-#ifdef QT5_HAS_WAYLAND
-            if( !b_hasWayland )
-                windowHandle()->setScreen(QGuiApplication::screens()[numscreen]);
-#else
-            windowHandle()->setScreen(QGuiApplication::screens()[numscreen]);
-#endif
-
-            /* To be sure window is on proper-screen in xinerama */
-            if( !screenres.contains( pos() ) )
-            {
-                lastWinPosition = pos();
-                lastWinSize = size();
-                msg_Dbg( p_intf, "Moving video to correct position");
-                move( QPoint( screenres.x(), screenres.y() ) );
-            }
-        }
-
-        if( playlistWidget != NULL && playlistWidget->artContainer->currentWidget() == videoWidget )
-            showTab( videoWidget );
-
-        /* we won't be able to get its windowed sized once in fullscreen, so update it now */
-        stackWidgetsSizes[stackCentralW->currentWidget()] = stackCentralW->size();
-
-        /* */
-        displayNormalView();
-        setInterfaceFullScreen( true );
+        hmdModeHelper = new HMDModeHelper(THEPL);
+        hmdModeHelper->show();
+        // Center the window.
+        hmdModeHelper->setGeometry(
+            QStyle::alignedRect(
+                Qt::LeftToRight,
+                Qt::AlignCenter,
+                hmdModeHelper->size(),
+                qApp->desktop()->availableGeometry()
+            )
+        );
     }
     else
     {
-        setMinimalView( b_minimalView );
-        setInterfaceFullScreen( b_interfaceFullScreen );
-#ifdef QT5_HAS_WAYLAND
-        if( lastWinScreen != NULL && !b_hasWayland )
-            windowHandle()->setScreen(lastWinScreen);
-#else
-        if( lastWinScreen != NULL )
-            windowHandle()->setScreen(lastWinScreen);
-#endif
-        if( lastWinPosition.isNull() == false )
-        {
-            move( lastWinPosition );
-            lastWinPosition = QPoint();
-            if( !pendingResize.isValid() )
-            {
-                resizeWindow( lastWinSize.width(), lastWinSize.height() );
-                lastWinSize = QSize();
-            }
-        }
-        if( pendingResize.isValid() )
-        {
-            /* apply resize requested while fullscreen was enabled */
-            resizeStack( pendingResize.width(), pendingResize.height() );
-            pendingResize = QSize(); // consume
-        }
-
+        hmdModeHelper->hide();
+        delete hmdModeHelper;
+        hmdModeHelper = NULL;
     }
-    videoWidget->sync();
+}
+
+void MainInterface::updateHMDMode(int newCount)
+{
+    VLC_UNUSED(newCount);
+    if (b_videoHMDMode)
+        setWindowFullScreen(true, i_hmdModeScreenNumber);
 }
 
 /* Slot to change the video always-on-top flag.
@@ -998,6 +979,24 @@ int MainInterface::controlVideo( int i_query, va_list args )
         return VLC_SUCCESS;
     case VOUT_WINDOW_UNSET_FULLSCREEN:
         emit askVideoSetFullScreen( false );
+    {
+        if (b_videoHMDMode)
+            return VLC_EGENERIC;
+
+        bool b_fs = va_arg( args, int );
+        emit askVideoSetFullScreen( b_fs );
+        return VLC_SUCCESS;
+    }
+    case VOUT_WINDOW_SET_HMD_MODE:
+    {
+        if (b_videoFullScreen)
+            return VLC_EGENERIC;
+
+        bool b_fs = va_arg( args, int );
+        unsigned i_numScreen = va_arg( args, unsigned );
+        emit askVideoSetHMDMode( b_fs, (int)i_numScreen );
+        return VLC_SUCCESS;
+    }
         return VLC_SUCCESS;
     default:
         msg_Warn( p_intf, "unsupported control query" );
@@ -1119,6 +1118,84 @@ void MainInterface::displayNormalView()
     controls->setVisible( false );
     statusBar()->setVisible( false );
     inputC->setVisible( false );
+}
+
+void MainInterface::setWindowFullScreen( bool fs, int i_screenNumber )
+{
+    if( fs )
+    {
+        int numscreen = i_screenNumber == -1 ?
+        var_InheritInteger( p_intf, "qt-fullscreen-screennumber" ) : i_screenNumber;
+        /* if user hasn't defined screennumber, or screennumber that is bigger
+         * than current number of screens, take screennumber where current interface
+         * is.
+         */
+        if( numscreen == -1 || numscreen >= QApplication::desktop()->screenCount() )
+            numscreen = QApplication::desktop()->screenNumber( p_intf->p_sys->p_mi );
+
+        if ( numscreen >= 0 && numscreen < QApplication::desktop()->screenCount() )
+        {
+             if( fullscreenControls )
+                 fullscreenControls->setTargetScreen( numscreen );
+
+             QRect screenres = QApplication::desktop()->screenGeometry( numscreen );
+             lastWinScreen = windowHandle()->screen();
+#ifdef QT5_HAS_WAYLAND
+             if( !b_hasWayland )
+                 windowHandle()->setScreen(QGuiApplication::screens()[numscreen]);
+#else
+             windowHandle()->setScreen(QGuiApplication::screens()[numscreen]);
+#endif
+
+             /* To be sure window is on proper-screen in xinerama */
+             if( !screenres.contains( pos() ) )
+             {
+                 lastWinPosition = pos();
+                 lastWinSize = size();
+                 msg_Dbg( p_intf, "Moving video to correct position");
+                 move( QPoint( screenres.x(), screenres.y() ) );
+             }
+         }
+
+         if( playlistWidget != NULL && playlistWidget->artContainer->currentWidget() == videoWidget )
+             showTab( videoWidget );
+
+         /* we won't be able to get its windowed sized once in fullscreen, so update it now */
+         stackWidgetsSizes[stackCentralW->currentWidget()] = stackCentralW->size();
+
+         /* */
+         displayNormalView();
+         setInterfaceFullScreen( true );
+     }
+     else
+     {
+         setMinimalView( b_minimalView );
+         setInterfaceFullScreen( b_interfaceFullScreen );
+#ifdef QT5_HAS_WAYLAND
+         if( lastWinScreen != NULL && !b_hasWayland )
+             windowHandle()->setScreen(lastWinScreen);
+#else
+         if( lastWinScreen != NULL )
+             windowHandle()->setScreen(lastWinScreen);
+#endif
+         if( lastWinPosition.isNull() == false )
+         {
+             move( lastWinPosition );
+             lastWinPosition = QPoint();
+             if( !pendingResize.isValid() )
+             {
+                 resizeWindow( lastWinSize.width(), lastWinSize.height() );
+                 lastWinSize = QSize();
+             }
+         }
+         if( pendingResize.isValid() )
+         {
+             /* apply resize requested while fullscreen was enabled */
+             resizeStack( pendingResize.width(), pendingResize.height() );
+             pendingResize = QSize(); // consume
+         }
+    }
+    videoWidget->sync();
 }
 
 /*
