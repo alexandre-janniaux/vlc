@@ -201,7 +201,7 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
 
         vout_display_opengl_t *vgl = vout_display_opengl_New(fmt, &subpicture_chromas,
                                                              sys->gl, &cfg->viewpoint,
-                                                             context);
+                                                             context, cfg->hmd);
         vlc_gl_ReleaseCurrent(sys->gl);
         if (!vgl)
             goto bailout;

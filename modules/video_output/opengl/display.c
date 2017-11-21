@@ -99,7 +99,8 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
         return VLC_ENOMEM;
 
     //var_Create (vd, "hmd-device-data", VLC_VAR_ADDRESS | VLC_VAR_DOINHERIT);
-    vlc_object_t *playlist = vd->obj.parent->obj.parent; // TODO: HACK, UGLY XXX
+    vlc_object_t *parent = vlc_object_parent(vd);
+    vlc_object_t *playlist = vlc_object_parent(parent); // TODO: HACK, UGLY XXX
     var_AddCallback (playlist, "hmd-device-data", OnHmdDeviceStateChanged, NULL);
 
     sys->gl = NULL;
@@ -146,7 +147,7 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
         goto error;
 
     sys->vgl = vout_display_opengl_New (fmt, &spu_chromas, sys->gl,
-                                        &cfg->viewpoint, context);
+                                        &cfg->viewpoint, context, false);
     vlc_gl_ReleaseCurrent (sys->gl);
 
     if (sys->vgl == NULL)
@@ -274,6 +275,7 @@ static int Control (vout_display_t *vd, int query, va_list ap)
             return VLC_EGENERIC;
         vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
         vout_display_opengl_Viewport(sys->vgl, place.x, place.y, place.width, place.height);
+
         vlc_gl_ReleaseCurrent (sys->gl);
         return VLC_SUCCESS;
       }
@@ -298,7 +300,10 @@ static int OnHmdDeviceStateChanged(vlc_object_t *p_this, char const *name,
 
     msg_Err(vd, "Updating HMD status from display");
 
+    if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
+        return VLC_EGENERIC;
     vout_display_opengl_UpdateHMD (sys->vgl, new_val.p_address);
+    vlc_gl_ReleaseCurrent (sys->gl);
 
     return VLC_SUCCESS;
 }
