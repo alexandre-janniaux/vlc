@@ -138,7 +138,7 @@ static int Open (vlc_object_t *obj)
         goto error;
 
     sys->vgl = vout_display_opengl_New (&vd->fmt, &spu_chromas, sys->gl,
-                                        &vd->cfg->viewpoint);
+                                        &vd->cfg->viewpoint, vd->cfg->hmd);
     vlc_gl_ReleaseCurrent (sys->gl);
 
     if (sys->vgl == NULL)
@@ -266,12 +266,23 @@ static int Control (vout_display_t *vd, int query, va_list ap)
             return VLC_EGENERIC;
         vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
         vout_display_opengl_Viewport(sys->vgl, place.x, place.y, place.width, place.height);
+
         vlc_gl_ReleaseCurrent (sys->gl);
         return VLC_SUCCESS;
       }
       case VOUT_DISPLAY_CHANGE_VIEWPOINT:
         return vout_display_opengl_SetViewpoint (sys->vgl,
             &va_arg (ap, const vout_display_cfg_t* )->viewpoint);
+      case VOUT_DISPLAY_CHANGE_HMD_CONFIGURATION:
+      {
+        if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
+            return VLC_EGENERIC;
+        if (vout_display_opengl_ChangeHMDConfiguration(sys->vgl,
+            va_arg(ap, const vout_hmd_cfg_t*)) != VLC_SUCCESS)
+            return VLC_EGENERIC;
+        vlc_gl_ReleaseCurrent (sys->gl);
+        return VLC_SUCCESS;
+      }
       default:
         msg_Err (vd, "Unknown request %d", query);
     }
