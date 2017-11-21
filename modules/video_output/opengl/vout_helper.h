@@ -215,7 +215,8 @@ typedef struct vout_display_opengl_t vout_display_opengl_t;
 vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
                                                const vlc_fourcc_t **subpicture_chromas,
                                                vlc_gl_t *gl,
-                                               const vlc_viewpoint_t *viewpoint);
+                                               const vlc_viewpoint_t *viewpoint,
+                                               bool b_hmd);
 void vout_display_opengl_Delete(vout_display_opengl_t *vgl);
 
 picture_pool_t *vout_display_opengl_GetPool(vout_display_opengl_t *vgl, unsigned);
@@ -232,5 +233,12 @@ int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,
                                 picture_t *picture, subpicture_t *subpicture);
 int vout_display_opengl_Display(vout_display_opengl_t *vgl,
                                 const video_format_t *source);
+
+int vout_display_opengl_ChangeHMDConfiguration(vout_display_opengl_t *vgl,
+                                               const vout_hmd_cfg_t *p_hmd_cfg);
+
+int vout_display_opengl_UpdateViewport(vout_display_opengl_t *vgl,
+                                       vout_display_place_t place,
+                                       unsigned displayWidth, unsigned displayHeight);
 
 #endif

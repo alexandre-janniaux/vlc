@@ -75,11 +75,71 @@ static int Control(vout_display_t *vd, int query, va_list args)
 {
     vout_display_sys_t *sys = vd->sys;
 
-    if (query == VOUT_DISPLAY_CHANGE_VIEWPOINT)
-        return vout_display_opengl_SetViewpoint(sys->vgl,
-            &va_arg (args, const vout_display_cfg_t* )->viewpoint);
+    switch (query)
+    {
+      case VOUT_DISPLAY_HIDE_MOUSE: /* FIXME TODO */
+        break;
+#ifndef NDEBUG
+      case VOUT_DISPLAY_RESET_PICTURES: // not needed
+        vlc_assert_unreachable();
+#endif
 
-    return CommonControl(vd, query, args);
+      case VOUT_DISPLAY_CHANGE_DISPLAY_SIZE:
+      case VOUT_DISPLAY_CHANGE_DISPLAY_FILLED:
+      case VOUT_DISPLAY_CHANGE_ZOOM:
+      {
+        const vout_display_cfg_t *c = va_arg (ap, const vout_display_cfg_t *);
+        const video_format_t *src = &vd->source;
+        vout_display_place_t place;
+
+        vout_display_PlacePicture (&place, src, c, false);
+        vlc_gl_Resize (sys->gl, place.width, place.height);
+        vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
+<<<<<<< HEAD
+        if (vout_display_opengl_UpdateViewport(sys->vgl, place,
+                c->display.width, c->display.height) != VLC_SUCCESS)
+            return VLC_EGENERIC;
+=======
+        vout_display_opengl_Viewport(sys->vgl, place.x, place.y, c.display.width, c.display.height);
+        vlc_gl_ReleaseCurrent (sys->gl);
+>>>>>>> ee622e2e0a... OpenGL: fix glwin32 HMD
+        return VLC_SUCCESS;
+      }
+
+      case VOUT_DISPLAY_CHANGE_SOURCE_ASPECT:
+      case VOUT_DISPLAY_CHANGE_SOURCE_CROP:
+      {
+        const vout_display_cfg_t *cfg = vd->cfg;
+        const video_format_t *src = va_arg (ap, const video_format_t *);
+        vout_display_place_t place;
+
+        vout_display_PlacePicture (&place, src, cfg, false);
+        vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
+<<<<<<< HEAD
+        if (vout_display_opengl_UpdateViewport(sys->vgl, place,
+                cfg->display.width, cfg->display.height) != VLC_SUCCESS)
+            return VLC_EGENERIC;
+=======
+        vout_display_opengl_Viewport(sys->vgl, place.x, place.y, cfg->display.width, cfg->display.height);
+        vlc_gl_ReleaseCurrent (sys->gl);
+>>>>>>> ee622e2e0a... OpenGL: fix glwin32 HMD
+        return VLC_SUCCESS;
+      }
+      case VOUT_DISPLAY_CHANGE_VIEWPOINT:
+        return vout_display_opengl_SetViewpoint (sys->vgl,
+            &va_arg (ap, const vout_display_cfg_t* )->viewpoint);
+      case VOUT_DISPLAY_CHANGE_HMD_CONFIGURATION:
+      {
+        if (vout_display_opengl_ChangeHMDConfiguration(sys->vgl,
+            va_arg(ap, const vout_hmd_cfg_t*)) != VLC_SUCCESS)
+            return VLC_EGENERIC;
+        return VLC_SUCCESS;
+      }
+      default:
+        msg_Err (vd, "Unknown request %d", query);
+    }
+
+    return VLC_EGENERIC;
 }
 
 static int EmbedVideoWindow_Control(vout_window_t *wnd, int query, va_list ap)
@@ -144,7 +204,7 @@ static int Open(vlc_object_t *object)
     if (vlc_gl_MakeCurrent (sys->gl))
         goto error;
     sys->vgl = vout_display_opengl_New(&fmt, &subpicture_chromas, sys->gl,
-                                       &vd->cfg->viewpoint);
+                                       &vd->cfg->viewpoint, vd->cfg->hmd);
     vlc_gl_ReleaseCurrent (sys->gl);
     if (!sys->vgl)
         goto error;
@@ -251,5 +311,6 @@ static void Manage (vout_display_t *vd)
         return;
     vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)width / height);
     vout_display_opengl_Viewport(sys->vgl, 0, 0, width, height);
+
     vlc_gl_ReleaseCurrent (sys->gl);
 }
