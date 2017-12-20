@@ -1648,9 +1648,9 @@ static enum PixelFormat ffmpeg_GetFormat( AVCodecContext *p_context,
     {
 #ifdef _WIN32
 #if LIBAVUTIL_VERSION_CHECK(54, 13, 1, 24, 100)
-        AV_PIX_FMT_D3D11VA_VLD,
-#endif
         AV_PIX_FMT_DXVA2_VLD,
+#endif
+        AV_PIX_FMT_D3D11VA_VLD,
 #endif
         AV_PIX_FMT_VAAPI_VLD,
 #if (LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(52, 4, 0))
