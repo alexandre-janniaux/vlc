@@ -48,6 +48,7 @@ block_Realloc
 block_Release
 block_TryRealloc
 config_AddIntf
+config_AutoSaveConfigFile
 config_ChainCreate
 config_ChainDestroy
 config_ChainDuplicate
