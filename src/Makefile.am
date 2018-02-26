@@ -72,6 +72,7 @@ pluginsinclude_HEADERS = \
 	../include/vlc_mtime.h \
 	../include/vlc_network.h \
 	../include/vlc_objects.h \
+	../include/vlc_object_loader.h \
 	../include/vlc_picture.h \
 	../include/vlc_picture_fifo.h \
 	../include/vlc_picture_pool.h \
@@ -358,7 +359,8 @@ libvlccore_la_SOURCES = \
 	misc/fingerprinter.c \
 	misc/text_style.c \
 	misc/subpicture.c \
-	misc/subpicture.h
+	misc/subpicture.h \
+	object_loader/object_loader.c
 libvlccore_la_LIBADD = $(LIBS_libvlccore) \
 	../compat/libcompat.la \
 	$(LTLIBINTL) $(LTLIBICONV) \

@@ -758,3 +758,16 @@ vlc_rd_get_names
 vlc_rd_new
 vlc_rd_release
 vlc_rd_probe_add
+objLoader_get
+objLoader_release
+objLoader_loadScene
+scene_object_New
+scene_object_Release
+scene_mesh_New
+scene_mesh_Release
+scene_material_New
+scene_material_LoadTexture
+scene_material_Release
+scene_CalcTransformationMatrix
+scene_New
+scene_Release
