@@ -314,3 +314,4 @@ libvlc_wait
 libvlc_audio_filter_list_get
 libvlc_video_filter_list_get
 libvlc_module_description_list_release
+libvlc_set_hmd
