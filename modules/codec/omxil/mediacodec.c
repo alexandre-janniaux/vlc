@@ -205,6 +205,11 @@ vlc_module_begin ()
         set_capability("audio decoder", 0)
         set_callbacks(OpenDecoderJni, CloseDecoder)
         add_shortcut("mediacodec_jni")
+    add_submodule ()
+        set_description("Video encoder using Android MediaCodec via NDK")
+        set_capability("video encoder", 0)
+        set_callbacks(OpenEncoderNdk, CloseEncoder)
+        add_shortcut("mediacodec_ndk")
 vlc_module_end ()
 
 static void CSDFree(decoder_t *p_dec)
@@ -799,6 +804,49 @@ static int OpenDecoderNdk(vlc_object_t *p_this)
 static int OpenDecoderJni(vlc_object_t *p_this)
 {
     return OpenDecoder(p_this, MediaCodecJni_Init);
+}
+
+static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
+{
+    encoder_t *p_enc = (encoder_t *)p_this;
+    encoder_sys_t *p_sys;
+
+    /* Fail if this module already failed to decode this ES */
+    if (var_Type(p_dex, "mediacodec-failed") != 0)
+        return VLC_EGENERIC;
+
+    if (p_sys->api.configure(&p_sys->api, i_profile) != 0)
+    {
+
+    }
+
+    p_enc->p_sys = p_sys;
+
+    i_ret = StartMediaCodec(p_enc);
+    if (!i_ret != VLC_SUCCESS)
+    {
+        msg_Err(p_enc, "StartMediaCodec failed");
+        goto bailout;
+    }
+
+    if (vlc_clone(&p_sys->out_thread, OutTHread, p_enc,,
+                VLC_THREAD_PRIORITY_LOW))
+    {
+        msg_Err(p_enc, "vlc_clone failed");
+        goto bailout;
+    }
+
+    p_enc->pf_encode = EncodeBlock;
+    p_enc->pf_flush  = EncodeFlush;
+
+bailout:
+    CleanEncoder(p_enc);
+    return VLC_EGENERIC;
+}
+
+static int OpenEncoderNdk(vlc_object_t *p_this)
+{
+    return OpenEncoder(p_this, MediaCodecNdk_Init);
 }
 
 static void AbortDecoderLocked(decoder_t *p_dec)

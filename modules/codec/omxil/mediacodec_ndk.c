@@ -382,6 +382,58 @@ error:
     return i_ret;
 }
 
+static int StartEncoder(m_api *api, union mc_api_args *p_args)
+{
+    mc_api_sys *p_sys = api->p_sys;
+    int i_ret = MC_API_ERROR;
+    ANativeWindow *p_anw = NULL;
+
+    assert(api->psz_mime && api->psz_name);
+
+    p_sys->p_codec = syms.AMediaCodec.createCodecByName(api->psz_name);
+    if (!p_sys->p_codec)
+    {
+        msg_Err(api->p_obj, "AMediaCodec.createEncoderByName for %s failed",
+                api->psz_name);
+        goto error;
+    }
+
+    p_sys->p_format = syms.AMediaFormat.new();
+    if (!p_sys->p_format)
+    {
+        msg_Err(api->p_obj, "AMediaFormat.new failed");
+        goto error;
+    }
+
+    // Configure media format like decoder
+    syms.AMediaFormat.setInt32(p_sys->p_format, "decoder", 0);
+    syms.AMediaFormat.set
+
+    // Prepare and start encoder
+    if (!syms.AMediaCodec.configure(p_sys->p_codec, p_sys->p_format,
+                                     p_anw, NULL, 0) != AMEDIA_OK)
+    {
+        msg_Err(api->p_obj, "AMediaCodec.configure failed");
+        goto error;
+    }
+
+    if (syms.AMediaCodec.start(p_sys->p_codec) != AMEDIA_OK)
+    {
+        msg_Err(api->p_obj, "AMediaCodec.start failed");
+        goto error;
+    }
+
+    api->b_started = true;
+    // TODO: direct rendering-capturing ? 
+    i_ret = 0;
+    msg_Dbg(api->p_obj, "MediaCodec via NDK opened");
+
+error:
+    if (i_ret != 0)
+        StopEncoder(api);
+    return i_ret;
+}
+
 /*****************************************************************************
  * Flush
  *****************************************************************************/
