@@ -31,6 +31,8 @@
 
 #include "converter.h"
 
+#define VLC_SCENE_MAX_LIGHT 30
+
 #ifdef HAVE_LIBPLACEBO
 #include <libplacebo/shaders/colorspace.h>
 
