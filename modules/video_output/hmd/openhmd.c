@@ -348,7 +348,7 @@ static void* HMDThread(void *p_data)
     /* Ugly hack: sleep to be sure the device is closed correctly.
      * This fix an issue with the Vive that does not switch on when it
      * has just been switched on by a previous instance of the module. */
-    msleep(500000);
+    //msleep(500000);
 
     return NULL;
 }
