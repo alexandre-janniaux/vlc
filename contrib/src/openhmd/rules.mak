@@ -1,7 +1,8 @@
 # OpenHMD
 
-OPENHMD_VERSION := fa50b693fc09c669bbfc7fd3c0627f73ffdba464
+OPENHMD_VERSION := 20d6c96087e559fc83d941240d856a879e616760
 OPENHMD_GITURL = https://github.com/magwyz/OpenHMD.git
+OPENHMD_BRANCH = testVive
 
 ifdef HAVE_LINUX
 ifndef HAVE_ANDROID
@@ -24,7 +25,7 @@ PKGS_FOUND += openhmd
 endif
 
 $(TARBALLS)/openhmd-git.tar.xz:
-	$(call download_git,$(OPENHMD_GITURL),,$(OPENHMD_VERSION))
+	$(call download_git,$(OPENHMD_GITURL),$(OPENHMD_BRANCH),$(OPENHMD_VERSION))
 
 .sum-openhmd: openhmd-git.tar.xz
 	$(call check_githash,$(OPENHMD_VERSION))
