@@ -607,7 +607,8 @@ GenTextures(const opengl_tex_converter_t *tc,
 #endif
 
         tc->vt->TexParameteri(tc->tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        tc->vt->TexParameteri(tc->tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        tc->vt->TexParameteri(tc->tex_target, GL_TEXTURE_MIN_FILTER,
+                              GL_LINEAR_MIPMAP_LINEAR);
         tc->vt->TexParameteri(tc->tex_target, GL_TEXTURE_WRAP_S, GL_REPEAT);
         tc->vt->TexParameteri(tc->tex_target, GL_TEXTURE_WRAP_T, GL_REPEAT);
     }
@@ -1198,6 +1199,7 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     GET_PROC_ADDR_CORE(Finish);
     GET_PROC_ADDR_CORE(Flush);
     GET_PROC_ADDR_CORE(GenTextures);
+    GET_PROC_ADDR_CORE(GenerateMipmap);
     GET_PROC_ADDR_CORE(GetError);
     GET_PROC_ADDR_CORE(GetIntegerv);
     GET_PROC_ADDR_CORE(GetString);
