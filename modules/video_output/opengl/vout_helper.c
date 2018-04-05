@@ -2750,6 +2750,15 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 {
     GL_ASSERT_NOERROR();
 
+    static int64_t i_last_time = 0;
+
+    int64_t i_current_time = mdate();
+    int64_t delta = (i_current_time - i_last_time) / 1000;
+    float fps = 1000.f / delta;
+    i_last_time = i_current_time;
+
+    fprintf(stderr, "FPS: %f, Delta (ms): %"PRId64" \n", fps, delta);
+
     /* Why drawing here and not in Render()? Because this way, the
        OpenGL providers can call vout_display_opengl_Display to force redraw.
        Currently, the OS X provider uses it to get a smooth window resizing */
