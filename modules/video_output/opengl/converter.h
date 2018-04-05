@@ -72,6 +72,7 @@ typedef void (APIENTRY *PFNGLBLENDFUNCPROC) (GLenum sfactor, GLenum dfactor);
 typedef void (APIENTRY *PFNGLBUFFERSTORAGEPROC) (GLenum target, GLsizeiptr size, const void *data, GLbitfield flags);
 typedef void (APIENTRY *PFNGLCLEARCOLORPROC) (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 typedef void (APIENTRY *PFNGLCLEARPROC) (GLbitfield mask);
+typedef void (APIENTRY *PFNGLCULLFACEPROC)(void);
 typedef void (APIENTRY *PFNGLDELETETEXTURESPROC) (GLsizei n, const GLuint *textures);
 typedef void (APIENTRY *PFNGLDEPTHMASKPROC) (GLboolean flag);
 typedef void (APIENTRY *PFNGLDISABLEPROC) (GLenum cap);
@@ -152,6 +153,7 @@ typedef void (APIENTRY *PFNGLVIEWPORTPROC) (GLint x, GLint y, GLsizei width, GLs
 typedef struct __GLsync *GLsync;
 typedef uint64_t GLuint64;
 typedef void *(APIENTRY *PFNGLMAPBUFFERRANGEPROC) (GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access);
+typedef void *(APIENTRY *PFNGLMAPBUFFERPROC) (GLenum target, GLbitfield access);
 typedef void (APIENTRY *PFNGLFLUSHMAPPEDBUFFERRANGEPROC) (GLenum target, GLintptr offset, GLsizeiptr length);
 typedef GLboolean (APIENTRY *PFNGLUNMAPBUFFERPROC) (GLenum target);
 typedef GLsync (APIENTRY *PFNGLFENCESYNCPROC) (GLenum condition, GLbitfield flags);
@@ -170,11 +172,13 @@ typedef struct {
     PFNGLBLENDFUNCPROC      BlendFunc;
     PFNGLCLEARCOLORPROC     ClearColor;
     PFNGLCLEARPROC          Clear;
+    PFNGLCULLFACEPROC       CullFace;
     PFNGLDELETETEXTURESPROC DeleteTextures;
     PFNGLDEPTHMASKPROC      DepthMask;
     PFNGLDISABLEPROC        Disable;
     PFNGLDRAWARRAYSPROC     DrawArrays;
     PFNGLDRAWELEMENTSPROC   DrawElements;
+    PFNGLDRAWELEMENTSINSTANCEDPROC   DrawElementsInstanced;
     PFNGLENABLEPROC         Enable;
     PFNGLFINISHPROC         Finish;
     PFNGLFLUSHPROC          Flush;
@@ -214,6 +218,7 @@ typedef struct {
     /* Shader variables commands */
     PFNGLGETUNIFORMLOCATIONPROC      GetUniformLocation;
     PFNGLGETATTRIBLOCATIONPROC       GetAttribLocation;
+    PFNGLVERTEXATTRIBDIVISORPROC     VertexAttribDivisor;
     PFNGLVERTEXATTRIBPOINTERPROC     VertexAttribPointer;
     PFNGLENABLEVERTEXATTRIBARRAYPROC EnableVertexAttribArray;
     PFNGLUNIFORMMATRIX4FVPROC        UniformMatrix4fv;
@@ -263,6 +268,7 @@ typedef struct {
     PFNGLBUFFERSUBDATAPROC          BufferSubData; /* can be NULL */
     PFNGLBUFFERSTORAGEPROC          BufferStorage; /* can be NULL */
     PFNGLMAPBUFFERRANGEPROC         MapBufferRange; /* can be NULL */
+    PFNGLMAPBUFFERPROC              MapBuffer; /* can be NULL */
     PFNGLFLUSHMAPPEDBUFFERRANGEPROC FlushMappedBufferRange; /* can be NULL */
     PFNGLUNMAPBUFFERPROC            UnmapBuffer; /* can be NULL */
     PFNGLFENCESYNCPROC              FenceSync; /* can be NULL */
