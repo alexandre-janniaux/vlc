@@ -432,7 +432,6 @@ tc_common_allocate_textures(const opengl_tex_converter_t *tc, GLuint *textures,
         tc->vt->TexImage2D(tc->tex_target, 0, tc->texs[i].internal,
                            tex_width[i], tex_height[i], 0, tc->texs[i].format,
                            tc->texs[i].type, NULL);
-        tc->vt->GenerateMipmap(GL_TEXTURE_2D);
     }
     return VLC_SUCCESS;
 }

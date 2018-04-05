@@ -607,8 +607,7 @@ GenTextures(const opengl_tex_converter_t *tc,
 #endif
 
         tc->vt->TexParameteri(tc->tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        tc->vt->TexParameteri(tc->tex_target, GL_TEXTURE_MIN_FILTER,
-                              GL_LINEAR_MIPMAP_LINEAR);
+        tc->vt->TexParameteri(tc->tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         tc->vt->TexParameteri(tc->tex_target, GL_TEXTURE_WRAP_S, GL_REPEAT);
         tc->vt->TexParameteri(tc->tex_target, GL_TEXTURE_WRAP_T, GL_REPEAT);
     }
