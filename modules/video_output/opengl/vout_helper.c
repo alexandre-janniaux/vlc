@@ -564,6 +564,8 @@ static GLuint BuildVertexShader(const opengl_tex_converter_t *tc,
         " TBNMatrix = mat3(Tangent_world, Bitangent_world, Normal_world);\n"
 
         " gl_Position = ProjectionMatrix * ViewMatrix * vec4(Position_world, 1);\n"
+        " if (dot(ViewMatrix * vec4(Position_world, 1) * gl_Position, vec4(0, 0, -1, 0)) <= 0)\n"
+        "   gl_Position = ProjectionMatrix * vec4(0, 0, 1, 1);\n"
         "}";
 
     const char *coord1_header = plane_count > 1 ?
@@ -2562,12 +2564,12 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
         scene_mesh_t *p_mesh = p_scene->meshes[p_object->meshId];
         scene_material_t *p_material = p_scene->materials[p_object->textureId];
 
-        if (!is_object_visible(p_object, p_mesh, p_eye_pos, p_eye_dir))
+        /*if (!is_object_visible(p_object, p_mesh, p_eye_pos, p_eye_dir))
         {
             // Skip this instance
             instance_count = 1;
             continue;
-        }
+        }*/
 
 
         unsigned next_object_idx = o;
@@ -2581,8 +2583,8 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
 
             next_object = vgl->p_objDisplay->p_scene->objects[next_object_idx];
             // suboptimal, the next instance can be skipped, but it's more complex
-            if (!is_object_visible(next_object, p_scene->meshes[next_object->meshId], p_eye_pos, p_eye_dir))
-                break;
+            /*if (!is_object_visible(next_object, p_scene->meshes[next_object->meshId], p_eye_pos, p_eye_dir))
+                break;*/
         }
 
         // count how many instances of this mesh will be rendered at once by openGL
