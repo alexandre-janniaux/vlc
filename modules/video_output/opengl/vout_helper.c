@@ -2855,14 +2855,22 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         vgl->vt.UseProgram(vgl->prgm->id);
 
         // Left eye
+        int64_t d_before_scene = mdate();
         vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, vgl->leftFBO);
         vgl->vt.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         drawScene(vgl, source, LEFT_EYE);
+        d_before_scene = mdate() - d_before_scene;
+
+        printf(" DrawScene1:     %"PRId64"\n", d_before_scene);
 
         // Right eye
+        d_before_scene = mdate();
         vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, vgl->rightFBO);
         vgl->vt.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         drawScene(vgl, source, RIGHT_EYE);
+        d_before_scene = mdate() - d_before_scene;
+
+        printf(" DrawScene2:     %"PRId64"\n", d_before_scene);
 
         // Exit framebuffer.
         vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -2898,6 +2906,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
             1, 1,
             0, 1,
         };
+        int64_t d_last_draw = mdate();
 
         vgl->vt.Uniform1f(vgl->vt.GetUniformLocation(program, "WarpScale"), vgl->hmd_cfg.warpScale * vgl->hmd_cfg.warpAdj);
         vgl->vt.Uniform4fv(vgl->vt.GetUniformLocation(program, "HmdWarpParam"), 1, vgl->hmd_cfg.distorsionCoefs);
@@ -2931,12 +2940,20 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         vgl->vt.VertexAttribPointer(vgl->vt.GetAttribLocation(program, "VertexPosition"), 3, GL_FLOAT, 0, 0, 0);
 
         vgl->vt.DrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
+
+        d_last_draw = mdate() - d_last_draw;
+        printf(" LastDraw:     %"PRId64"\n", d_last_draw);
+
     }
     else
         drawScene(vgl, source, UNDEFINED_EYE);
 
     /* Display */
+    int64_t d_swap_buffer = mdate();
     vlc_gl_Swap(vgl->gl);
+    d_swap_buffer = mdate() - d_swap_buffer;
+
+    printf(" SwapBuffer:     %"PRId64"\n", d_swap_buffer);
 
     GL_ASSERT_NOERROR();
 
