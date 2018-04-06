@@ -2694,16 +2694,30 @@ static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, s
                sizeof(vgl->p_objDisplay->p_scene->headPositionMatrix));
 
 
+    int64_t d_before_shader = mdate();
     DrawWithShaders(vgl, vgl->prgm, eye);
+    int64_t delta_draw_with_shader = mdate() - d_before_shader;
+
+    int64_t d_before_hmd_controller = 0;
+    int64_t delta_draw_hmd_controller = 0;
 
     if (vgl->b_show_hmd_controller)
+    {
+        d_before_hmd_controller = mdate();
         DrawHMDController(vgl, eye);
+        delta_draw_hmd_controller = mdate() - d_before_hmd_controller;
+    }
 
+    int64_t d_before_scene_objects = 0;
+    int64_t delta_draw_scene_objects = 0;
     if (vgl->b_sideBySide
         && vgl->fmt.projection_mode == PROJECTION_MODE_RECTANGULAR
         && vgl->p_objDisplay)
+    {
+        d_before_scene_objects = mdate();
         DrawSceneObjects(vgl, vgl->scene_prgm, eye);
-
+        delta_draw_scene_objects = mdate() - d_before_scene_objects;
+    }
     /* Draw the subpictures */
     // Change the program for overlays
     struct prgm *prgm = vgl->sub_prgm;
@@ -2732,6 +2746,9 @@ static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, s
     }
 
     vgl->vt.ActiveTexture(GL_TEXTURE0 + 0);
+
+    int64_t d_before_eye = mdate();
+
     for (int i = 0; i < vgl->region_count; i++) {
         gl_region_t *glr = &vgl->region[i];
         const GLfloat vertexCoord[] = {
@@ -2789,8 +2806,24 @@ static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, s
         vgl->vt.Uniform2fv(prgm->uloc.SbSCoefs, 1, prgm->var.SbSCoefs);
         vgl->vt.Uniform2fv(prgm->uloc.SbSOffsets, 1, prgm->var.SbSOffsets);
 
+
         vgl->vt.DrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
+
+    int64_t delta_draw_eye = mdate() - d_before_eye;
+
+    printf("== time ==\n"
+           " DrawWithShader:     %"PRId64"\n"
+           " DrawHMDcontroller:  %"PRId64"\n"
+           " DrawSceneObject:    %"PRId64"\n"
+           " DrawEyes:           %"PRId64"\n",
+           delta_draw_with_shader,
+           delta_draw_hmd_controller,
+           delta_draw_scene_objects,
+           delta_draw_eye);
+
+
+
 
     vgl->vt.Disable(GL_BLEND);
 
@@ -2806,11 +2839,11 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     static int64_t i_last_time = 0;
 
     int64_t i_current_time = mdate();
-    int64_t delta = (i_current_time - i_last_time) / 1000;
-    float fps = 1000.f / delta;
+    int64_t delta = (i_current_time - i_last_time);
+    float fps = 1000.f * 1000.f / delta;
     i_last_time = i_current_time;
 
-    fprintf(stderr, "FPS: %f, Delta (ms): %"PRId64" \n", fps, delta);
+    fprintf(stderr, "FPS: %f, Delta (µs): %"PRId64" \n", fps, delta);
 
     /* Why drawing here and not in Render()? Because this way, the
        OpenGL providers can call vout_display_opengl_Display to force redraw.
