@@ -234,19 +234,10 @@ static void* HMDThread(void *p_data)
     setlocale(LC_ALL, "C");
 
     int num_devices = ohmd_ctx_probe(p_sys->ctx);
-    msg_Dbg(p_hmd, "%d devices found", num_devices);
-    if (num_devices < 1) {
+    if (num_devices < 0) {
         msg_Err(p_hmd, "Failed to probe devices: %s", ohmd_ctx_get_error(p_sys->ctx));
         ohmd_ctx_destroy(p_sys->ctx);
         b_init_successfull = false;
-    }
-
-    for (unsigned i = 0; i < num_devices; ++i)
-    {
-        char *vendor = ohmd_list_gets(p_sys->ctx, i, OHMD_VENDOR);
-        char *product = ohmd_list_gets(p_sys->ctx, i, OHMD_PRODUCT);
-        char *path = ohmd_list_gets(p_sys->ctx, i, OHMD_PATH);
-        msg_Dbg(p_hmd, "Device found: %s - %s - %s", vendor, product, path);
     }
 
     if (b_init_successfull)
@@ -314,8 +305,6 @@ static void* HMDThread(void *p_data)
     // Quit the thread in the case of an initialization error.
     if (!b_init_successfull)
         return NULL;
-
-    msg_Dbg(p_hmd, "OpenHMD init sucessful");
 
     /* Main OpenHMD thread. */
     while (true)
