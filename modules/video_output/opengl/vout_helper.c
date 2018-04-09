@@ -2568,7 +2568,10 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
         0
     };
 
+    // Compress consecutive object with same mesh with instanced rendering
     unsigned instance_count = 1;
+    // For statistics only, count how much object have been culled out
+    unsigned instances_dropped = 0;
     for (unsigned o = 0; o < p_scene->nObjects; o += instance_count)
     {
         scene_object_t *p_object = p_scene->objects[o];
@@ -2579,6 +2582,7 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
         {
             // Skip this instance
             instance_count = 1;
+            instances_dropped++;
             continue;
         }
 
@@ -2688,6 +2692,8 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
     vgl->vt.VertexAttribDivisor(prgm->aloc.InstanceTransformMatrix+1, 0);
     vgl->vt.VertexAttribDivisor(prgm->aloc.InstanceTransformMatrix+2, 0);
     vgl->vt.VertexAttribDivisor(prgm->aloc.InstanceTransformMatrix+3, 0);
+
+    printf("=> %u instances have been culled out\n", instances_dropped);
 
     //vgl->vt.Disable(GL_DEPTH_TEST);
 }
