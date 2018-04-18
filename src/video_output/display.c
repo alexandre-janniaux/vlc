@@ -738,7 +738,6 @@ bool vout_ManageDisplay(vout_display_t *vd, bool allow_reset_pictures)
             }
 
             osys->ch_hmd_cont = false;
-            picture_Release(ctl.p_pic);
         }
 
 
@@ -989,6 +988,9 @@ void vout_SetHMDController(vout_display_t *vd, vlc_hmd_controller_t *p_ctl)
 {
     vout_display_owner_sys_t *osys = vd->owner.sys;
 
+    if (likely(osys->hmd_cont.p_pic != NULL))
+        picture_Release(osys->hmd_cont.p_pic);
+
     osys->ch_hmd_cont = true;
     osys->hmd_cont = *p_ctl;
 }
@@ -1081,6 +1083,9 @@ error:
 void vout_DeleteDisplay(vout_display_t *vd, vout_display_state_t *state)
 {
     vout_display_owner_sys_t *osys = vd->owner.sys;
+
+    if (osys->hmd_cont.p_pic != NULL)
+        picture_Release(osys->hmd_cont.p_pic);
 
     if (state) {
         if (!osys->is_splitter)
