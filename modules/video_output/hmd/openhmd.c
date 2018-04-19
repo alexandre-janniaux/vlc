@@ -84,6 +84,9 @@ struct vout_hmd_sys_t
 
     ohmd_context* ctx;
     ohmd_device* hmd;
+
+    vlc_mutex_t vp_lock;
+    vlc_viewpoint_t vp;
 };
 
 
@@ -106,6 +109,8 @@ static int Open(vlc_object_t *p_this)
 
     vlc_mutex_init(&p_sys->lock);
     vlc_cond_init(&p_sys->thread_cond);
+
+    vlc_mutex_init(&p_sys->vp_lock);
 
     p_sys->b_thread_running = true;
     p_sys->b_init_completed = false;
@@ -222,6 +227,18 @@ static void quaternionToEuler(float *q, vlc_viewpoint_t *vp)
 }
 
 
+vlc_viewpoint_t getViewpoint(vout_hmd_viewpoint_provider_t *p_vpProvider)
+{
+    vout_hmd_sys_t* p_sys = (vout_hmd_sys_t*)p_vpProvider;
+
+    vlc_mutex_lock(&p_sys->vp_lock);
+    vlc_viewpoint_t vp = p_sys->vp;
+    vlc_mutex_unlock(&p_sys->vp_lock);
+
+    return vp;
+}
+
+
 static void* HMDThread(void *p_data)
 {
     vout_hmd_t* p_hmd = (vout_hmd_t*)p_data;
@@ -293,6 +310,9 @@ static void* HMDThread(void *p_data)
         ohmd_device_getf(p_sys->hmd, OHMD_LEFT_EYE_GL_MODELVIEW_MATRIX, p_hmd->params.modelview.left);
         ohmd_device_getf(p_sys->hmd, OHMD_RIGHT_EYE_GL_MODELVIEW_MATRIX, p_hmd->params.modelview.right);
 
+        p_hmd->params.p_vpProvider = (vout_hmd_viewpoint_provider_t *)p_sys;
+        p_hmd->params.getViewpoint = getViewpoint;
+
         vout_hmd_SendEventConfigurationChanged(p_hmd);
     }
 
@@ -317,6 +337,11 @@ static void* HMDThread(void *p_data)
             ohmd_device_getf(p_sys->hmd, OHMD_ROTATION_QUAT, quat);
 
         quaternionToEuler(quat, &vp);
+
+        vlc_mutex_lock(&p_sys->vp_lock);
+        p_sys->vp = vp;
+        vlc_mutex_unlock(&p_sys->vp_lock);
+
         vout_display_SendEventViewpointMoved(p_sys->p_display, &vp);
 
         vlc_mutex_lock(&p_sys->lock);
