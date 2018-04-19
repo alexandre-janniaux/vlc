@@ -448,6 +448,8 @@ static int StartEncoder(mc_api *api)
     i_ret = 0;
     msg_Dbg(api->p_obj, "MediaCodec encoder via NDK opened");
 
+    return VLC_SUCCESS;
+
 error:
     if (i_ret != 0)
         Stop(api);

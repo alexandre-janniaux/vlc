@@ -149,6 +149,7 @@ struct encoder_sys_t
 
     bool b_aborted;
     bool b_flush_out;
+    bool b_output_ready;
     bool b_input_dequeued;
 };
 
@@ -572,6 +573,7 @@ static void StopMediaCodec(decoder_t *p_dec)
 
 static void StopMediaCodec_Encoder(encoder_t *p_enc)
 {
+    msg_Dbg(stderr, "Stopping mediacodec encoder");
     encoder_sys_t *p_sys = p_enc->p_sys;
     p_sys->api.stop(&p_sys->api);
 }
@@ -853,19 +855,69 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     encoder_t *p_enc = (encoder_t *)p_this;
     encoder_sys_t *p_sys;
 
-    /* Fail if this module already failed to encode this ES */
-    if (var_Type(p_enc, "mediacodec-encoder-failed") != 0)
+    const char *mime = NULL;
+
+    if (p_enc->fmt_out.i_cat != VIDEO_ES)
+    {
+        msg_Err(p_enc, "MediaCodec encoder only support video encoding");
         return VLC_EGENERIC;
+    }
+
+    if (!p_enc->fmt_in.video.i_width || !p_enc->fmt_in.video.i_height)
+    {
+        msg_Err(p_enc, "MediaCodec might not work with video of size 0");
+        return VLC_EGENERIC;
+    }
+
+    switch (p_enc->fmt_out.i_codec) {
+    case VLC_CODEC_H264:
+        mime = "video/avc";
+        break;
+    default:
+        break;
+    }
+    /* Fail if this module already failed to encode this ES */
+    //if (var_Type(p_enc, "mediacodec-encoder-failed") != 0)
+    //    return VLC_EGENERIC;
+
+    if (mime == NULL)
+    {
+        msg_Err(p_enc, "Codec %4.4s not supported", (char *)&p_enc->fmt_out.i_codec);
+        return VLC_EGENERIC;
+    }
 
     /* Allocate the memory needed to store the decoder's structure */
     if ((p_sys = calloc(1, sizeof(*p_sys))) == NULL)
+    {
+        msg_Err(p_this, "Can't allocate encoder_sys_t");
         return VLC_ENOMEM;
+    }
 
     p_sys->api.p_obj = p_this;
     p_sys->api.i_codec = p_enc->fmt_in.i_codec;
     p_sys->api.i_cat = p_enc->fmt_in.i_cat;
+    p_sys->api.psz_mime = mime;
+
+    vlc_mutex_init(&p_sys->lock);
+    vlc_cond_init(&p_sys->cond);
 
     p_enc->p_sys = p_sys;
+    p_sys->b_flush_out = false;
+    p_sys->b_output_ready = false;
+
+    p_enc->fmt_in.i_codec = VLC_CODEC_I420;
+
+    if (pf_init(&p_sys->api) != 0)
+    {
+        msg_Err(p_enc, "Can't initialize mediacodec API for mediacodec encoder");
+        goto bailout;
+    }
+
+    if (p_sys->api.configure(&p_sys->api, p_enc->fmt_out.i_profile) != 0)
+    {
+        msg_Err(p_enc, "Can't configure MediaCodec encoder for the given mime type");
+        return VLC_EGENERIC;
+    }
 
     int i_ret = StartMediaCodec_Encoder(p_enc);
     if (i_ret != VLC_SUCCESS)
@@ -878,19 +930,24 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
                 VLC_THREAD_PRIORITY_LOW))
     {
         msg_Err(p_enc, "vlc_clone failed");
+        vlc_mutex_unlock(&p_sys->lock);
         goto bailout;
     }
 
+
     p_enc->pf_encode_video = EncodeVideo;
-    p_enc->pf_encode_audio = EncodeAudio;
-    p_enc->pf_encode_sub   = EncodeSub;
+    p_enc->pf_encode_audio = NULL;
+    p_enc->pf_encode_sub   = NULL;
 
     p_sys->fifo_out = block_FifoNew();
 
     if (p_sys->fifo_out == NULL)
     {
+        msg_Err(p_enc, "Can't allocation fifo block for encoder");
         goto bailout;
     }
+
+    msg_Dbg(p_enc, "Mediacodec encoder successfully created");
 
     return VLC_SUCCESS;
 
@@ -901,6 +958,7 @@ bailout:
 
 static int OpenEncoderNdk(vlc_object_t *p_this)
 {
+    msg_Dbg(p_this, "Opening MediaCodec NDK encoder");
     return OpenEncoder(p_this, MediaCodecNdk_Init);
 }
 
@@ -1719,6 +1777,7 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
          */
         p_sys->api.queue_picture_in(&p_sys->api, i_index, picture,
                                      picture->date, false);
+        p_sys->b_output_ready = true;
     }
 
     /*
@@ -1726,25 +1785,18 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
      */
     if (vlc_fifo_GetCount(p_sys->fifo_out) > 0)
     {
+        msg_Dbg(p_enc, "Popping one frame from the encoder");
         vlc_fifo_Lock(p_sys->fifo_out);
         block_t *out_block = block_FifoGet(p_sys->fifo_out);
         vlc_fifo_Unlock(p_sys->fifo_out);
+
+        return out_block;
     }
 
     /*
      * There can be no available output buffer, because the encoder
      * might need multiple frame so as to output some data.
      * In this case we return NULL */
-    return NULL;
-}
-
-static block_t* EncodeAudio(encoder_t *p_enc, block_t *p_block)
-{
-    return NULL;
-}
-
-static block_t* EncodeSub(encoder_t *p_enc, subpicture_t *p_picture)
-{
     return NULL;
 }
 
@@ -1760,8 +1812,18 @@ static void* EncoderOutputThread(void *p_obj)
 
     struct mc_api_out out;
 
+    vlc_mutex_lock(&p_sys->lock);
+    mutex_cleanup_push(&p_sys->lock);
     for(;;)
     {
+        // TODO: wait encoder in correct state
+
+        /* Wait for output ready */
+        while (!p_sys->b_flush_out && !p_sys->b_output_ready)
+            vlc_cond_wait(&p_sys->cond, &p_sys->lock);
+
+        int canc = vlc_savecancel();
+
         // Check if an output buffer is available
         // TODO: move into its own thread
         int i_index = p_sys->api.dequeue_out(&p_sys->api, -1);
@@ -1798,9 +1860,22 @@ static void* EncoderOutputThread(void *p_obj)
             p_sys->api.release_out(&p_sys->api, i_index, false);
 
             /* push block into the queue so that it is returned at the next call */
-
+            vlc_fifo_Lock(&p_sys->fifo_out);
+            vlc_fifo_QueueUnlocked(&p_sys->fifo_out, p_block);
+            vlc_fifo_Unlock(&p_sys->fifo_out);
+        }
+        else
+        {
+            vlc_restorecancel(canc);
+            break;
         }
     }
+    msg_Warn(p_enc, "Encoder output thread stopped");
+
+    vlc_cleanup_pop();
+    vlc_mutex_unlock(&p_sys->lock);
+
+    return NULL;
 }
 
 static int Video_OnNewBlock(decoder_t *p_dec, block_t **pp_block)
