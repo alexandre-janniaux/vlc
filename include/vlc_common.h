@@ -380,11 +380,13 @@ typedef audio_format_t audio_sample_format_t;
 /* Video */
 typedef struct vout_thread_t vout_thread_t;
 typedef struct vlc_viewpoint_t vlc_viewpoint_t;
+typedef struct vout_hmd_sys_t vout_hmd_sys_t;
 typedef struct vout_hmd_projection_t vout_hmd_projection_t;
 typedef struct vout_hmd_modelview_t vout_hmd_modelview_t;
 typedef struct vout_hmd_t vout_hmd_t;
 typedef struct vout_hmd_cfg_t vout_hmd_cfg_t;
 typedef struct vlc_hmd_controller_t vlc_hmd_controller_t;
+typedef struct vout_hmd_viewpoint_provider_t vout_hmd_viewpoint_provider_t;
 
 typedef video_format_t video_frame_format_t;
 typedef struct picture_t picture_t;
