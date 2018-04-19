@@ -1518,15 +1518,6 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     CreateFBO(vgl, &vgl->leftFBO, &vgl->leftColorTex, &vgl->leftDepthTex);
     CreateFBO(vgl, &vgl->rightFBO, &vgl->rightColorTex, &vgl->rightDepthTex);
 
-    char psz_scenePath[1024];
-    strncpy(psz_scenePath, config_GetDataDir(), sizeof(psz_scenePath));
-    strncat(psz_scenePath, DIR_SEP "VirtualTheater" DIR_SEP "virtualCinemaTargo.json",
-           sizeof(psz_scenePath));
-
-    vgl->p_objDisplay = loadSceneObjects(psz_scenePath, vgl->gl, vgl->scene_prgm->tc);
-    if (vgl->p_objDisplay == NULL)
-        msg_Warn(vgl->gl, "Could not load the virtual theater");
-
     GL_ASSERT_NOERROR();
     return vgl;
 }
@@ -1539,7 +1530,8 @@ void vout_display_opengl_Delete(vout_display_opengl_t *vgl)
     vgl->vt.Finish();
     vgl->vt.Flush();
 
-    releaseSceneObjects(vgl->p_objDisplay);
+    if (vgl->p_objDisplay)
+        releaseSceneObjects(vgl->p_objDisplay);
 
     const size_t main_tex_count = vgl->prgm->tc->tex_count;
     const bool main_del_texs = !vgl->prgm->tc->handle_texs_gen;
@@ -3048,9 +3040,17 @@ int vout_display_opengl_ChangeHMDConfiguration(vout_display_opengl_t *vgl, const
 
         vgl->vt.Uniform2fv(vgl->vt.GetUniformLocation(vgl->stereo_prgm->id, "ViewportScale"), 1, vgl->hmd_cfg.viewportScale);
         vgl->vt.Uniform3fv(vgl->vt.GetUniformLocation(vgl->stereo_prgm->id, "aberr"), 1, vgl->hmd_cfg.aberrScale);
+
+        vgl->p_objDisplay = loadSceneObjects(vgl->gl, vgl->scene_prgm->tc);
+        if (vgl->p_objDisplay == NULL)
+            msg_Warn(vgl->gl, "Could not load the virtual theater");
     }
     else
+    {
+        releaseSceneObjects(vgl->p_objDisplay);
+        vgl->p_objDisplay = NULL;
         vgl->b_sideBySide = false;
+    }
 
     vout_display_opengl_Viewport(vgl, vgl->i_displayX, vgl->i_displayY,
                                  vgl->i_displayWidth, vgl->i_displayHeight);
