@@ -1601,8 +1601,9 @@ static void UpdateFOVy(vout_display_opengl_t *vgl)
     vgl->f_fovy = 2 * atanf(tanf(vgl->f_fovx / 2) / vgl->f_sar);
 }
 
-int vout_display_opengl_SetViewpoint(vout_display_opengl_t *vgl,
-                                     const vlc_viewpoint_t *p_vp)
+
+static int UpdateViewpoint(vout_display_opengl_t *vgl,
+                           const vlc_viewpoint_t *p_vp)
 {
     if (p_vp->fov > FIELD_OF_VIEW_DEGREES_MAX
             || p_vp->fov < FIELD_OF_VIEW_DEGREES_MIN)
@@ -1622,12 +1623,26 @@ int vout_display_opengl_SetViewpoint(vout_display_opengl_t *vgl,
         UpdateFOVy(vgl);
         UpdateZ(vgl);
     }
+
     getViewpointMatrixes(vgl, vgl->fmt.projection_mode, vgl->prgm);
     getViewpointMatrixes(vgl, vgl->fmt.projection_mode, vgl->ctl_prgm);
     getViewpointMatrixes(vgl, vgl->fmt.projection_mode, vgl->scene_prgm);
 
     return VLC_SUCCESS;
 #undef RAD
+}
+
+
+int vout_display_opengl_SetViewpoint(vout_display_opengl_t *vgl,
+                                     const vlc_viewpoint_t *p_vp)
+{
+    if (vgl->b_sideBySide)
+    {
+        // The viewpoint values are updated by a callback at display time.
+        return VLC_SUCCESS;
+    }
+
+    return UpdateViewpoint(vgl, p_vp);
 }
 
 
@@ -2898,6 +2913,11 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     vgl->vt.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (vgl->b_sideBySide) {
+
+        // Get latest viewpoint values.
+        vlc_viewpoint_t vp = vgl->hmd_cfg.getViewpoint(vgl->hmd_cfg.p_vpProvider);
+        UpdateViewpoint(vgl, &vp);
+
         // Draw scene into framebuffers.
         vgl->vt.UseProgram(vgl->prgm->id);
 
