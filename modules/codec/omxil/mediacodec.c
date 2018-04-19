@@ -134,6 +134,24 @@ struct decoder_sys_t
     };
 };
 
+struct encoder_sys_t
+{
+    mc_api api;
+    vlc_mutex_t     lock;
+    vlc_thread_t    out_thread;
+    /* Cond used to signal the output thread */
+    vlc_cond_t      cond;
+    vlc_cond_t      enc_cond;
+
+    /* Fifo storing the available encoded blocks, which are
+     * returned from EncodeVideo */
+    vlc_fifo_t     *fifo_out;
+
+    bool b_aborted;
+    bool b_flush_out;
+    bool b_input_dequeued;
+};
+
 /*****************************************************************************
  * Local prototypes
  *****************************************************************************/
@@ -141,6 +159,10 @@ static int  OpenDecoderJni(vlc_object_t *);
 static int  OpenDecoderNdk(vlc_object_t *);
 static void CleanDecoder(decoder_t *);
 static void CloseDecoder(vlc_object_t *);
+
+static int OpenEncoderNdk(vlc_object_t *);
+static void CleanEncoder(encoder_t *);
+static void CloseEncoder(vlc_object_t *);
 
 static int Video_OnNewBlock(decoder_t *, block_t **);
 static int VideoHXXX_OnNewBlock(decoder_t *, block_t **);
@@ -151,6 +173,10 @@ static int Video_ProcessOutput(decoder_t *, mc_api_out *, picture_t **,
                                block_t **);
 static int DecodeBlock(decoder_t *, block_t *);
 
+static block_t* EncodeVideo(encoder_t *, picture_t *);
+static block_t* EncodeAudio(encoder_t *, block_t *);
+static block_t* EncodeSub(encoder_t *, subpicture_t *);
+
 static int Audio_OnNewBlock(decoder_t *, block_t **);
 static void Audio_OnFlush(decoder_t *);
 static int Audio_ProcessOutput(decoder_t *, mc_api_out *, picture_t **,
@@ -158,8 +184,12 @@ static int Audio_ProcessOutput(decoder_t *, mc_api_out *, picture_t **,
 
 static void DecodeFlushLocked(decoder_t *);
 static void DecodeFlush(decoder_t *);
+static void EncodeFlushLocked(encoder_t *);
+static void EncodeFlush(encoder_t *);
 static void StopMediaCodec(decoder_t *);
+static void StopMediaCodec_encoder(encoder_t *);
 static void *OutThread(void *);
+static void *EncoderOutputThread(void *);
 
 static void InvalidateAllPictures(decoder_t *);
 static void RemoveInflightPictures(decoder_t *);
@@ -207,9 +237,9 @@ vlc_module_begin ()
         add_shortcut("mediacodec_jni")
     add_submodule ()
         set_description("Video encoder using Android MediaCodec via NDK")
-        set_capability("video encoder", 0)
+        set_capability("encoder", 0)
         set_callbacks(OpenEncoderNdk, CloseEncoder)
-        add_shortcut("mediacodec_ndk")
+        add_shortcut("mediacodec")
 vlc_module_end ()
 
 static void CSDFree(decoder_t *p_dec)
@@ -519,6 +549,12 @@ static int StartMediaCodec(decoder_t *p_dec)
     return p_sys->api.start(&p_sys->api, &args);
 }
 
+static int StartMediaCodec_Encoder(encoder_t *p_enc)
+{
+    encoder_sys_t *p_sys = p_enc->p_sys;
+    return p_sys->api.start_encoder(&p_sys->api);
+}
+
 /*****************************************************************************
  * StopMediaCodec: Close the mediacodec instance
  *****************************************************************************/
@@ -531,6 +567,12 @@ static void StopMediaCodec(decoder_t *p_dec)
     if (p_sys->api.b_direct_rendering)
         RemoveInflightPictures(p_dec);
 
+    p_sys->api.stop(&p_sys->api);
+}
+
+static void StopMediaCodec_Encoder(encoder_t *p_enc)
+{
+    encoder_sys_t *p_sys = p_enc->p_sys;
     p_sys->api.stop(&p_sys->api);
 }
 
@@ -811,33 +853,46 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     encoder_t *p_enc = (encoder_t *)p_this;
     encoder_sys_t *p_sys;
 
-    /* Fail if this module already failed to decode this ES */
-    if (var_Type(p_dex, "mediacodec-failed") != 0)
+    /* Fail if this module already failed to encode this ES */
+    if (var_Type(p_enc, "mediacodec-encoder-failed") != 0)
         return VLC_EGENERIC;
 
-    if (p_sys->api.configure(&p_sys->api, i_profile) != 0)
-    {
+    /* Allocate the memory needed to store the decoder's structure */
+    if ((p_sys = calloc(1, sizeof(*p_sys))) == NULL)
+        return VLC_ENOMEM;
 
-    }
+    p_sys->api.p_obj = p_this;
+    p_sys->api.i_codec = p_enc->fmt_in.i_codec;
+    p_sys->api.i_cat = p_enc->fmt_in.i_cat;
 
     p_enc->p_sys = p_sys;
 
-    i_ret = StartMediaCodec(p_enc);
-    if (!i_ret != VLC_SUCCESS)
+    int i_ret = StartMediaCodec_Encoder(p_enc);
+    if (i_ret != VLC_SUCCESS)
     {
         msg_Err(p_enc, "StartMediaCodec failed");
         goto bailout;
     }
 
-    if (vlc_clone(&p_sys->out_thread, OutTHread, p_enc,,
+    if (vlc_clone(&p_sys->out_thread, EncoderOutputThread, p_enc,
                 VLC_THREAD_PRIORITY_LOW))
     {
         msg_Err(p_enc, "vlc_clone failed");
         goto bailout;
     }
 
-    p_enc->pf_encode = EncodeBlock;
-    p_enc->pf_flush  = EncodeFlush;
+    p_enc->pf_encode_video = EncodeVideo;
+    p_enc->pf_encode_audio = EncodeAudio;
+    p_enc->pf_encode_sub   = EncodeSub;
+
+    p_sys->fifo_out = block_FifoNew();
+
+    if (p_sys->fifo_out == NULL)
+    {
+        goto bailout;
+    }
+
+    return VLC_SUCCESS;
 
 bailout:
     CleanEncoder(p_enc);
@@ -885,6 +940,21 @@ static void CleanDecoder(decoder_t *p_dec)
     free(p_sys);
 }
 
+static void CleanEncoder(encoder_t *p_enc)
+{
+    encoder_sys_t *p_sys = p_enc->p_sys;
+    vlc_mutex_destroy(&p_sys->lock);
+    vlc_cond_destroy(&p_sys->cond);
+
+    StopMediaCodec_Encoder(p_enc);
+
+    p_sys->api.clean(&p_sys->api);
+
+    block_FifoRelease(p_sys->fifo_out);
+
+    free(p_sys);
+}
+
 /*****************************************************************************
  * CloseDecoder: Close the decoder instance
  *****************************************************************************/
@@ -903,6 +973,18 @@ static void CloseDecoder(vlc_object_t *p_this)
     vlc_join(p_sys->out_thread, NULL);
 
     CleanDecoder(p_dec);
+}
+
+static void CloseEncoder(vlc_object_t *p_this)
+{
+    encoder_t *p_enc = (encoder_t *)p_this;
+    encoder_sys_t *p_sys = p_enc->p_sys;
+
+    vlc_mutex_lock(&p_sys->lock);
+    EncodeFlushLocked(p_enc);
+    vlc_mutex_unlock(&p_sys->lock);
+
+    CleanEncoder(p_enc);
 }
 
 /*****************************************************************************
@@ -1232,6 +1314,32 @@ static void DecodeFlush(decoder_t *p_dec)
 
     vlc_mutex_lock(&p_sys->lock);
     DecodeFlushLocked(p_dec);
+    vlc_mutex_unlock(&p_sys->lock);
+}
+
+static void EncodeFlushLocked(encoder_t *p_enc)
+{
+    encoder_sys_t *p_sys = p_enc->p_sys;
+    bool b_had_input = p_sys->b_input_dequeued;
+
+    if (b_had_input && p_sys->api.flush(&p_sys->api) != VLC_SUCCESS)
+    {
+        // TODO: error
+        return;
+    }
+
+    vlc_cond_broadcast(&p_sys->cond);
+
+    while (!p_sys->b_aborted && p_sys->b_flush_out)
+        vlc_cond_wait(&p_sys->enc_cond, &p_sys->lock);
+}
+
+static void EncodeFlush(encoder_t *p_enc)
+{
+    encoder_sys_t *p_sys = p_enc->p_sys;
+
+    vlc_mutex_lock(&p_sys->lock);
+    EncodeFlushLocked(p_enc);
     vlc_mutex_unlock(&p_sys->lock);
 }
 
@@ -1590,6 +1698,109 @@ reload:
      * for this ES */
     var_Create(p_dec, "mediacodec-failed", VLC_VAR_VOID);
     return VLCDEC_RELOAD;
+}
+
+static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
+{
+    encoder_sys_t *p_sys = p_enc->p_sys;
+    struct mc_api_out out;
+
+    // XXX: should we check an output before ?
+
+    // Request input buffer to MC
+    int i_index = p_sys->api.dequeue_in(&p_sys->api, -1);
+
+    if (i_index >= 0)
+    {
+        /*
+         * Send data with timestamp, telling MC it's not a
+         * configure buffer. If p_buff is null, it will send
+         * an end_of_stream signal to MC
+         */
+        p_sys->api.queue_picture_in(&p_sys->api, i_index, picture,
+                                     picture->date, false);
+    }
+
+    /*
+     * Return the first encoded block available
+     */
+    if (vlc_fifo_GetCount(p_sys->fifo_out) > 0)
+    {
+        vlc_fifo_Lock(p_sys->fifo_out);
+        block_t *out_block = block_FifoGet(p_sys->fifo_out);
+        vlc_fifo_Unlock(p_sys->fifo_out);
+    }
+
+    /*
+     * There can be no available output buffer, because the encoder
+     * might need multiple frame so as to output some data.
+     * In this case we return NULL */
+    return NULL;
+}
+
+static block_t* EncodeAudio(encoder_t *p_enc, block_t *p_block)
+{
+    return NULL;
+}
+
+static block_t* EncodeSub(encoder_t *p_enc, subpicture_t *p_picture)
+{
+    return NULL;
+}
+
+/*
+ *  Asynchronous task waiting for a new block to become available from
+ *  the encoder and pushing it to a FIFO so it can be returned in the
+ *  EncodeBlock function
+ */
+static void* EncoderOutputThread(void *p_obj)
+{
+    encoder_t *p_enc = (encoder_t *)p_obj;
+    encoder_sys_t *p_sys = p_enc->p_sys;
+
+    struct mc_api_out out;
+
+    for(;;)
+    {
+        // Check if an output buffer is available
+        // TODO: move into its own thread
+        int i_index = p_sys->api.dequeue_out(&p_sys->api, -1);
+
+        // TODO: check TRYAGAIN, errors and code
+        if (i_index >= 0)
+        {
+            /*
+             * Extract the buffer we were allowed to read from the
+             * dequeue_out call
+             */
+            int i_ret = p_sys->api.get_out(&p_sys->api, i_index, &out);
+
+            // TODO: check TRYAGAIN, errors and code
+
+            if (out.b_eos)
+            {
+
+            }
+
+            // TODO: can it be a config buffer?
+            /*
+             * Allocate a new block with the data of the buffer
+             * we just got from get_out call.
+             * The MediaCodec API advises that we should release
+             * this buffer as soon as possible because it can
+             * stall the encoder.
+             */
+            block_t *p_block = block_Alloc(out.buf.i_size);
+            p_block->i_pts = out.buf.i_ts;
+            p_block->i_dts = out.buf.i_ts;
+            memcpy(p_block->p_buffer, out.buf.p_ptr, out.buf.i_size);
+
+            p_sys->api.release_out(&p_sys->api, i_index, false);
+
+            /* push block into the queue so that it is returned at the next call */
+
+        }
+    }
 }
 
 static int Video_OnNewBlock(decoder_t *p_dec, block_t **pp_block)
