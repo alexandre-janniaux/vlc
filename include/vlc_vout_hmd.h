@@ -4,9 +4,6 @@
 #include <vlc_common.h>
 #include <vlc_vout_display.h>
 
-typedef struct vout_hmd_t vout_hmd_t;
-typedef struct vout_hmd_sys_t vout_hmd_sys_t;
-
 
 /* The matrices are stored in the OpenGL format:
  * vectors are stores in lines.
@@ -44,6 +41,9 @@ struct vout_hmd_cfg_t
 
     vout_hmd_projection_t projection;
     vout_hmd_modelview_t modelview;
+
+    vout_hmd_viewpoint_provider_t *p_vpProvider;
+    vlc_viewpoint_t (*getViewpoint)(vout_hmd_viewpoint_provider_t *);
 };
 
 
@@ -62,7 +62,6 @@ struct vout_hmd_t {
 
     /* HMD parameters */
     vout_hmd_cfg_t params;
-    vout_hmd_modelview_t modelview;
 
     void (*event)(vout_hmd_t *, int, va_list);
 };
