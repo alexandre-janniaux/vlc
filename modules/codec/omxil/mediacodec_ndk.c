@@ -47,6 +47,8 @@ char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
  * buffers and not via "csd-*" buffers from AMediaFormat */
 #define AMEDIACODEC_FLAG_CODEC_CONFIG 2
 
+#define COLOR_FormatYUV420Flexible (0x7f420888)
+
 /*****************************************************************************
  * NdkMediaError.h
  *****************************************************************************/
@@ -158,6 +160,9 @@ typedef void (*pf_AMediaFormat_setString)(AMediaFormat*,
 typedef void (*pf_AMediaFormat_setInt32)(AMediaFormat*,
         const char* name, int32_t value);
 
+typedef void (*pf_AMediaFormat_setFloat)(AMediaFormat*,
+        const char* name, float value);
+
 typedef bool (*pf_AMediaFormat_getInt32)(AMediaFormat*,
         const char *name, int32_t *out);
 
@@ -185,6 +190,7 @@ struct syms
         pf_AMediaFormat_delete delete;
         pf_AMediaFormat_setString setString;
         pf_AMediaFormat_setInt32 setInt32;
+        pf_AMediaFormat_setFloat setFloat;
         pf_AMediaFormat_getInt32 getInt32;
     } AMediaFormat;
 };
@@ -220,6 +226,7 @@ static struct members members[] =
     { "AMediaFormat_delete", OFF(delete), true },
     { "AMediaFormat_setString", OFF(setString), true },
     { "AMediaFormat_setInt32", OFF(setInt32), true },
+    { "AMediaFormat_setFloat", OFF(setFloat), true },
     { "AMediaFormat_getInt32", OFF(getInt32), true },
 #undef OFF
     { NULL, 0, false }
@@ -307,6 +314,27 @@ static int Stop(mc_api *api)
     return 0;
 }
 
+static int ConfigureEncoder(mc_api *api, const picture_t* p_picture)
+{
+    mc_api_sys *p_sys = api->p_sys;
+    video_frame_format_t *p_format = &p_picture->format;
+    // TODO: use picture plane or picture format ?
+    syms.AMediaFormat.setInt32(p_sys->p_format, "width", p_format->i_width);
+    syms.AMediaFormat.setInt32(p_sys->p_format, "height", p_format->i_height);
+    syms.AMediaFormat.setInt32(p_sys->p_format, "slice-height", p_format->i_visible_height);
+    syms.AMediaFormat.setInt32(p_sys->p_format, "stride", p_format->i_width * p_format->i_bits_per_pixel / 8);
+
+    if (syms.AMediaCodec.start(p_sys->p_codec) != AMEDIA_OK)
+    {
+        msg_Err(api->p_obj, "AMediaCodec.start failed");
+        return MC_API_ERROR;
+    }
+
+    api->b_started = true;
+
+    return 0;
+}
+
 /*****************************************************************************
  * Start
  *****************************************************************************/
@@ -382,7 +410,7 @@ error:
     return i_ret;
 }
 
-static int StartEncoder(m_api *api, union mc_api_args *p_args)
+static int StartEncoder(mc_api *api)
 {
     mc_api_sys *p_sys = api->p_sys;
     int i_ret = MC_API_ERROR;
@@ -405,32 +433,24 @@ static int StartEncoder(m_api *api, union mc_api_args *p_args)
         goto error;
     }
 
-    // Configure media format like decoder
+    // Configure media format as an encoder
     syms.AMediaFormat.setInt32(p_sys->p_format, "decoder", 0);
-    syms.AMediaFormat.set
+    syms.AMediaFormat.setInt32(p_sys->p_format, "color-format", COLOR_FormatYUV420Flexible);
 
-    // Prepare and start encoder
-    if (!syms.AMediaCodec.configure(p_sys->p_codec, p_sys->p_format,
-                                     p_anw, NULL, 0) != AMEDIA_OK)
-    {
-        msg_Err(api->p_obj, "AMediaCodec.configure failed");
-        goto error;
-    }
+    //float frame_rate = p_sys->fmt_in.i_frame_rate / (float) p_sys->fmt_in.i_frame_base;
+    ////syms.AMediaFormat.setFloat(p_sys->p_format, "frame-rate", frame_rate);
+    //syms.AMediaFormat.setInt32(p_sys->p_format, "i-frame-interval", p_enc->i_iframes);
 
-    if (syms.AMediaCodec.start(p_sys->p_codec) != AMEDIA_OK)
-    {
-        msg_Err(api->p_obj, "AMediaCodec.start failed");
-        goto error;
-    }
-
-    api->b_started = true;
+    /* The MediaCodec encoder needs the picture parameter for its configuration so it
+     * Will really be started only at the first frame */
+    api->b_started = false;
     // TODO: direct rendering-capturing ? 
     i_ret = 0;
-    msg_Dbg(api->p_obj, "MediaCodec via NDK opened");
+    msg_Dbg(api->p_obj, "MediaCodec encoder via NDK opened");
 
 error:
     if (i_ret != 0)
-        StopEncoder(api);
+        Stop(api);
     return i_ret;
 }
 
@@ -489,6 +509,56 @@ static int QueueInput(mc_api *api, int i_index, const void *p_buf,
     if (i_mc_size > i_size)
         i_mc_size = i_size;
     memcpy(p_mc_buf, p_buf, i_mc_size);
+
+    if (syms.AMediaCodec.queueInputBuffer(p_sys->p_codec, i_index, 0, i_mc_size,
+                                          i_ts, i_flags) == AMEDIA_OK)
+        return 0;
+    else
+    {
+        msg_Err(api->p_obj, "AMediaCodec.queueInputBuffer failed");
+        return MC_API_ERROR;
+    }
+}
+
+static int QueueInputPicture(mc_api *api, int i_index,
+                             const picture_t *p_picture,
+                             mtime_t i_ts, bool b_config)
+{
+    assert(p_picture);
+
+    if (!api->b_started && ConfigureEncoder(api, p_picture) != 0)
+    {
+        return MC_API_ERROR;
+    }
+
+    mc_api_sys *p_sys = api->p_sys;
+    uint8_t *p_mc_buf;
+    size_t i_mc_size;
+    int i_flags = (b_config ? AMEDIACODEC_FLAG_CODEC_CONFIG : 0)
+                | (p_picture == NULL ? AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM : 0);
+
+    assert(i_index >= 0);
+
+    p_mc_buf = syms.AMediaCodec.getInputBuffer(p_sys->p_codec,
+                                               i_index, &i_mc_size);
+    if (!p_mc_buf)
+        return MC_API_ERROR;
+
+    uint8_t *p_cursor = p_mc_buf;
+    for(int i=0; i<p_picture->i_planes; ++i)
+    {
+        const plane_t *current_plane = &p_picture->p[i];
+        for (int i_line=0; i_line < current_plane->i_visible_lines; i_line++)
+        {
+            // Don't copy margins, stop at i_visible_lines
+            memcpy(p_cursor, current_plane->p_pixels,
+                    current_plane->i_pitch * current_plane->i_visible_lines);
+            p_cursor += current_plane->i_pitch * current_plane->i_lines;
+        }
+        // TODO: check size
+        //if (i_mc_size > i_size)
+        //    i_mc_size = i_size;
+    }
 
     if (syms.AMediaCodec.queueInputBuffer(p_sys->p_codec, i_index, 0, i_mc_size,
                                           i_ts, i_flags) == AMEDIA_OK)
@@ -687,10 +757,12 @@ int MediaCodecNdk_Init(mc_api *api)
     api->clean = Clean;
     api->configure = Configure;
     api->start = Start;
+    api->start_encoder = StartEncoder;
     api->stop = Stop;
     api->flush = Flush;
     api->dequeue_in = DequeueInput;
     api->queue_in = QueueInput;
+    api->queue_picture_in = QueueInputPicture;
     api->dequeue_out = DequeueOutput;
     api->get_out = GetOutput;
     api->release_out = ReleaseOutput;

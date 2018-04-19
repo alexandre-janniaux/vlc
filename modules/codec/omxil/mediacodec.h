@@ -127,6 +127,7 @@ struct mc_api
     void (*clean)(mc_api *);
     int (*configure)(mc_api *, int i_profile);
     int (*start)(mc_api *, union mc_api_args *p_args);
+    int (*start_encoder)(mc_api *);
     int (*stop)(mc_api *);
     int (*flush)(mc_api *);
 
@@ -143,6 +144,9 @@ struct mc_api
      * Returns 0 if buffer is successfully queued, or MC_API_ERROR */
     int (*queue_in)(mc_api *, int i_index, const void *p_buf, size_t i_size,
                     mtime_t i_ts, bool b_config);
+
+    int (*queue_picture_in)(mc_api *, int i_index, const picture_t *picture,
+                            mtime_t i_ts, bool b_config);
 
     /* i_index is the index returned by dequeue_out and should be >= 0,
      * MC_API_INFO_OUTPUT_FORMAT_CHANGED, or MC_API_INFO_OUTPUT_BUFFERS_CHANGED.
