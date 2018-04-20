@@ -573,7 +573,7 @@ static void StopMediaCodec(decoder_t *p_dec)
 
 static void StopMediaCodec_Encoder(encoder_t *p_enc)
 {
-    msg_Dbg(stderr, "Stopping mediacodec encoder");
+    msg_Dbg(p_enc, "Stopping mediacodec encoder");
     encoder_sys_t *p_sys = p_enc->p_sys;
     p_sys->api.stop(&p_sys->api);
 }
@@ -1860,9 +1860,9 @@ static void* EncoderOutputThread(void *p_obj)
             p_sys->api.release_out(&p_sys->api, i_index, false);
 
             /* push block into the queue so that it is returned at the next call */
-            vlc_fifo_Lock(&p_sys->fifo_out);
-            vlc_fifo_QueueUnlocked(&p_sys->fifo_out, p_block);
-            vlc_fifo_Unlock(&p_sys->fifo_out);
+            vlc_fifo_Lock(p_sys->fifo_out);
+            vlc_fifo_QueueUnlocked(p_sys->fifo_out, p_block);
+            vlc_fifo_Unlock(p_sys->fifo_out);
         }
         else
         {
