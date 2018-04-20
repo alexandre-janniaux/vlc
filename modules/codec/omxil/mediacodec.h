@@ -48,6 +48,10 @@ int MediaCodecNdk_Init(mc_api*);
 /* MediaCodec only QUIRKS */
 #define MC_API_VIDEO_QUIRKS_ADAPTIVE 0x1000
 
+/* Flags to choose the type of codec */
+#define MC_API_FLAG_ENCODER 0x1
+#define MC_API_FLAG_DECODER 0x2
+
 struct mc_api_out
 {
     enum {
@@ -125,7 +129,7 @@ struct mc_api
     bool b_direct_rendering;
 
     void (*clean)(mc_api *);
-    int (*configure)(mc_api *, int i_profile);
+    int (*configure)(mc_api *, int i_profile, int flags);
     int (*start)(mc_api *, union mc_api_args *p_args);
     int (*start_encoder)(mc_api *);
     int (*stop)(mc_api *);
