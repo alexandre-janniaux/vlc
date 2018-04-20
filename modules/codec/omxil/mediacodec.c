@@ -147,8 +147,10 @@ struct encoder_sys_t
      * returned from EncodeVideo */
     vlc_fifo_t     *fifo_out;
 
+    bool b_started;
     bool b_aborted;
     bool b_flush_out;
+    /* if true, start to pop frames from the encoder and push them in the fifo */
     bool b_output_ready;
     bool b_input_dequeued;
 };
@@ -550,10 +552,10 @@ static int StartMediaCodec(decoder_t *p_dec)
     return p_sys->api.start(&p_sys->api, &args);
 }
 
-static int StartMediaCodec_Encoder(encoder_t *p_enc)
+static int StartMediaCodec_Encoder(encoder_t *p_enc, const picture_t* p_picture)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
-    return p_sys->api.start_encoder(&p_sys->api);
+    return p_sys->api.start_encoder(&p_sys->api, p_picture);
 }
 
 /*****************************************************************************
@@ -919,12 +921,7 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         return VLC_EGENERIC;
     }
 
-    int i_ret = StartMediaCodec_Encoder(p_enc);
-    if (i_ret != VLC_SUCCESS)
-    {
-        msg_Err(p_enc, "StartMediaCodec failed");
-        goto bailout;
-    }
+    //StartMediaCodec_Encoder(p_enc, NULL);
 
     if (vlc_clone(&p_sys->out_thread, EncoderOutputThread, p_enc,
                 VLC_THREAD_PRIORITY_LOW))
@@ -1762,6 +1759,21 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
     struct mc_api_out out;
+
+    if (!p_sys->api.b_started)
+    {
+        if (!picture && !p_sys->b_started)
+            return NULL;
+
+        msg_Dbg(p_enc, "Encoding video");
+
+        int i_ret = StartMediaCodec_Encoder(p_enc, picture);
+        if (i_ret != VLC_SUCCESS)
+        {
+            msg_Err(p_enc, "StartMediaCodec failed");
+            return NULL;
+        }
+    }
 
     // XXX: should we check an output before ?
 

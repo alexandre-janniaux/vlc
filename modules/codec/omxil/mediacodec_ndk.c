@@ -314,27 +314,6 @@ static int Stop(mc_api *api)
     return 0;
 }
 
-static int ConfigureEncoder(mc_api *api, const picture_t* p_picture)
-{
-    mc_api_sys *p_sys = api->p_sys;
-    video_frame_format_t *p_format = &p_picture->format;
-    // TODO: use picture plane or picture format ?
-    syms.AMediaFormat.setInt32(p_sys->p_format, "width", p_format->i_width);
-    syms.AMediaFormat.setInt32(p_sys->p_format, "height", p_format->i_height);
-    syms.AMediaFormat.setInt32(p_sys->p_format, "slice-height", p_format->i_visible_height);
-    syms.AMediaFormat.setInt32(p_sys->p_format, "stride", p_format->i_width * p_format->i_bits_per_pixel / 8);
-
-    if (syms.AMediaCodec.start(p_sys->p_codec) != AMEDIA_OK)
-    {
-        msg_Err(api->p_obj, "AMediaCodec.start failed");
-        return MC_API_ERROR;
-    }
-
-    api->b_started = true;
-
-    return 0;
-}
-
 /*****************************************************************************
  * Start
  *****************************************************************************/
@@ -410,7 +389,7 @@ error:
     return i_ret;
 }
 
-static int StartEncoder(mc_api *api)
+static int StartEncoder(mc_api *api, const picture_t* p_picture)
 {
     mc_api_sys *p_sys = api->p_sys;
     int i_ret = MC_API_ERROR;
@@ -435,16 +414,47 @@ static int StartEncoder(mc_api *api)
 
     // Configure media format as an encoder
     syms.AMediaFormat.setInt32(p_sys->p_format, "decoder", 0);
+    syms.AMediaFormat.setString(p_sys->p_format, "mime", api->psz_mime);
     syms.AMediaFormat.setInt32(p_sys->p_format, "color-format", COLOR_FormatYUV420Flexible);
 
-    //float frame_rate = p_sys->fmt_in.i_frame_rate / (float) p_sys->fmt_in.i_frame_base;
-    ////syms.AMediaFormat.setFloat(p_sys->p_format, "frame-rate", frame_rate);
+    syms.AMediaFormat.setInt32(p_sys->p_format, "bitrate", 10000000);
+    syms.AMediaFormat.setInt32(p_sys->p_format, "frame-rate", 30);
+    syms.AMediaFormat.setInt32(p_sys->p_format, "i-frame-interval", 5);
+    //float frame_rate = 25;
+    //syms.AMediaFormat.setFloat(p_sys->p_format, "frame-rate", frame_rate);
     //syms.AMediaFormat.setInt32(p_sys->p_format, "i-frame-interval", p_enc->i_iframes);
 
-    /* The MediaCodec encoder needs the picture parameter for its configuration so it
-     * Will really be started only at the first frame */
-    api->b_started = false;
-    // TODO: direct rendering-capturing ? 
+    if (p_picture)
+    {
+        const video_frame_format_t *p_format = &p_picture->format;
+        syms.AMediaFormat.setInt32(p_sys->p_format, "width", p_format->i_visible_width);
+        syms.AMediaFormat.setInt32(p_sys->p_format, "height", p_format->i_visible_height);
+        syms.AMediaFormat.setInt32(p_sys->p_format, "slice-height",
+                                   p_format->i_height * p_picture->p[0].i_pixel_pitch);
+        syms.AMediaFormat.setInt32(p_sys->p_format, "stride",
+                                   p_format->i_width * p_picture->p[0].i_pixel_pitch);
+    }
+    else
+    {
+        syms.AMediaFormat.setInt32(p_sys->p_format, "width", 1920);
+        syms.AMediaFormat.setInt32(p_sys->p_format, "height", 1080);
+    }
+
+    if (syms.AMediaCodec.configure(p_sys->p_codec, p_sys->p_format,
+                p_anw, NULL, AMEDIACODEC_CONFIGURE_FLAG_ENCODE) != AMEDIA_OK)
+    {
+        msg_Err(api->p_obj, "AMediaCodec.configure failed");
+        goto error;
+    }
+
+    if (syms.AMediaCodec.start(p_sys->p_codec) != AMEDIA_OK)
+    {
+        msg_Err(api->p_obj, "AMediaCodec.start failed");
+        goto error;
+    }
+
+    api->b_started = true;
+
     i_ret = 0;
     msg_Dbg(api->p_obj, "MediaCodec encoder via NDK opened");
 
@@ -484,7 +494,7 @@ static int DequeueInput(mc_api *api, mtime_t i_timeout)
         return MC_API_INFO_TRYAGAIN;
     else
     {
-        msg_Err(api->p_obj, "AMediaCodec.dequeueInputBuffer failed");
+        msg_Err(api->p_obj, "AMediaCodec.dequeueInputBuffer failed with code %d", i_index);
         return MC_API_ERROR;
     }
 }
@@ -528,10 +538,6 @@ static int QueueInputPicture(mc_api *api, int i_index,
 {
     assert(p_picture);
 
-    if (!api->b_started && ConfigureEncoder(api, p_picture) != 0)
-    {
-        return MC_API_ERROR;
-    }
 
     mc_api_sys *p_sys = api->p_sys;
     uint8_t *p_mc_buf;
@@ -550,13 +556,11 @@ static int QueueInputPicture(mc_api *api, int i_index,
     for(int i=0; i<p_picture->i_planes; ++i)
     {
         const plane_t *current_plane = &p_picture->p[i];
-        for (int i_line=0; i_line < current_plane->i_visible_lines; i_line++)
-        {
-            // Don't copy margins, stop at i_visible_lines
-            memcpy(p_cursor, current_plane->p_pixels,
-                    current_plane->i_pitch * current_plane->i_visible_lines);
-            p_cursor += current_plane->i_pitch * current_plane->i_lines;
-        }
+
+        // Don't copy margins, stop at i_visible_lines
+        memcpy(p_cursor, current_plane->p_pixels,
+                current_plane->i_pitch * current_plane->i_visible_lines);
+        p_cursor += current_plane->i_pitch * current_plane->i_lines;
         // TODO: check size
         //if (i_mc_size > i_size)
         //    i_mc_size = i_size;
