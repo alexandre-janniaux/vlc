@@ -557,6 +557,7 @@ static int QueueInputPicture(mc_api *api, int i_index,
         return MC_API_ERROR;
 
     uint8_t *p_cursor = p_mc_buf;
+    size_t i_size;
     for(int i=0; i<p_picture->i_planes; ++i)
     {
         const plane_t *current_plane = &p_picture->p[i];
@@ -564,15 +565,20 @@ static int QueueInputPicture(mc_api *api, int i_index,
         // Don't copy margins, stop at i_visible_lines
         memcpy(p_cursor, current_plane->p_pixels,
                 current_plane->i_pitch * current_plane->i_visible_lines);
-        p_cursor += current_plane->i_pitch * current_plane->i_lines;
-        // TODO: check size
-        //if (i_mc_size > i_size)
-        //    i_mc_size = i_size;
+        size_t i_plane_size = current_plane->i_pitch * current_plane->i_lines
+                            * current_plane->i_pixel_pitch;
+        p_cursor += i_plane_size;
+        i_size   += i_plane_size;
     }
+
+    if (i_mc_size > i_size)
+        i_mc_size = i_size;
 
     if (syms.AMediaCodec.queueInputBuffer(p_sys->p_codec, i_index, 0, i_mc_size,
                                           i_ts, i_flags) == AMEDIA_OK)
+    {
         return 0;
+    }
     else
     {
         msg_Err(api->p_obj, "AMediaCodec.queueInputBuffer failed");
