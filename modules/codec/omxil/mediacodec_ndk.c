@@ -484,6 +484,10 @@ static int Flush(mc_api *api)
  *****************************************************************************/
 static int DequeueInput(mc_api *api, mtime_t i_timeout)
 {
+    assert(api);
+    assert(api->p_sys);
+    assert(api->p_sys->p_codec);
+
     mc_api_sys *p_sys = api->p_sys;
     ssize_t i_index;
 

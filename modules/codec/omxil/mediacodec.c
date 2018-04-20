@@ -857,6 +857,8 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     encoder_t *p_enc = (encoder_t *)p_this;
     encoder_sys_t *p_sys;
 
+    msg_Dbg(p_enc, "Opening MediaCodec Encoder");
+
     const char *mime = NULL;
 
     if (p_enc->fmt_out.i_cat != VIDEO_ES)
