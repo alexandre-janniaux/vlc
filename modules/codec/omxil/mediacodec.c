@@ -138,6 +138,8 @@ struct encoder_sys_t
 {
     mc_api api;
     vlc_mutex_t     lock;
+    /* lock the decoded output block chain */
+    vlc_mutex_t     out_lock;
     vlc_thread_t    out_thread;
     /* Cond used to signal the output thread */
     vlc_cond_t      cond;
@@ -145,7 +147,8 @@ struct encoder_sys_t
 
     /* Fifo storing the available encoded blocks, which are
      * returned from EncodeVideo */
-    vlc_fifo_t     *fifo_out;
+    block_t*        p_out_chain;
+    block_t**       pp_out_last;
 
     bool b_started;
     bool b_aborted;
@@ -903,48 +906,45 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     p_sys->api.psz_mime = mime;
 
     vlc_mutex_init(&p_sys->lock);
+    vlc_mutex_init(&p_sys->out_lock);
     vlc_cond_init(&p_sys->cond);
 
     p_enc->p_sys = p_sys;
+    p_enc->fmt_in.i_codec = VLC_CODEC_I420;
+
     p_sys->b_flush_out = false;
     p_sys->b_output_ready = false;
 
-    p_enc->fmt_in.i_codec = VLC_CODEC_I420;
+    /* no block in the blockchain at the beginning */
+    p_sys->p_out_chain = NULL;
+    p_sys->pp_out_last = &p_sys->p_out_chain;
 
+    /* Initialize MediaCodec API/symbols */
     if (pf_init(&p_sys->api) != 0)
     {
         msg_Err(p_enc, "Can't initialize mediacodec API for mediacodec encoder");
         goto bailout;
     }
 
+    /* Find the right codec and codec options */
     if (p_sys->api.configure(&p_sys->api, p_enc->fmt_out.i_profile, MC_API_FLAG_ENCODER) != 0)
     {
         msg_Err(p_enc, "Can't configure MediaCodec encoder for the given mime type");
         return VLC_EGENERIC;
     }
 
-    //StartMediaCodec_Encoder(p_enc, NULL);
-
+    /* Start the encoded picture fetcher thread */
     if (vlc_clone(&p_sys->out_thread, EncoderOutputThread, p_enc,
-                VLC_THREAD_PRIORITY_LOW))
+                VLC_THREAD_PRIORITY_LOW) != VLC_SUCCESS)
     {
         msg_Err(p_enc, "vlc_clone failed");
         vlc_mutex_unlock(&p_sys->lock);
         goto bailout;
     }
 
-
     p_enc->pf_encode_video = EncodeVideo;
     p_enc->pf_encode_audio = NULL;
     p_enc->pf_encode_sub   = NULL;
-
-    p_sys->fifo_out = block_FifoNew();
-
-    if (p_sys->fifo_out == NULL)
-    {
-        msg_Err(p_enc, "Can't allocation fifo block for encoder");
-        goto bailout;
-    }
 
     msg_Dbg(p_enc, "Mediacodec encoder successfully created");
 
@@ -1001,13 +1001,15 @@ static void CleanEncoder(encoder_t *p_enc)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
     vlc_mutex_destroy(&p_sys->lock);
+    vlc_mutex_destroy(&p_sys->out_lock);
     vlc_cond_destroy(&p_sys->cond);
 
     StopMediaCodec_Encoder(p_enc);
 
     p_sys->api.clean(&p_sys->api);
 
-    block_FifoRelease(p_sys->fifo_out);
+    if(p_sys->p_out_chain)
+        block_ChainRelease(p_sys->p_out_chain);
 
     free(p_sys);
 }
@@ -1040,6 +1042,8 @@ static void CloseEncoder(vlc_object_t *p_this)
     vlc_mutex_lock(&p_sys->lock);
     EncodeFlushLocked(p_enc);
     vlc_mutex_unlock(&p_sys->lock);
+
+    // TODO: join other thread
 
     CleanEncoder(p_enc);
 }
@@ -1764,7 +1768,7 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
 
     if (!p_sys->api.b_started)
     {
-        if (!picture && !p_sys->b_started)
+        if (!picture)
             return NULL;
 
         msg_Dbg(p_enc, "Encoding video");
@@ -1789,35 +1793,37 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
          * configure buffer. If p_buff is null, it will send
          * an end_of_stream signal to MC
          */
+        fprintf(stderr, "Queue picture in at index %d\n", i_index);
         p_sys->api.queue_picture_in(&p_sys->api, i_index, picture,
                                      picture->date, false);
         p_sys->b_output_ready = true;
+        vlc_cond_signal(&p_sys->cond);
     }
 
     /*
      * Return the first encoded block available
      */
-    if (vlc_fifo_GetCount(p_sys->fifo_out) > 0)
+    block_t *out_block = NULL;
+    vlc_mutex_lock(&p_sys->out_lock);
+    if (p_sys->p_out_chain)
     {
-        msg_Dbg(p_enc, "Popping one frame from the encoder");
-        vlc_fifo_Lock(p_sys->fifo_out);
-        block_t *out_block = block_FifoGet(p_sys->fifo_out);
-        vlc_fifo_Unlock(p_sys->fifo_out);
-
-        return out_block;
+        out_block = block_ChainGather(p_sys->p_out_chain);
+        p_sys->p_out_chain = NULL;
+        p_sys->pp_out_last = &p_sys->p_out_chain;
     }
+    vlc_mutex_unlock(&p_sys->out_lock);
 
     /*
      * There can be no available output buffer, because the encoder
      * might need multiple frame so as to output some data.
      * In this case we return NULL */
-    return NULL;
+    return out_block;
 }
 
 /*
  *  Asynchronous task waiting for a new block to become available from
  *  the encoder and pushing it to a FIFO so it can be returned in the
- *  EncodeBlock function
+ *  EncodeVideo function
  */
 static void* EncoderOutputThread(void *p_obj)
 {
@@ -1827,7 +1833,6 @@ static void* EncoderOutputThread(void *p_obj)
     struct mc_api_out out;
 
     vlc_mutex_lock(&p_sys->lock);
-    mutex_cleanup_push(&p_sys->lock);
     for(;;)
     {
         // TODO: wait encoder in correct state
@@ -1852,41 +1857,50 @@ static void* EncoderOutputThread(void *p_obj)
             int i_ret = p_sys->api.get_out(&p_sys->api, i_index, &out);
 
             // TODO: check TRYAGAIN, errors and code
-
-            if (out.b_eos)
+            if (i_ret == 1 && out.type == MC_OUT_TYPE_BUF)
             {
 
+                if (out.b_eos)
+                {
+
+                }
+
+                // TODO: can it be a config buffer?
+                /*
+                 * Allocate a new block with the data of the buffer
+                 * we just got from get_out call.
+                 * The MediaCodec API advises that we should release
+                 * this buffer as soon as possible because it can
+                 * stall the encoder.
+                 */
+                if (i_index >= 0)
+                {
+                    fprintf(stderr, "Block size : %d\n", out.buf.i_size);
+                    block_t *p_block = block_Alloc(out.buf.i_size);
+                    p_block->i_pts = out.buf.i_ts;
+                    p_block->i_dts = out.buf.i_ts;
+                    memcpy(p_block->p_buffer, out.buf.p_ptr, out.buf.i_size);
+
+                    p_sys->api.release_out(&p_sys->api, i_index, false);
+
+                    /* append the block into so that it is returned at the next encode call */
+                    vlc_mutex_lock(&p_sys->out_lock);
+                    block_ChainLastAppend(&p_sys->pp_out_last, p_block);
+                    vlc_mutex_unlock(&p_sys->out_lock);
+                    fprintf(stderr, "Appending a new block to the blockchain\n");
+                }
             }
-
-            // TODO: can it be a config buffer?
-            /*
-             * Allocate a new block with the data of the buffer
-             * we just got from get_out call.
-             * The MediaCodec API advises that we should release
-             * this buffer as soon as possible because it can
-             * stall the encoder.
-             */
-            block_t *p_block = block_Alloc(out.buf.i_size);
-            p_block->i_pts = out.buf.i_ts;
-            p_block->i_dts = out.buf.i_ts;
-            memcpy(p_block->p_buffer, out.buf.p_ptr, out.buf.i_size);
-
-            p_sys->api.release_out(&p_sys->api, i_index, false);
-
-            /* push block into the queue so that it is returned at the next call */
-            vlc_fifo_Lock(p_sys->fifo_out);
-            vlc_fifo_QueueUnlocked(p_sys->fifo_out, p_block);
-            vlc_fifo_Unlock(p_sys->fifo_out);
         }
         else
         {
-            vlc_restorecancel(canc);
+            msg_Err(p_enc, "get_out failed");
             break;
         }
     }
+
+    p_sys->b_aborted = true;
     msg_Warn(p_enc, "Encoder output thread stopped");
 
-    vlc_cleanup_pop();
     vlc_mutex_unlock(&p_sys->lock);
 
     return NULL;
