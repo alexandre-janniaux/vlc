@@ -1841,14 +1841,23 @@ static void* EncoderOutputThread(void *p_obj)
         while (!p_sys->b_flush_out && !p_sys->b_output_ready)
             vlc_cond_wait(&p_sys->cond, &p_sys->lock);
 
-        int canc = vlc_savecancel();
+        if (p_sys->b_aborted)
+            break;
 
-        // Check if an output buffer is available
-        // TODO: move into its own thread
+        /* TODO: flush */
+
+        vlc_mutex_unlock(&p_sys->lock);
+
+        /* Check if an output buffer is available */
         int i_index = p_sys->api.dequeue_out(&p_sys->api, -1);
 
+        vlc_mutex_lock(&p_sys->lock);
+
+        /* TODO: flush */
+
         // TODO: check TRYAGAIN, errors and code
-        if (i_index >= 0)
+        if (i_index >= 0 || i_index == MC_API_INFO_OUTPUT_FORMAT_CHANGED
+         || i_index == MC_API_INFO_OUTPUT_BUFFERS_CHANGED)
         {
             /*
              * Extract the buffer we were allowed to read from the
