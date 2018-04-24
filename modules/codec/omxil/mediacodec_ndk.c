@@ -151,6 +151,32 @@ typedef media_status_t (*pf_AMediaCodec_releaseOutputBufferAtTime)(AMediaCodec*,
 typedef media_status_t (*pf_AMediaCodec_setOutputSurface)(AMediaCodec*,
         ANativeWindow *surface);
 
+/*
+ * AMediaCodec async API
+ */
+
+typedef void (*AMediaCodecOnAsyncError)(AMediaCodec*, void *userdata,
+        media_status_t error, int32_t actionCode, const char* detail);
+
+typedef void (*AMediaCodecOnAsyncFormatChanged)(AMediaCodec*,
+        void *userdata, AMediaFormat *format);
+
+typedef void (*AMediaCodecOnAsyncInputAvailable)(AMediaCodec*,
+        void *userdata, int32_t index);
+
+typedef void (*AMediaCodecOnAsyncOutputAvailable)(AMediaCodec*,
+        void *userdata, int32_t index, AMediaCodecBufferInfo *bufferInfo);
+
+typedef struct {
+    AMediaCodecOnAsyncInputAvailable onAsyncInputAvailable;
+    AMediaCodecOnAsyncOutputAvailable onAsyncOutputAvailable;
+    AMediaCodecOnAsyncFormatChanged onAsyncFormatChanged;
+    AMediaCodecOnAsyncError onAsyncError;
+} AMediaCodecOnAsyncNotifyCallback;
+
+typedef media_status_t (*pf_AMediaCodec_setAsyncNotifyCallback)(AMediaCodec*,
+        AMediaCodecOnAsyncNotifyCallback, void* userdata);
+
 typedef AMediaFormat *(*pf_AMediaFormat_new)();
 typedef media_status_t (*pf_AMediaFormat_delete)(AMediaFormat*);
 
@@ -184,6 +210,7 @@ struct syms
         pf_AMediaCodec_releaseOutputBuffer releaseOutputBuffer;
         pf_AMediaCodec_releaseOutputBufferAtTime releaseOutputBufferAtTime;
         pf_AMediaCodec_setOutputSurface setOutputSurface;
+        pf_AMediaCodec_setAsyncNotifyCallback setAsyncNotifyCallback;
     } AMediaCodec;
     struct {
         pf_AMediaFormat_new new;
@@ -220,6 +247,7 @@ static struct members members[] =
     { "AMediaCodec_releaseOutputBuffer", OFF(releaseOutputBuffer), true },
     { "AMediaCodec_releaseOutputBufferAtTime", OFF(releaseOutputBufferAtTime), true },
     { "AMediaCodec_setOutputSurface", OFF(setOutputSurface), false },
+    { "AMediaCodec_setAsyncNotifyCallback", OFF(setAsyncNotifyCallback), false },
 #undef OFF
 #define OFF(x) offsetof(struct syms, AMediaFormat.x)
     { "AMediaFormat_new", OFF(new), true },
