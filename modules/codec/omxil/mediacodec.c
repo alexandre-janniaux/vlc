@@ -167,6 +167,7 @@ static void CleanDecoder(decoder_t *);
 static void CloseDecoder(vlc_object_t *);
 
 static int OpenEncoderNdk(vlc_object_t *);
+static int OpenEncoderJni(vlc_object_t *);
 static void CleanEncoder(encoder_t *);
 static void CloseEncoder(vlc_object_t *);
 
@@ -240,6 +241,11 @@ vlc_module_begin ()
     add_submodule ()
         set_capability("audio decoder", 0)
         set_callbacks(OpenDecoderJni, CloseDecoder)
+        add_shortcut("mediacodec_jni")
+    add_submodule ()
+        set_description("Video encoder using Android MediaCodec via JNI")
+        set_capability("encoder", 0)
+        set_callbacks(OpenEncoderJni, CloseEncoder)
         add_shortcut("mediacodec_jni")
     add_submodule ()
         set_description("Video encoder using Android MediaCodec via NDK")
@@ -959,6 +965,12 @@ static int OpenEncoderNdk(vlc_object_t *p_this)
 {
     msg_Dbg(p_this, "Opening MediaCodec NDK encoder");
     return OpenEncoder(p_this, MediaCodecNdk_Init);
+}
+
+static int OpenEncoderJni(vlc_object_t *p_this)
+{
+    msg_Dbg(p_this, "Opening MediaCodec JNI encoder");
+    return OpenEncoder(p_this, MediaCodecJni_Init);
 }
 
 static void AbortDecoderLocked(decoder_t *p_dec)
