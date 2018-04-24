@@ -687,6 +687,94 @@ error:
     return i_ret;
 }
 
+static int StartEncoder(mc_api *api, const picture_t *p_picture)
+{
+    mc_api_sys *p_sys = api->p_sys;
+    JNIEnv* env = NULL;
+    int i_ret = MC_API_ERROR;
+    jstring jmime = NULL;
+    jstring jcodec_name = NULL;
+    jobject jcodec = NULL;
+    jobject jformat = NULL;
+    jobject jbuffer_info = NULL;
+
+    assert(api->psz_mime && api->psz_name);
+
+    GET_ENV();
+
+    jmime = JNI_NEW_STRING(api->psz_mime);
+    jcodec_name = JNI_NEW_STRING(api->psz_name);
+
+    if (!jmime || !jcodec_name)
+        goto error;
+
+    jcodec = (*env)->CallStaticObjectMethod(env, jfields.media_codec_class,
+                                            jfields.create_by_codec_name,
+                                            jcodec_name);
+
+    if (CHECK_EXCEPTION())
+    {
+        msg_Warn(api->p_obj, "Exception occured in MediaCodec.createByCodecName");
+        goto error;
+    }
+    p_sys->codec = (*env)->NewGlobalRef(env, jcodec);
+
+    jformat = (*env)->CallStaticObjectMethod(env,
+                                             jfields.media_format_class,
+                                             jfields.create_video_format,
+                                             jmime,
+                                             p_picture->p[0].i_visible_pitch,
+                                             p_picture->p[0].i_visible_lines);
+
+    SET_INTEGER(jformat, "frame-rate", 30);
+    SET_INTEGER(jformat, "max-input-size", 0);
+    SET_INTEGER(jformat, "color-format", 21);
+    SET_INTEGER(jformat, "bitrate", 7680000);
+    SET_INTEGER(jformat, "i-frame-interval", 4);
+    SET_INTEGER(jformat, "profile", 1);
+    SET_INTEGER(jformat, "level", 0x10);
+
+    (*env)->CallVoidMethod(env, p_sys->codec, jfields.configure,
+                           jformat, NULL, NULL, MC_API_FLAG_ENCODER);
+    if (CHECK_EXCEPTION())
+    {
+        msg_Warn(api->p_obj, "Exception occured in MediaCodec.configure");
+        goto error;
+    }
+
+    (*env)->CallVoidMethod(env, p_sys->codec, jfields.start);
+    if (CHECK_EXCEPTION())
+    {
+        msg_Warn(api->p_obj, "Exception occured in MediaCodec.start");
+        goto error;
+    }
+
+    api->b_started = true;
+    i_ret = 0;
+
+    jbuffer_info = (*env)->NewObject(env, jfields.buffer_info_class,
+                                             jfields.buffer_info_ctor);
+    p_sys->buffer_info = (*env)->NewGlobalRef(env, jbuffer_info);
+
+    (*env)->DeleteLocalRef(env, jbuffer_info);
+
+    msg_Dbg(api->p_obj, "MediaCodec via JNI opened");
+
+    fprintf(stderr, "MediaCodec start_decoder finished\n");
+
+error:
+    if (jmime)
+        (*env)->DeleteLocalRef(env, jmime);
+    if (jcodec_name)
+        (*env)->DeleteLocalRef(env, jcodec_name);
+    if (jcodec)
+        (*env)->DeleteLocalRef(env, jcodec);
+    if (jformat)
+        (*env)->DeleteLocalRef(env, jformat);
+
+    return i_ret;
+}
+
 /*****************************************************************************
  * Flush
  *****************************************************************************/
@@ -783,6 +871,95 @@ static int QueueInput(mc_api *api, int i_index, const void *p_buf,
         return MC_API_ERROR;
     }
 
+    return 0;
+}
+
+/*****************************************************************************
+ * QueueInputPicture
+ *****************************************************************************/
+static int QueueInputPicture(mc_api *api, int i_index, const picture_t *p_picture,
+                            mtime_t i_ts, bool b_config)
+{
+    if (p_picture == NULL)
+        return 0;
+
+    mc_api_sys *p_sys = api->p_sys;
+    JNIEnv *env;
+    uint8_t *p_mc_buf;
+    jobject j_mc_buf;
+    jsize j_mc_size;
+    jint jflags = (b_config ? BUFFER_FLAG_CODEC_CONFIG : 0)
+                | (p_picture == NULL ? BUFFER_FLAG_END_OF_STREAM : 0);
+
+    GET_ENV();
+
+    if (jfields.get_input_buffers)
+        j_mc_buf = (*env)->GetObjectArrayElement(env, p_sys->input_buffers,
+                                                 i_index);
+    else
+    {
+        j_mc_buf = (*env)->CallObjectMethod(env, p_sys->codec, jfields.get_input_buffer,
+                                            i_index);
+        if (CHECK_EXCEPTION())
+        {
+            msg_Err(api->p_obj, "Exception in MediaCodec.getInputBuffer");
+            return MC_API_ERROR;
+        }
+    }
+    j_mc_size = (*env)->GetDirectBufferCapacity(env, j_mc_buf);
+    p_mc_buf = (*env)->GetDirectBufferAddress(env, j_mc_buf);
+
+    if (j_mc_size < 0)
+    {
+        msg_Err(api->p_obj, "Couldn't get valid buffer from MediaCodec.GetInputBuffer");
+        (*env)->DeleteLocalRef(env, j_mc_buf);
+        return MC_API_ERROR;
+    }
+
+    fprintf(stderr, "mc_buf of size %d\n", j_mc_size);
+
+    // TODO: idem ndk
+
+    uint8_t *p_cursor = p_mc_buf;
+    int i_size = 0;
+    for(int i=0; i<p_picture->i_planes; ++i)
+    {
+        const plane_t *current_plane = &p_picture->p[i];
+
+        fprintf(stderr, "lines: %d\n"
+                "pitch: %d\n"
+                "visible_lines: %d\n"
+                "visible_pitch: %d\n"
+                "pixel_pitch: %d\n",
+                current_plane->i_lines,
+                current_plane->i_pitch,
+                current_plane->i_visible_lines,
+                current_plane->i_visible_pitch,
+                current_plane->i_pixel_pitch);
+
+        // Don't copy margins, stop at i_visible_lines
+        memcpy(p_cursor, current_plane->p_pixels,
+                current_plane->i_pixel_pitch * current_plane->i_visible_pitch *
+                current_plane->i_visible_lines);
+        int i_plane_size = current_plane->i_visible_pitch * current_plane->i_visible_lines
+                            * current_plane->i_pixel_pitch;
+        p_cursor += i_plane_size;
+        i_size   += i_plane_size;
+    }
+
+    fprintf(stderr, "i_mc_size : %d / i_size : %d\n", j_mc_size, i_size);
+
+    if (j_mc_size > i_size)
+        j_mc_size = i_size;
+
+    (*env)->CallVoidMethod(env, p_sys->codec, jfields.queue_input_buffer,
+                          i_index, 0, j_mc_size, i_ts, jflags);
+    (*env)->DeleteLocalRef(env, j_mc_buf);
+    if (CHECK_EXCEPTION())
+    {
+        msg_Err(api->p_obj, "Exception in MediaCodec.queueInputBuffer");
+        return MC_API_ERROR;
+    }
     return 0;
 }
 
@@ -1027,10 +1204,12 @@ int MediaCodecJni_Init(mc_api *api)
     api->clean = Clean;
     api->configure = Configure;
     api->start = Start;
+    api->start_encoder = StartEncoder;
     api->stop = Stop;
     api->flush = Flush;
     api->dequeue_in = DequeueInput;
     api->queue_in = QueueInput;
+    api->queue_picture_in = QueueInputPicture;
     api->dequeue_out = DequeueOutput;
     api->get_out = GetOutput;
     api->release_out = ReleaseOutput;
