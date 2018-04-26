@@ -1849,7 +1849,7 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
         fprintf(stderr, "dequeue output with index %d\n", i_index);
         int i_ret = p_sys->api.get_out(&p_sys->api, i_index, &p_sys->mc_out);
 
-        if (i_ret && p_sys->mc_out.type == MC_OUT_TYPE_BUF)
+        if (i_ret)
         {
             fprintf(stderr, "Filling output block\n");
             out_block = block_Alloc(p_sys->mc_out.buf.i_size);
@@ -1858,6 +1858,11 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
                 out_block->i_pts = p_sys->mc_out.buf.i_ts;
                 out_block->i_dts = p_sys->mc_out.buf.i_ts;
                 memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
+                if (p_sys->mc_out.type == MC_OUT_TYPE_BUF)
+                    out_block->i_flags |= BLOCK_FLAG_HEADER;
+
+                if (p_sys->mc_out.b_eos)
+                    out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
             }
             else
             {
@@ -1870,17 +1875,25 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
         p_sys->api.release_out(&p_sys->api, i_index, false);
     }
 
-    if (!p_sys->b_has_headers && out_block)
+    //if (!p_sys->b_has_headers && out_block)
+    //{
+    //    fprintf(stderr, "Trying to get config packet from encoder\n");
+    //    block_t *p_headers = p_sys->api.get_csd(&p_sys->api);
+    ////    if (p_headers)
+    ////    {
+    ////        fprintf(stderr, "Adding config paquet to buffer\n");
+    ////        block_t *head  = NULL;
+    ////        block_t **tail = &head;
+    ////        block_ChainLastAppend(&tail, out_block);
+    ////        block_ChainLastAppend(&tail, p_headers);
+    ////        out_block = block_ChainGather(head);
+    ////        p_sys->b_has_headers = true;
+    ////    }
+    //}
+
+    if (!out_block)
     {
-        block_t *p_headers = p_sys->api.get_csd(&p_sys->api);
-        if (p_headers)
-        {
-            block_t *head  = NULL;
-            block_t **tail = &head;
-            block_ChainLastAppend(&tail, out_block);
-            block_ChainLastAppend(&tail, p_headers);
-            out_block = block_ChainGather(head);
-        }
+        fprintf(stderr, "Warning, block is NULL\n");
     }
 
     /* There can be no available output buffer, because the encoder

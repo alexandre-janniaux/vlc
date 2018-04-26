@@ -142,13 +142,14 @@ static const struct member members[] = {
     { "setInteger", "(Ljava/lang/String;I)V", "android/media/MediaFormat", OFF(set_integer), METHOD, true },
     { "getInteger", "(Ljava/lang/String;)I", "android/media/MediaFormat", OFF(get_integer), METHOD, true },
     { "setByteBuffer", "(Ljava/lang/String;Ljava/nio/ByteBuffer;)V", "android/media/MediaFormat", OFF(set_bytebuffer), METHOD, true },
-    { "getByteBuffer", "(Ljava/lang/String;)java/nio/ByteBuffer;", "android/media/MediaFormat", OFF(get_bytebuffer), METHOD, false },
+    { "getByteBuffer", "(Ljava/lang/String;)Ljava/nio/ByteBuffer;", "android/media/MediaFormat", OFF(get_bytebuffer), METHOD, false },
 
     { "<init>", "()V", "android/media/MediaCodec$BufferInfo", OFF(buffer_info_ctor), METHOD, true },
     { "size", "I", "android/media/MediaCodec$BufferInfo", OFF(size_field), FIELD, true },
     { "offset", "I", "android/media/MediaCodec$BufferInfo", OFF(offset_field), FIELD, true },
     { "presentationTimeUs", "J", "android/media/MediaCodec$BufferInfo", OFF(pts_field), FIELD, true },
     { "flags", "I", "android/media/MediaCodec$BufferInfo", OFF(flags_field), FIELD, true },
+
     { NULL, NULL, NULL, 0, 0, false },
 };
 
@@ -1048,14 +1049,28 @@ static int GetOutput(mc_api *api, int i_index, mc_api_out *p_out)
                 offset = (*env)->GetIntField(env, p_sys->buffer_info,
                                              jfields.offset_field);
             }
+
             p_out->buf.p_ptr = ptr + offset;
             p_out->buf.i_size = (*env)->GetIntField(env, p_sys->buffer_info,
                                                        jfields.size_field);
+
+            if (flags & BUFFER_FLAG_CODEC_CONFIG)
+            {
+                uint8_t* p = p_out->buf.p_ptr;
+                fprintf(stderr, "############# CODEC CONFIG:\n");
+                for(int i=0; i<p_out->buf.i_size; ++i)
+                {
+                    fprintf(stderr, "%.2X", p[i]);
+                }
+                fprintf(stderr, "\n\n");
+                p_out->type = MC_OUT_TYPE_BUF;
+            }
             (*env)->DeleteLocalRef(env, buf);
         }
         return 1;
     } else if (i_index == MC_API_INFO_OUTPUT_FORMAT_CHANGED)
     {
+        fprintf(stderr, "================== MC_API_INFO_OUTPUT_FORMAT_CHANGED ==========================\n\n\n");
         jobject format = NULL;
         jobject format_string = NULL;
         jsize format_len;
@@ -1200,11 +1215,14 @@ static block_t *GetCsd(mc_api *api)
     if (!(env = android_getEnv(api->p_obj, THREAD_NAME))) return NULL;
 
     if (!jfields.get_bytebuffer)
+    {
+        fprintf(stderr, "No get_bytebuffer function in JNI mediacodec\n");
         return NULL;
+    }
 
     jformat = (*env)->CallObjectMethod(env, api->p_sys->codec, jfields.get_output_format);
 
-    if (CHECK_EXCEPTION())
+    if (CHECK_EXCEPTION() || !jformat)
     {
         fprintf(stderr, "Couldn't retrieve output format in MediaCodec JNI encoder\n");
         return NULL;
@@ -1219,14 +1237,17 @@ static block_t *GetCsd(mc_api *api)
         goto cleanup;
     }
 
+    fprintf(stderr, "Getting csd0 data\n");
     jcsd0 = (*env)->CallObjectMethod(env, jformat, jfields.get_bytebuffer, csd0);
 
-    if (CHECK_EXCEPTION())
+    if (CHECK_EXCEPTION() || !jcsd0)
     {
         fprintf(stderr, "Couldn't retrieve csd-0 data from codec\n");
+
         goto cleanup;
     }
 
+    fprintf(stderr, "Getting csd1\n");
     jcsd1 = (*env)->CallObjectMethod(env, jformat, jfields.get_bytebuffer, csd1);
 
     if (CHECK_EXCEPTION())
@@ -1235,17 +1256,27 @@ static block_t *GetCsd(mc_api *api)
         goto cleanup;
     }
 
+    fprintf(stderr, "Getting address\n");
     const uint8_t* p_csd0 = (*env)->GetDirectBufferAddress(env, jcsd0);
+
+    const uint8_t* p = p_csd0;
+
+    if (p) {
+    fprintf(stderr, "############# CODEC CSD : %x%x %x%x %x%x %x%x \n\n\n", p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+    }
+    return NULL;
+
+    fprintf(stderr, "getting size\n");
     const size_t   i_csd0 = (*env)->GetIntField(env, jcsd0, jfields.size_field);
-;
     const uint8_t* p_csd1 = (*env)->GetDirectBufferAddress(env, jcsd1);
     const size_t   i_csd1 = (*env)->GetIntField(env, jcsd1, jfields.size_field);
 
-    p_block = block_Alloc(i_csd0 + i_csd1);
+    fprintf(stderr, "Allocating block\n");
+    p_block = block_Alloc(i_csd0 /*+ i_csd1 */);
     memcpy(p_block->p_buffer, p_csd0, i_csd0);
-    memcpy(p_block->p_buffer + i_csd0, p_csd1, i_csd1);
+    //memcpy(p_block->p_buffer + i_csd0, p_csd1, i_csd1);
 
-    p_block->i_size = i_csd0 + i_csd1;
+    p_block->i_size = i_csd0;//+ i_csd1;
     p_block->i_flags |= BLOCK_FLAG_HEADER;
 
 cleanup:
