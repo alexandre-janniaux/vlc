@@ -22,6 +22,7 @@
 #define VLC_MEDIACODEC_H
 
 #include <vlc_common.h>
+#include <vlc_block.h>
 #include "../../video_output/android/utils.h"
 
 typedef struct mc_api mc_api;
@@ -166,6 +167,9 @@ struct mc_api
     /* Dynamically sets the output surface
      * Returns 0 on success, or MC_API_ERROR */
     int (*set_output_surface)(mc_api*, void *p_surface, void *p_jsurface);
+
+    /* Get CSD buffer for encoder */
+    block_t *(*get_csd)(mc_api*);
 };
 
 #endif

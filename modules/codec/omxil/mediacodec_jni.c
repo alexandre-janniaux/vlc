@@ -30,6 +30,7 @@
 #include <assert.h>
 
 #include <vlc_common.h>
+#include <vlc_block.h>
 
 #include <OMX_Core.h>
 #include <OMX_Component.h>
@@ -69,7 +70,7 @@ struct jfields
     jmethodID dequeue_input_buffer, dequeue_output_buffer, queue_input_buffer;
     jmethodID release_output_buffer;
     jmethodID create_video_format, create_audio_format;
-    jmethodID set_integer, set_bytebuffer, get_integer;
+    jmethodID set_integer, set_bytebuffer, get_integer, get_bytebuffer;
     jmethodID buffer_info_ctor;
     jfieldID size_field, offset_field, pts_field, flags_field;
 };
@@ -141,6 +142,7 @@ static const struct member members[] = {
     { "setInteger", "(Ljava/lang/String;I)V", "android/media/MediaFormat", OFF(set_integer), METHOD, true },
     { "getInteger", "(Ljava/lang/String;)I", "android/media/MediaFormat", OFF(get_integer), METHOD, true },
     { "setByteBuffer", "(Ljava/lang/String;Ljava/nio/ByteBuffer;)V", "android/media/MediaFormat", OFF(set_bytebuffer), METHOD, true },
+    { "getByteBuffer", "(Ljava/lang/String;)java/nio/ByteBuffer;", "android/media/MediaFormat", OFF(get_bytebuffer), METHOD, false },
 
     { "<init>", "()V", "android/media/MediaCodec$BufferInfo", OFF(buffer_info_ctor), METHOD, true },
     { "size", "I", "android/media/MediaCodec$BufferInfo", OFF(size_field), FIELD, true },
@@ -880,9 +882,6 @@ static int QueueInput(mc_api *api, int i_index, const void *p_buf,
 static int QueueInputPicture(mc_api *api, int i_index, const picture_t *p_picture,
                             mtime_t i_ts, bool b_config)
 {
-    if (p_picture == NULL)
-        return 0;
-
     mc_api_sys *p_sys = api->p_sys;
     JNIEnv *env;
     uint8_t *p_mc_buf;
@@ -922,29 +921,32 @@ static int QueueInputPicture(mc_api *api, int i_index, const picture_t *p_pictur
 
     uint8_t *p_cursor = p_mc_buf;
     int i_size = 0;
-    for(int i=0; i<p_picture->i_planes; ++i)
+    if (p_picture)
     {
-        const plane_t *current_plane = &p_picture->p[i];
+        for(int i=0; i<p_picture->i_planes; ++i)
+        {
+            const plane_t *current_plane = &p_picture->p[i];
 
-        fprintf(stderr, "lines: %d\n"
-                "pitch: %d\n"
-                "visible_lines: %d\n"
-                "visible_pitch: %d\n"
-                "pixel_pitch: %d\n",
-                current_plane->i_lines,
-                current_plane->i_pitch,
-                current_plane->i_visible_lines,
-                current_plane->i_visible_pitch,
-                current_plane->i_pixel_pitch);
+            fprintf(stderr, "lines: %d\n"
+                    "pitch: %d\n"
+                    "visible_lines: %d\n"
+                    "visible_pitch: %d\n"
+                    "pixel_pitch: %d\n",
+                    current_plane->i_lines,
+                    current_plane->i_pitch,
+                    current_plane->i_visible_lines,
+                    current_plane->i_visible_pitch,
+                    current_plane->i_pixel_pitch);
 
-        // Don't copy margins, stop at i_visible_lines
-        memcpy(p_cursor, current_plane->p_pixels,
-                current_plane->i_pixel_pitch * current_plane->i_visible_pitch *
-                current_plane->i_visible_lines);
-        int i_plane_size = current_plane->i_visible_pitch * current_plane->i_visible_lines
-                            * current_plane->i_pixel_pitch;
-        p_cursor += i_plane_size;
-        i_size   += i_plane_size;
+            // Don't copy margins, stop at i_visible_lines
+            memcpy(p_cursor, current_plane->p_pixels,
+                    current_plane->i_pixel_pitch * current_plane->i_visible_pitch *
+                    current_plane->i_visible_lines);
+            int i_plane_size = current_plane->i_visible_pitch * current_plane->i_visible_lines
+                * current_plane->i_pixel_pitch;
+            p_cursor += i_plane_size;
+            i_size   += i_plane_size;
+        }
     }
 
     fprintf(stderr, "i_mc_size : %d / i_size : %d\n", j_mc_size, i_size);
@@ -1188,6 +1190,84 @@ static int Configure(mc_api *api, int i_profile, int flags)
 /*****************************************************************************
  * MediaCodecJni_New
  *****************************************************************************/
+static block_t *GetCsd(mc_api *api)
+{
+    JNIEnv *env;
+    jobject jformat = NULL, jcsd0 = NULL, jcsd1 = NULL;
+
+    block_t *p_block = NULL;
+
+    if (!(env = android_getEnv(api->p_obj, THREAD_NAME))) return NULL;
+
+    if (!jfields.get_bytebuffer)
+        return NULL;
+
+    jformat = (*env)->CallObjectMethod(env, api->p_sys->codec, jfields.get_output_format);
+
+    if (CHECK_EXCEPTION())
+    {
+        fprintf(stderr, "Couldn't retrieve output format in MediaCodec JNI encoder\n");
+        return NULL;
+    }
+
+    jstring csd0 = JNI_NEW_STRING("csd-0");
+    jstring csd1 = JNI_NEW_STRING("csd-1");
+
+    if (!csd0 || !csd1)
+    {
+        fprintf(stderr, "Couldn't allocate csd-x JNI strings\n");
+        goto cleanup;
+    }
+
+    jcsd0 = (*env)->CallObjectMethod(env, jformat, jfields.get_bytebuffer, csd0);
+
+    if (CHECK_EXCEPTION())
+    {
+        fprintf(stderr, "Couldn't retrieve csd-0 data from codec\n");
+        goto cleanup;
+    }
+
+    jcsd1 = (*env)->CallObjectMethod(env, jformat, jfields.get_bytebuffer, csd1);
+
+    if (CHECK_EXCEPTION())
+    {
+        fprintf(stderr, "Couldn't retrieve csd-1 data from codec\n");
+        goto cleanup;
+    }
+
+    const uint8_t* p_csd0 = (*env)->GetDirectBufferAddress(env, jcsd0);
+    const size_t   i_csd0 = (*env)->GetIntField(env, jcsd0, jfields.size_field);
+;
+    const uint8_t* p_csd1 = (*env)->GetDirectBufferAddress(env, jcsd1);
+    const size_t   i_csd1 = (*env)->GetIntField(env, jcsd1, jfields.size_field);
+
+    p_block = block_Alloc(i_csd0 + i_csd1);
+    memcpy(p_block->p_buffer, p_csd0, i_csd0);
+    memcpy(p_block->p_buffer + i_csd0, p_csd1, i_csd1);
+
+    p_block->i_size = i_csd0 + i_csd1;
+    p_block->i_flags |= BLOCK_FLAG_HEADER;
+
+cleanup:
+
+    if (jcsd1)
+        (*env)->DeleteLocalRef(env, jcsd1);
+
+    if (jcsd0)
+        (*env)->DeleteLocalRef(env, jcsd0);
+
+    if (csd1)
+        (*env)->DeleteLocalRef(env, csd1);
+
+    if (csd0)
+        (*env)->DeleteLocalRef(env, csd0);
+
+    return p_block;
+}
+
+/*****************************************************************************
+ * MediaCodecJni_New
+ *****************************************************************************/
 int MediaCodecJni_Init(mc_api *api)
 {
     JNIEnv *env;
@@ -1215,6 +1295,7 @@ int MediaCodecJni_Init(mc_api *api)
     api->release_out = ReleaseOutput;
     api->release_out_ts = NULL;
     api->set_output_surface = SetOutputSurface;
+    api->get_csd = GetCsd;
 
     /* Allow rotation only after API 21 */
     if (jfields.get_input_buffer && jfields.get_output_buffer)
