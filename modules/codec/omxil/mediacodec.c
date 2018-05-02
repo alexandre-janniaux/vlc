@@ -921,6 +921,8 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
 
     p_enc->p_sys = p_sys;
     p_enc->fmt_in.i_codec = VLC_CODEC_NV12;
+    p_enc->fmt_out.i_codec = VLC_CODEC_H264;
+    p_enc->fmt_out.i_cat = VIDEO_ES;
 
     p_sys->b_abort = false;
     p_sys->b_flush_out = false;
@@ -1851,22 +1853,40 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
 
         if (i_ret)
         {
-            fprintf(stderr, "Filling output block\n");
-            out_block = block_Alloc(p_sys->mc_out.buf.i_size);
-            if (out_block)
+            if (p_sys->mc_out.type == MC_OUT_TYPE_CONF)
             {
-                out_block->i_pts = p_sys->mc_out.buf.i_ts;
-                out_block->i_dts = p_sys->mc_out.buf.i_ts;
-                memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
-                if (p_sys->mc_out.type == MC_OUT_TYPE_BUF)
-                    out_block->i_flags |= BLOCK_FLAG_HEADER;
-
-                if (p_sys->mc_out.b_eos)
-                    out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
+                p_enc->fmt_out.p_extra = malloc(p_sys->mc_out.buf.i_ts);
+                // TODO: I don't know what to do
+                if (p_enc->fmt_out.p_extra == NULL)
+                    return NULL;
+                memcpy(p_enc->fmt_out.p_extra, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
+                p_enc->fmt_out.i_extra = p_sys->mc_out.buf.i_size;
             }
-            else
+            if (p_sys->mc_out.buf.p_ptr[5] == 0x41)
             {
-                msg_Err(p_enc, "Couln't allocate memory for block allocation");
+                fprintf(stderr, "Filling output block of size %d\n", p_sys->mc_out.buf.i_size);
+                out_block = block_Alloc(p_sys->mc_out.buf.i_size);
+                if (out_block)
+                {
+                    fprintf(stderr, "New packet DTS: %"PRId64"\n", p_sys->mc_out.buf.i_ts);
+                    out_block->i_pts = p_sys->mc_out.buf.i_ts;
+                    out_block->i_dts = p_sys->mc_out.buf.i_ts;
+                    memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
+
+                    if (p_sys->mc_out.b_eos)
+                        out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
+                    fprintf(stderr, "############# IMAGE DATA ##############\n");
+                    const uint8_t* p = out_block->p_buffer;
+                    for(int i=0; i<32; ++i)
+                    {
+                        fprintf(stderr, "%.2X", p[i]);
+                    }
+                    fprintf(stderr, "\n\n");
+                }
+                else
+                {
+                    msg_Err(p_enc, "Couln't allocate memory for block allocation");
+                }
             }
         }
         else {

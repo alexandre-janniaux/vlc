@@ -1015,6 +1015,7 @@ static int GetOutput(mc_api *api, int i_index, mc_api_out *p_out)
                                         jfields.flags_field);
         p_out->b_eos = flags & BUFFER_FLAG_END_OF_STREAM;
 
+
         if (api->b_direct_rendering)
         {
             p_out->buf.p_ptr = NULL;
@@ -1063,7 +1064,7 @@ static int GetOutput(mc_api *api, int i_index, mc_api_out *p_out)
                     fprintf(stderr, "%.2X", p[i]);
                 }
                 fprintf(stderr, "\n\n");
-                p_out->type = MC_OUT_TYPE_BUF;
+                p_out->type = MC_OUT_TYPE_CONF;
             }
             (*env)->DeleteLocalRef(env, buf);
         }
