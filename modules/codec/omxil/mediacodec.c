@@ -564,10 +564,10 @@ static int StartMediaCodec(decoder_t *p_dec)
     return p_sys->api.start(&p_sys->api, &args);
 }
 
-static int StartMediaCodec_Encoder(encoder_t *p_enc, const picture_t* p_picture)
+static int StartMediaCodec_Encoder(encoder_t *p_enc, const video_format_t* p_format)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
-    return p_sys->api.start_encoder(&p_sys->api, p_picture);
+    return p_sys->api.start_encoder(&p_sys->api, p_format);
 }
 
 /*****************************************************************************
@@ -939,6 +939,7 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         msg_Err(p_enc, "Can't initialize mediacodec API for mediacodec encoder");
         goto bailout;
     }
+    p_sys->api.p_obj = p_enc;
 
     /* Find the right codec and codec options */
     if (p_sys->api.configure(&p_sys->api, p_enc->fmt_out.i_profile, MC_API_FLAG_ENCODER) != 0)
@@ -957,6 +958,59 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         msg_Err(p_enc, "StartMediaCodec failed");
         return VLC_EGENERIC;
     }
+
+    fprintf(stderr, "Trying to fetch the first configuration block\n");
+
+    int i_index = MC_API_INFO_TRYAGAIN;
+    while ( (i_index = p_sys->api.dequeue_out(&p_sys->api, 0)) == -11)
+    {
+        /*
+         * MediaCodec won't generate CSD data until it gets some data to parse
+         * so queue some trash black data before trying to get data
+         */
+        i_index = p_sys->api.dequeue_in(&p_sys->api, 0);
+        if (i_index < 0)
+        {
+            msg_Err(p_enc, "Couldn't fetch input block from MediaCodec");
+            return VLC_EGENERIC;
+        }
+        p_sys->api.queue_picture_in(&p_sys->api, i_index, NULL, 0, true);
+
+        fprintf(stderr, "Dequeued the first block, index %d\n", i_index);
+    }
+
+    if (i_index < 0)
+    {
+        msg_Err(p_enc, "Couldn't fetch configuration block index from MediaCodec");
+        return VLC_EGENERIC;
+    }
+
+    fprintf(stderr, "Fetch block data\n");
+    i_ret = p_sys->api.get_out(&p_sys->api, i_index, &p_sys->mc_out);
+    if (!i_ret)
+    {
+        msg_Err(p_enc, "Couldn't fetch configuration block data from MediaCodec");
+        return VLC_EGENERIC;
+    }
+
+    if (p_sys->mc_out.type != MC_OUT_TYPE_CONF)
+    {
+        msg_Err(p_enc, "Invalid configuration block from MediaCodec");
+        return VLC_EGENERIC;
+    }
+
+    p_enc->fmt_out.p_extra = malloc(p_sys->mc_out.buf.i_ts);
+    if (!p_enc->fmt_out.p_extra)
+    {
+        msg_Err(p_enc, "Couldn't allocate extra data for codec");
+        p_sys->api.release_out(&p_sys->api, i_index, false);
+        return VLC_ENOMEM;
+    }
+
+    memcpy(p_enc->fmt_out.p_extra, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
+    p_enc->fmt_out.i_extra = p_sys->mc_out.buf.i_size;
+    fprintf(stderr, "Found PPS/SPS\n");
+    p_sys->api.release_out(&p_sys->api, i_index, false);
 
     p_enc->pf_encode_video = EncodeVideo;
     p_enc->pf_encode_audio = NULL;

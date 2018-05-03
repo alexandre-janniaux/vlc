@@ -894,6 +894,13 @@ static int QueueInputPicture(mc_api *api, int i_index, const picture_t *p_pictur
     jint jflags = (b_config ? BUFFER_FLAG_CODEC_CONFIG : 0)
                 | (p_picture == NULL ? BUFFER_FLAG_END_OF_STREAM : 0);
 
+    /* A null picture with config means we are trying to configure the encoder
+     * and we want to send black images */
+    if (b_config && p_picture == NULL)
+    {
+        jflags = 0;
+    }
+
     GET_ENV();
 
     if (jfields.get_input_buffers)
