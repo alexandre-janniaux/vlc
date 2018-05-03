@@ -947,17 +947,16 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         return VLC_EGENERIC;
     }
 
+    fprintf(stderr, "Format from p_enc: %d / %d\n", p_enc->fmt_in.video.i_visible_width, 
+            p_enc->fmt_in.video.i_visible_height);
+
     fprintf(stderr, "Codec encoder has been configured\n");
-
-    /* Start the encoded picture fetcher thread */
-    //if (vlc_clone(&p_sys->out_thread, EncoderOutputThread, p_enc,
-    //            VLC_THREAD_PRIORITY_LOW) != VLC_SUCCESS)
-    //{
-    //    msg_Err(p_enc, "vlc_clone failed");
-    //    goto bailout;
-    //}
-
-    //fprintf(stderr, "Thread has been cloned\n");
+    int i_ret = StartMediaCodec_Encoder(p_enc, &p_enc->fmt_in.video);
+    if (i_ret != VLC_SUCCESS)
+    {
+        msg_Err(p_enc, "StartMediaCodec failed");
+        return VLC_EGENERIC;
+    }
 
     p_enc->pf_encode_video = EncodeVideo;
     p_enc->pf_encode_audio = NULL;
@@ -1805,19 +1804,19 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
 
-    if (!p_sys->api.b_started)
-    {
-        if (!picture)
-            return NULL;
+    //if (!p_sys->api.b_started)
+    //{
+    //    if (!picture)
+    //        return NULL;
 
-        fprintf(stderr, "Starting MediaCodec encoder\n");
-        int i_ret = StartMediaCodec_Encoder(p_enc, picture);
-        if (i_ret != VLC_SUCCESS)
-        {
-            msg_Err(p_enc, "StartMediaCodec failed");
-            return NULL;
-        }
-    }
+    //    fprintf(stderr, "Starting MediaCodec encoder\n");
+    //    int i_ret = StartMediaCodec_Encoder(p_enc, picture);
+    //    if (i_ret != VLC_SUCCESS)
+    //    {
+    //        msg_Err(p_enc, "StartMediaCodec failed");
+    //        return NULL;
+    //    }
+    //}
 
     // Request input buffer to MC
     int i_index = p_sys->api.dequeue_in(&p_sys->api, 0);

@@ -690,7 +690,7 @@ error:
     return i_ret;
 }
 
-static int StartEncoder(mc_api *api, const picture_t *p_picture)
+static int StartEncoder(mc_api *api, const video_format_t *p_format)
 {
     mc_api_sys *p_sys = api->p_sys;
     JNIEnv* env = NULL;
@@ -722,16 +722,19 @@ static int StartEncoder(mc_api *api, const picture_t *p_picture)
     }
     p_sys->codec = (*env)->NewGlobalRef(env, jcodec);
 
+    fprintf(stderr, "Format: %d / %d\n", p_format->i_width, p_format->i_height);
+
     jformat = (*env)->CallStaticObjectMethod(env,
                                              jfields.media_format_class,
                                              jfields.create_video_format,
                                              jmime,
-                                             p_picture->p[0].i_visible_pitch,
-                                             p_picture->p[0].i_visible_lines);
+                                             p_format->i_visible_width,// TODO: visible_width ?
+                                             p_format->i_visible_height);
 
     SET_INTEGER(jformat, "frame-rate", 30);
     SET_INTEGER(jformat, "max-input-size", 0);
-    SET_INTEGER(jformat, "color-format", 21);
+    SET_INTEGER(jformat, "color-format", 0x7f420888);
+    //SET_INTEGER(jformat, "color-format", 21);
     SET_INTEGER(jformat, "bitrate", 7680000);
     SET_INTEGER(jformat, "i-frame-interval", 4);
     SET_INTEGER(jformat, "profile", 1);
