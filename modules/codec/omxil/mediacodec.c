@@ -1861,32 +1861,56 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
                     return NULL;
                 memcpy(p_enc->fmt_out.p_extra, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
                 p_enc->fmt_out.i_extra = p_sys->mc_out.buf.i_size;
+                fprintf(stderr, "Found PPS/SPS\n");
             }
-            if (p_sys->mc_out.buf.p_ptr[5] == 0x41)
-            {
-                fprintf(stderr, "Filling output block of size %d\n", p_sys->mc_out.buf.i_size);
-                out_block = block_Alloc(p_sys->mc_out.buf.i_size);
-                if (out_block)
-                {
-                    fprintf(stderr, "New packet DTS: %"PRId64"\n", p_sys->mc_out.buf.i_ts);
-                    out_block->i_pts = p_sys->mc_out.buf.i_ts;
-                    out_block->i_dts = p_sys->mc_out.buf.i_ts;
-                    memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
+            else {
+                fprintf(stderr, "MC_OUT TYPE: %.2x\n", p_sys->mc_out.buf.p_ptr[4]);
 
-                    if (p_sys->mc_out.b_eos)
-                        out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
-                    fprintf(stderr, "############# IMAGE DATA ##############\n");
-                    const uint8_t* p = out_block->p_buffer;
-                    for(int i=0; i<32; ++i)
-                    {
-                        fprintf(stderr, "%.2X", p[i]);
-                    }
-                    fprintf(stderr, "\n\n");
-                }
-                else
+                uint8_t* p_buffer = out_block->p_buffer;
+                if ((p_sys->mc_out.buf.p_ptr[4] & 0x1F) == 0x01)
                 {
-                    msg_Err(p_enc, "Couln't allocate memory for block allocation");
+                    fprintf(stderr, "Filling output block of size %d\n", p_sys->mc_out.buf.i_size);
+                    out_block = block_Alloc(p_sys->mc_out.buf.i_size + p_enc->fmt_out.i_extra);
+                    if (out_block)
+                    {
+                        out_block->i_flags = BLOCK_FLAG_TYPE_I;
+                        p_buffer = out_block->p_buffer;
+                        if (p_enc->fmt_out.p_extra)
+                        {
+                            fprintf(stderr, "Putting extra data on top of the packet\n");
+                            memcpy(p_buffer, p_enc->fmt_out.p_extra, p_enc->fmt_out.i_extra);
+                            p_buffer += p_enc->fmt_out.i_extra;
+                        }
+                    }
+                    else
+                    {
+                        msg_Err(p_enc, "Couln't allocate memory for block allocation");
+                        return NULL;
+                    }
                 }
+                else {
+                    out_block = block_Alloc(p_sys->mc_out.buf.i_size + p_enc->fmt_out.i_extra);
+                    p_buffer = out_block->p_buffer;
+                    if (!out_block)
+                    {
+                        msg_Err(p_enc, "Couln't allocate memory for block allocation");
+                        return NULL;
+                    }
+                }
+                fprintf(stderr, "New packet DTS: %"PRId64"\n", p_sys->mc_out.buf.i_ts);
+                out_block->i_pts = p_sys->mc_out.buf.i_ts;
+                out_block->i_dts = p_sys->mc_out.buf.i_ts;
+                memcpy(p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
+
+                if (p_sys->mc_out.b_eos)
+                    out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
+                fprintf(stderr, "############# IMAGE DATA ##############\n");
+                const uint8_t* p = out_block->p_buffer;
+                for(int i=0; i<32; ++i)
+                {
+                    fprintf(stderr, "%.2X", p[i]);
+                };
+                fprintf(stderr, "\n\n");
             }
         }
         else {
