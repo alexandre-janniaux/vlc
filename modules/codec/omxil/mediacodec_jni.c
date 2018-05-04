@@ -1257,6 +1257,28 @@ static block_t *GetCsd(mc_api *api)
         goto cleanup;
     }
 
+    fprintf(stderr, "Getting address\n");
+    const uint8_t* p_csd0 = (*env)->GetDirectBufferAddress(env, jcsd0);
+
+    const uint8_t* p = p_csd0;
+
+    if (p) {
+    fprintf(stderr, "############# CODEC CSD : %x%x %x%x %x%x %x%x \n\n\n", p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+    }
+    return NULL;
+
+    fprintf(stderr, "getting size\n");
+    const size_t   i_csd0 = (*env)->GetIntField(env, jcsd0, jfields.size_field);
+    const uint8_t* p_csd1 = (*env)->GetDirectBufferAddress(env, jcsd1);
+    const size_t   i_csd1 = (*env)->GetIntField(env, jcsd1, jfields.size_field);
+
+    fprintf(stderr, "Allocating block\n");
+    p_block = block_Alloc(i_csd0 /*+ i_csd1 */);
+    memcpy(p_block->p_buffer, p_csd0, i_csd0);
+    //memcpy(p_block->p_buffer + i_csd0, p_csd1, i_csd1);
+
+    p_block->i_size = i_csd0;//+ i_csd1;
+    p_block->i_flags |= BLOCK_FLAG_HEADER;
 
 cleanup:
 
