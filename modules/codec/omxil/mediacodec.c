@@ -1880,21 +1880,17 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
         fprintf(stderr, "dequeue output with index %d\n", i_index);
         int i_ret = p_sys->api.get_out(&p_sys->api, i_index, &p_sys->mc_out);
 
-        if (i_ret != 0)
+        if (i_ret)
         {
             if (p_sys->mc_out.type == MC_OUT_TYPE_CONF)
             {
                 p_enc->fmt_out.p_extra = malloc(p_sys->mc_out.buf.i_ts);
-                // TODO: I don't know what to do
                 if (p_enc->fmt_out.p_extra == NULL)
                     return NULL;
                 memcpy(p_enc->fmt_out.p_extra, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
                 p_enc->fmt_out.i_extra = p_sys->mc_out.buf.i_size;
-                fprintf(stderr, "Found PPS/SPS\n");
             }
             else {
-                fprintf(stderr, "MC_OUT TYPE: %.2x\n", p_sys->mc_out.buf.p_ptr[4]);
-
                 uint8_t* p_buffer = out_block->p_buffer;
                 if ((p_sys->mc_out.buf.p_ptr[4] & 0x1F) == 0x01 || true)
                 {
@@ -1905,7 +1901,6 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
                         p_buffer = out_block->p_buffer;
                         if (p_enc->fmt_out.p_extra)
                         {
-                            fprintf(stderr, "Putting extra data on top of the packet\n");
                             memcpy(p_buffer, p_enc->fmt_out.p_extra, p_enc->fmt_out.i_extra);
                             p_buffer += p_enc->fmt_out.i_extra;
                         }
@@ -1925,7 +1920,6 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
                         return NULL;
                     }
                 }
-                fprintf(stderr, "New packet DTS: %"PRId64"\n", p_sys->mc_out.buf.i_ts);
                 out_block->i_pts = p_sys->mc_out.buf.i_ts;
                 out_block->i_dts = p_sys->mc_out.buf.i_ts;
                 memcpy(p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
@@ -1934,31 +1928,7 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
                     out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
             }
         }
-        else {
-            fprintf(stderr, "MC_OUT is not a buffer\n");
-        }
         p_sys->api.release_out(&p_sys->api, i_index, false);
-    }
-
-    //if (!p_sys->b_has_headers && out_block)
-    //{
-    //    fprintf(stderr, "Trying to get config packet from encoder\n");
-    //    block_t *p_headers = p_sys->api.get_csd(&p_sys->api);
-    ////    if (p_headers)
-    ////    {
-    ////        fprintf(stderr, "Adding config paquet to buffer\n");
-    ////        block_t *head  = NULL;
-    ////        block_t **tail = &head;
-    ////        block_ChainLastAppend(&tail, out_block);
-    ////        block_ChainLastAppend(&tail, p_headers);
-    ////        out_block = block_ChainGather(head);
-    ////        p_sys->b_has_headers = true;
-    ////    }
-    //}
-
-    if (!out_block)
-    {
-        fprintf(stderr, "Warning, block is NULL\n");
     }
 
     /* There can be no available output buffer, because the encoder
