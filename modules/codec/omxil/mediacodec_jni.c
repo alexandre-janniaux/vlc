@@ -728,11 +728,13 @@ static int StartEncoder(mc_api *api, const video_format_t *p_format)
                                              jfields.media_format_class,
                                              jfields.create_video_format,
                                              jmime,
-                                             p_format->i_visible_width,// TODO: visible_width ?
+                                             p_format->i_visible_width,
                                              p_format->i_visible_height);
 
     SET_INTEGER(jformat, "frame-rate", 30);
     SET_INTEGER(jformat, "max-input-size", 0);
+    // TODO: get input format to know what format to use after giving YUV_Flexible
+    // TODO: or enforce a format for sdk < 21
     SET_INTEGER(jformat, "color-format", 0x7f420888);
     //SET_INTEGER(jformat, "color-format", 21);
     SET_INTEGER(jformat, "bitrate", 7680000);
@@ -926,10 +928,6 @@ static int QueueInputPicture(mc_api *api, int i_index, const picture_t *p_pictur
         return MC_API_ERROR;
     }
 
-    fprintf(stderr, "mc_buf of size %d\n", j_mc_size);
-
-    // TODO: idem ndk
-
     uint8_t *p_cursor = p_mc_buf;
     int i_size = 0;
     if (p_picture)
@@ -960,9 +958,9 @@ static int QueueInputPicture(mc_api *api, int i_index, const picture_t *p_pictur
         }
     }
 
-    fprintf(stderr, "i_mc_size : %d / i_size : %d\n", j_mc_size, i_size);
+    assert(j_mc_size >= i_size);
 
-    if (j_mc_size > i_size)
+    if (j_mc_size > i_size && p_picture)
         j_mc_size = i_size;
 
     (*env)->CallVoidMethod(env, p_sys->codec, jfields.queue_input_buffer,
@@ -1051,7 +1049,7 @@ static int GetOutput(mc_api *api, int i_index, mc_api_out *p_out)
                     return MC_API_ERROR;
                 }
             }
-            //jsize buf_size = (*env)->GetDirectBufferCapacity(env, buf);
+
             /* buf can be NULL in case of EOS */
             if (buf)
             {
@@ -1067,13 +1065,6 @@ static int GetOutput(mc_api *api, int i_index, mc_api_out *p_out)
 
             if (flags & BUFFER_FLAG_CODEC_CONFIG)
             {
-                uint8_t* p = p_out->buf.p_ptr;
-                fprintf(stderr, "############# CODEC CONFIG:\n");
-                for(int i=0; i<p_out->buf.i_size; ++i)
-                {
-                    fprintf(stderr, "%.2X", p[i]);
-                }
-                fprintf(stderr, "\n\n");
                 p_out->type = MC_OUT_TYPE_CONF;
             }
             (*env)->DeleteLocalRef(env, buf);
@@ -1081,7 +1072,6 @@ static int GetOutput(mc_api *api, int i_index, mc_api_out *p_out)
         return 1;
     } else if (i_index == MC_API_INFO_OUTPUT_FORMAT_CHANGED)
     {
-        fprintf(stderr, "================== MC_API_INFO_OUTPUT_FORMAT_CHANGED ==========================\n\n\n");
         jobject format = NULL;
         jobject format_string = NULL;
         jsize format_len;
@@ -1267,28 +1257,6 @@ static block_t *GetCsd(mc_api *api)
         goto cleanup;
     }
 
-    fprintf(stderr, "Getting address\n");
-    const uint8_t* p_csd0 = (*env)->GetDirectBufferAddress(env, jcsd0);
-
-    const uint8_t* p = p_csd0;
-
-    if (p) {
-    fprintf(stderr, "############# CODEC CSD : %x%x %x%x %x%x %x%x \n\n\n", p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
-    }
-    return NULL;
-
-    fprintf(stderr, "getting size\n");
-    const size_t   i_csd0 = (*env)->GetIntField(env, jcsd0, jfields.size_field);
-    const uint8_t* p_csd1 = (*env)->GetDirectBufferAddress(env, jcsd1);
-    const size_t   i_csd1 = (*env)->GetIntField(env, jcsd1, jfields.size_field);
-
-    fprintf(stderr, "Allocating block\n");
-    p_block = block_Alloc(i_csd0 /*+ i_csd1 */);
-    memcpy(p_block->p_buffer, p_csd0, i_csd0);
-    //memcpy(p_block->p_buffer + i_csd0, p_csd1, i_csd1);
-
-    p_block->i_size = i_csd0;//+ i_csd1;
-    p_block->i_flags |= BLOCK_FLAG_HEADER;
 
 cleanup:
 

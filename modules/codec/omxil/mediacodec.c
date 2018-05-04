@@ -566,6 +566,7 @@ static int StartMediaCodec(decoder_t *p_dec)
 
 static int StartMediaCodec_Encoder(encoder_t *p_enc, const video_format_t* p_format)
 {
+    assert(p_enc->p_sys);
     encoder_sys_t *p_sys = p_enc->p_sys;
     return p_sys->api.start_encoder(&p_sys->api, p_format);
 }
@@ -587,9 +588,12 @@ static void StopMediaCodec(decoder_t *p_dec)
 
 static void StopMediaCodec_Encoder(encoder_t *p_enc)
 {
+    assert(p_enc->p_sys);
     msg_Dbg(p_enc, "Stopping mediacodec encoder");
     encoder_sys_t *p_sys = p_enc->p_sys;
-    p_sys->api.stop(&p_sys->api);
+
+    if (p_sys->api.b_started)
+        p_sys->api.stop(&p_sys->api);
 }
 
 /*****************************************************************************
@@ -915,10 +919,6 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     p_sys->api.psz_mime = mime;
     p_sys->api.b_started = false;
 
-    vlc_mutex_init(&p_sys->lock);
-    vlc_mutex_init(&p_sys->out_lock);
-    vlc_cond_init(&p_sys->cond);
-
     p_enc->p_sys = p_sys;
     p_enc->fmt_in.i_codec = VLC_CODEC_NV12;
     p_enc->fmt_out.i_codec = VLC_CODEC_H264;
@@ -929,17 +929,13 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     p_sys->b_output_ready = false;
     p_sys->b_has_headers = false;
 
-    /* no block in the blockchain at the beginning */
-    p_sys->p_out_chain = NULL;
-    p_sys->pp_out_last = &p_sys->p_out_chain;
-
     /* Initialize MediaCodec API/symbols */
     if (pf_init(&p_sys->api) != 0)
     {
         msg_Err(p_enc, "Can't initialize mediacodec API for mediacodec encoder");
         goto bailout;
     }
-    p_sys->api.p_obj = p_enc;
+    p_sys->api.p_obj = p_this;
 
     /* Find the right codec and codec options */
     if (p_sys->api.configure(&p_sys->api, p_enc->fmt_out.i_profile, MC_API_FLAG_ENCODER) != 0)
@@ -1082,18 +1078,8 @@ static void CleanEncoder(encoder_t *p_enc)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
 
-    fprintf(stderr, "Stopping MediaCodec\n");
     StopMediaCodec_Encoder(p_enc);
-
-    fprintf(stderr, "Cleaning MediaCodec\n");
     p_sys->api.clean(&p_sys->api);
-
-    if(p_sys->p_out_chain)
-        block_ChainRelease(p_sys->p_out_chain);
-
-    //vlc_mutex_destroy(&p_sys->lock);
-    //vlc_mutex_destroy(&p_sys->out_lock);
-    //vlc_cond_destroy(&p_sys->cond);
 
     free(p_sys);
 }
@@ -1123,27 +1109,12 @@ static void CloseEncoder(vlc_object_t *p_this)
     encoder_t *p_enc = (encoder_t *)p_this;
     encoder_sys_t *p_sys = p_enc->p_sys;
 
+    p_sys->api.stop(&p_sys->api);
+    CleanEncoder(p_enc);
     return;
 
     p_sys->b_abort = true;
-
-    fprintf(stderr, "Flushing encoder\n");
-
-    vlc_mutex_lock(&p_sys->lock);
     EncodeFlushLocked(p_enc);
-    vlc_mutex_unlock(&p_sys->lock);
-
-    fprintf(stderr, "Stopping encoder\n");
-
-    p_sys->api.stop(&p_sys->api);
-
-    fprintf(stderr, "Joining encoder\n");
-
-    //vlc_join(p_sys->out_thread, NULL);
-
-    fprintf(stderr, "Cleaning encoder\n");
-
-    CleanEncoder(p_enc);
 }
 
 /*****************************************************************************
@@ -1909,7 +1880,7 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
         fprintf(stderr, "dequeue output with index %d\n", i_index);
         int i_ret = p_sys->api.get_out(&p_sys->api, i_index, &p_sys->mc_out);
 
-        if (i_ret)
+        if (i_ret != 0)
         {
             if (p_sys->mc_out.type == MC_OUT_TYPE_CONF)
             {
