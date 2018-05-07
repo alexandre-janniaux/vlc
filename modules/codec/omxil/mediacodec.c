@@ -146,10 +146,8 @@ struct encoder_sys_t
     vlc_cond_t      cond;
     vlc_cond_t      enc_cond;
 
-    /* Fifo storing the available encoded blocks, which are
-     * returned from EncodeVideo */
-    block_t*        p_out_chain;
-    block_t**       pp_out_last;
+    /* Fifo storing the DTS of the packets to be encoded */
+    timestamp_fifo_t* fifo_dts;
 
     bool b_started;
     bool b_abort;
@@ -919,6 +917,14 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     p_sys->api.psz_mime = mime;
     p_sys->api.b_started = false;
 
+    p_sys->fifo_dts = timestamp_FifoNew(32);
+    if (!p_sys->fifo_dts)
+    {
+        msg_Err(p_this, "Couldn't allocate fifo_dts for MediaCodec");
+        free(p_sys);
+        return VLC_ENOMEM;
+    }
+
     p_enc->p_sys = p_sys;
     p_enc->fmt_in.i_codec = VLC_CODEC_NV12;
     p_enc->fmt_out.i_codec = VLC_CODEC_H264;
@@ -1081,6 +1087,7 @@ static void CleanEncoder(encoder_t *p_enc)
     StopMediaCodec_Encoder(p_enc);
     p_sys->api.clean(&p_sys->api);
 
+    timestamp_FifoRelease(p_sys->fifo_dts);
     free(p_sys);
 }
 
@@ -1860,7 +1867,10 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
          * an end_of_stream signal to MC
          */
         if (picture != NULL)
+        {
             fprintf(stderr, "Queue picture in at index %d with date %"PRId64"\n", i_index, picture->date);
+            timestamp_FifoPut(p_sys->fifo_dts, picture->date);
+        }
         else
             fprintf(stderr, "Queue EOS at index %d", i_index);
         int ret = p_sys->api.queue_picture_in(&p_sys->api, i_index, picture,
@@ -1921,7 +1931,7 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
                     }
                 }
                 out_block->i_pts = p_sys->mc_out.buf.i_ts;
-                out_block->i_dts = p_sys->mc_out.buf.i_ts;
+                out_block->i_dts = timestamp_FifoGet(p_sys->fifo_dts);
                 memcpy(p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
 
                 if (p_sys->mc_out.b_eos)
