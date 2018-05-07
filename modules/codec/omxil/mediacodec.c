@@ -138,13 +138,6 @@ struct encoder_sys_t
 {
     mc_api          api;
     mc_api_out      mc_out;
-    vlc_mutex_t     lock;
-    /* lock the decoded output block chain */
-    vlc_mutex_t     out_lock;
-    vlc_thread_t    out_thread;
-    /* Cond used to signal the output thread */
-    vlc_cond_t      cond;
-    vlc_cond_t      enc_cond;
 
     /* Fifo storing the available encoded blocks, which are
      * returned from EncodeVideo */
@@ -152,8 +145,6 @@ struct encoder_sys_t
     block_t**       pp_out_last;
 
     bool b_started;
-    bool b_abort;
-    bool b_aborted;
     bool b_flush_out;
     bool b_has_headers;
     /* if true, start to pop frames from the encoder and push them in the fifo */
@@ -915,18 +906,12 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     p_sys->api.psz_mime = mime;
     p_sys->api.b_started = false;
 
-    vlc_mutex_init(&p_sys->lock);
-    vlc_mutex_init(&p_sys->out_lock);
-    vlc_cond_init(&p_sys->cond);
-
     p_enc->p_sys = p_sys;
     p_enc->fmt_in.i_codec = VLC_CODEC_NV12;
     p_enc->fmt_out.i_codec = VLC_CODEC_H264;
     p_enc->fmt_out.i_cat = VIDEO_ES;
 
-    p_sys->b_abort = false;
     p_sys->b_flush_out = false;
-    p_sys->b_output_ready = false;
     p_sys->b_has_headers = false;
 
     /* no block in the blockchain at the beginning */
@@ -1030,13 +1015,6 @@ static void CleanEncoder(encoder_t *p_enc)
     fprintf(stderr, "Cleaning MediaCodec\n");
     p_sys->api.clean(&p_sys->api);
 
-    if(p_sys->p_out_chain)
-        block_ChainRelease(p_sys->p_out_chain);
-
-    //vlc_mutex_destroy(&p_sys->lock);
-    //vlc_mutex_destroy(&p_sys->out_lock);
-    //vlc_cond_destroy(&p_sys->cond);
-
     free(p_sys);
 }
 
@@ -1065,26 +1043,9 @@ static void CloseEncoder(vlc_object_t *p_this)
     encoder_t *p_enc = (encoder_t *)p_this;
     encoder_sys_t *p_sys = p_enc->p_sys;
 
-    return;
-
-    p_sys->b_abort = true;
-
-    fprintf(stderr, "Flushing encoder\n");
-
-    vlc_mutex_lock(&p_sys->lock);
     EncodeFlushLocked(p_enc);
-    vlc_mutex_unlock(&p_sys->lock);
-
-    fprintf(stderr, "Stopping encoder\n");
 
     p_sys->api.stop(&p_sys->api);
-
-    fprintf(stderr, "Joining encoder\n");
-
-    //vlc_join(p_sys->out_thread, NULL);
-
-    fprintf(stderr, "Cleaning encoder\n");
-
     CleanEncoder(p_enc);
 }
 
@@ -1428,11 +1389,6 @@ static void EncodeFlushLocked(encoder_t *p_enc)
         // TODO: error
         return;
     }
-
-    vlc_cond_broadcast(&p_sys->cond);
-
-    while (!p_sys->b_aborted && p_sys->b_flush_out)
-        vlc_cond_wait(&p_sys->enc_cond, &p_sys->lock);
 }
 
 static void EncodeFlush(encoder_t *p_enc)
