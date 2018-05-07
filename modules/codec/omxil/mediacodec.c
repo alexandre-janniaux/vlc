@@ -1841,20 +1841,6 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
 
-    //if (!p_sys->api.b_started)
-    //{
-    //    if (!picture)
-    //        return NULL;
-
-    //    fprintf(stderr, "Starting MediaCodec encoder\n");
-    //    int i_ret = StartMediaCodec_Encoder(p_enc, picture);
-    //    if (i_ret != VLC_SUCCESS)
-    //    {
-    //        msg_Err(p_enc, "StartMediaCodec failed");
-    //        return NULL;
-    //    }
-    //}
-
     // Request input buffer to MC
     int i_index = p_sys->api.dequeue_in(&p_sys->api, 0);
     fprintf(stderr, "enqueue input with index %d\n", i_index);
