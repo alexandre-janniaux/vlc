@@ -115,6 +115,8 @@ static int Open(vlc_object_t *p_this)
     // Init the text renderer.
     if (unlikely(initTextRenderer(p_intf) != VLC_SUCCESS))
     {
+        var_DelCallback(p_playlist, "volume", VolumeChanged, p_intf);
+        var_DelCallback(p_playlist, "input-current", PlaylistEvent, p_intf);
         vlc_mutex_destroy(&p_sys->renderMutex);
         free(p_sys);
         return VLC_EGENERIC;
@@ -125,6 +127,8 @@ static int Open(vlc_object_t *p_this)
     if (unlikely(b == NULL))
     {
         releaseTextRenderer(p_intf);
+        var_DelCallback(p_playlist, "volume", VolumeChanged, p_intf);
+        var_DelCallback(p_playlist, "input-current", PlaylistEvent, p_intf);
         vlc_mutex_destroy(&p_sys->renderMutex);
         free(p_sys);
     }
@@ -133,11 +137,15 @@ static int Open(vlc_object_t *p_this)
     p_sys->i_ctlHeight = b->getHeight();
 
     // Init the blend filter
-    p_sys->p_blendFilter = filter_NewBlend(p_this, b->getFrameFormat());
+    video_format_t *format = b->getFrameFormat();
+    if (likely(format != NULL))
+        p_sys->p_blendFilter = filter_NewBlend(p_this, format);
     if (unlikely(p_sys->p_blendFilter == NULL))
     {
         delete b;
         releaseTextRenderer(p_intf);
+        var_DelCallback(p_playlist, "volume", VolumeChanged, p_intf);
+        var_DelCallback(p_playlist, "input-current", PlaylistEvent, p_intf);
         vlc_mutex_destroy(&p_sys->renderMutex);
         free(p_sys);
         return VLC_EGENERIC;
@@ -145,17 +153,19 @@ static int Open(vlc_object_t *p_this)
 
     p_sys->controls.push_back(b);
 
-    #define TEST_CTL(CTL)                                            \
-        if (unlikely(CTL == NULL))                                   \
-        {                                                            \
-            for (std::vector<Control *>::const_iterator it =         \
-                 p_sys->controls.begin();                            \
-                 it != p_sys->controls.end(); ++it)                  \
-                delete *it;                                          \
-            releaseTextRenderer(p_intf);                             \
-            vlc_mutex_destroy(&p_sys->renderMutex);                  \
-            free(p_sys);                                             \
-            return VLC_ENOMEM;                                       \
+    #define TEST_CTL(CTL)                                                        \
+        if (unlikely(CTL == NULL))                                               \
+        {                                                                        \
+            for (std::vector<Control *>::const_iterator it =                     \
+                 p_sys->controls.begin();                                        \
+                 it != p_sys->controls.end(); ++it)                              \
+                delete *it;                                                      \
+            releaseTextRenderer(p_intf);                                         \
+            var_DelCallback(p_playlist, "volume", VolumeChanged, p_intf);        \
+            var_DelCallback(p_playlist, "input-current", PlaylistEvent, p_intf); \
+            vlc_mutex_destroy(&p_sys->renderMutex);                              \
+            free(p_sys);                                                         \
+            return VLC_ENOMEM;                                                   \
         }
 
     p_sys->play = new Button(p_intf, 250, 30, getPicPath("play.png"));
