@@ -680,7 +680,7 @@ static int CheckShaderMessages(const vlc_gl_t *gl, const opengl_vtable_t *vt,
             int charsWritten;
             vt->GetShaderInfoLog(shaders[i], infoLength, &charsWritten,
                                       infolog);
-            msg_Err(tc->gl, "shader %u: %s", i, infolog);
+            msg_Err(gl, "shader %u: %s", i, infolog);
             free(infolog);
         }
     }
