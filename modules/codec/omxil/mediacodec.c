@@ -34,6 +34,7 @@
 #include <vlc_aout.h>
 #include <vlc_plugin.h>
 #include <vlc_codec.h>
+#include <vlc_demux.h>
 #include <vlc_block_helper.h>
 #include <vlc_memory.h>
 #include <vlc_timestamp_helper.h>
@@ -139,14 +140,12 @@ struct encoder_sys_t
     mc_api          api;
     mc_api_out      mc_out;
 
-    /* Fifo storing the available encoded blocks, which are
-     * returned from EncodeVideo */
-    block_t*        p_out_chain;
-    block_t**       pp_out_last;
+    decoder_t        *p_packetizer;
 
+    bool b_eos;
     bool b_started;
     bool b_flush_out;
-    bool b_has_headers;
+    bool b_headers_sent;
     /* if true, start to pop frames from the encoder and push them in the fifo */
     bool b_output_ready;
     bool b_input_dequeued;
@@ -185,7 +184,6 @@ static int Audio_ProcessOutput(decoder_t *, mc_api_out *, picture_t **,
 
 static void DecodeFlushLocked(decoder_t *);
 static void DecodeFlush(decoder_t *);
-static void EncodeFlushLocked(encoder_t *);
 static void EncodeFlush(encoder_t *);
 static void StopMediaCodec(decoder_t *);
 static void StopMediaCodec_encoder(encoder_t *);
@@ -555,10 +553,13 @@ static int StartMediaCodec(decoder_t *p_dec)
     return p_sys->api.start(&p_sys->api, &args);
 }
 
-static int StartMediaCodec_Encoder(encoder_t *p_enc, const picture_t* p_picture)
+static int StartMediaCodec_Encoder(encoder_t *p_enc)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
-    return p_sys->api.start_encoder(&p_sys->api, p_picture);
+    assert(p_sys->api.start_encoder);
+    fprintf(stderr, "Starting mediacodecencoder\n");
+
+    return p_sys->api.start_encoder(&p_sys->api, &p_enc->fmt_in.video);
 }
 
 /*****************************************************************************
@@ -876,13 +877,17 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         return VLC_EGENERIC;
     }
 
+    es_format_t fmt;
+    es_format_Init(&fmt, VIDEO_ES, VLC_CODEC_H264);
+
     switch (p_enc->fmt_out.i_codec) {
     case VLC_CODEC_H264:
         mime = "video/avc";
         break;
     default:
-        break;
+        return VLC_EGENERIC;
     }
+
     /* Fail if this module already failed to encode this ES */
     //if (var_Type(p_enc, "mediacodec-encoder-failed") != 0)
     //    return VLC_EGENERIC;
@@ -912,11 +917,14 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     p_enc->fmt_out.i_cat = VIDEO_ES;
 
     p_sys->b_flush_out = false;
-    p_sys->b_has_headers = false;
+    p_sys->b_eos = false;
 
-    /* no block in the blockchain at the beginning */
-    p_sys->p_out_chain = NULL;
-    p_sys->pp_out_last = &p_sys->p_out_chain;
+    fprintf(stderr, "Creating packetizer for encoder\n");
+    p_sys->p_packetizer = demux_PacketizerNew (p_this, &fmt, "h264");
+    fprintf(stderr, "Created packetizer for encoder\n");
+    if (!p_sys->p_packetizer) {
+        return VLC_EGENERIC;
+    }
 
     /* Initialize MediaCodec API/symbols */
     if (pf_init(&p_sys->api) != 0)
@@ -934,19 +942,18 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
 
     fprintf(stderr, "Codec encoder has been configured\n");
 
-    /* Start the encoded picture fetcher thread */
-    //if (vlc_clone(&p_sys->out_thread, EncoderOutputThread, p_enc,
-    //            VLC_THREAD_PRIORITY_LOW) != VLC_SUCCESS)
-    //{
-    //    msg_Err(p_enc, "vlc_clone failed");
-    //    goto bailout;
-    //}
-
-    //fprintf(stderr, "Thread has been cloned\n");
-
     p_enc->pf_encode_video = EncodeVideo;
     p_enc->pf_encode_audio = NULL;
     p_enc->pf_encode_sub   = NULL;
+
+
+    if (StartMediaCodec_Encoder(p_enc) != 0)
+    {
+        msg_Err(p_enc, "Can't start MediaCodec encoder");
+        return VLC_EGENERIC;
+    }
+
+    fprintf(stderr, "Codec encoder has been started\n");
 
     msg_Dbg(p_enc, "Mediacodec encoder successfully created");
 
@@ -998,9 +1005,6 @@ static void CleanDecoder(decoder_t *p_dec)
         if (p_dec->fmt_in.i_codec == VLC_CODEC_H264
          || p_dec->fmt_in.i_codec == VLC_CODEC_HEVC)
             hxxx_helper_clean(&p_sys->video.hh);
-
-        if (p_sys->video.timestamp_fifo)
-            timestamp_FifoRelease(p_sys->video.timestamp_fifo);
     }
     free(p_sys);
 }
@@ -1043,7 +1047,7 @@ static void CloseEncoder(vlc_object_t *p_this)
     encoder_t *p_enc = (encoder_t *)p_this;
     encoder_sys_t *p_sys = p_enc->p_sys;
 
-    EncodeFlushLocked(p_enc);
+    //EncodeFlush(p_enc);
 
     p_sys->api.stop(&p_sys->api);
     CleanEncoder(p_enc);
@@ -1379,7 +1383,7 @@ static void DecodeFlush(decoder_t *p_dec)
     vlc_mutex_unlock(&p_sys->lock);
 }
 
-static void EncodeFlushLocked(encoder_t *p_enc)
+static void EncodeFlush(encoder_t *p_enc)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
     bool b_had_input = p_sys->b_input_dequeued;
@@ -1389,15 +1393,6 @@ static void EncodeFlushLocked(encoder_t *p_enc)
         // TODO: error
         return;
     }
-}
-
-static void EncodeFlush(encoder_t *p_enc)
-{
-    encoder_sys_t *p_sys = p_enc->p_sys;
-
-    vlc_mutex_lock(&p_sys->lock);
-    EncodeFlushLocked(p_enc);
-    vlc_mutex_unlock(&p_sys->lock);
 }
 
 static void *OutThread(void *data)
@@ -1760,34 +1755,25 @@ reload:
 static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
+    assert(p_sys->api.b_started);
 
-    if (!p_sys->api.b_started)
-    {
-        if (!picture)
-            return NULL;
+    p_sys->b_eos |= picture == NULL;
 
-        fprintf(stderr, "Starting MediaCodec encoder\n");
-        int i_ret = StartMediaCodec_Encoder(p_enc, picture);
-        if (i_ret != VLC_SUCCESS)
-        {
-            msg_Err(p_enc, "StartMediaCodec failed");
-            return NULL;
-        }
-    }
-
-    // Request input buffer to MC
+    //// Request input buffer to MC
     int i_index = p_sys->api.dequeue_in(&p_sys->api, 0);
     fprintf(stderr, "enqueue input with index %d\n", i_index);
 
     if (i_index >= 0)
     {
-        /*
-         * Send data with timestamp, telling MC it's not a
-         * configure buffer. If p_buff is null, it will send
-         * an end_of_stream signal to MC
-         */
+        ///*
+        // * Send data with timestamp, telling MC it's not a
+        // * configure buffer. If p_buff is null, it will send
+        // * an end_of_stream signal to MC
+        // */
         if (picture != NULL)
-            fprintf(stderr, "Queue picture in at index %d with date %"PRId64"\n", i_index, picture->date);
+        {
+    //        fprintf(stderr, "Queue picture in at index %d with date %"PRId64"\n", i_index, picture->date);
+        }
         else
             fprintf(stderr, "Queue EOS at index %d", i_index);
         int ret = p_sys->api.queue_picture_in(&p_sys->api, i_index, picture,
@@ -1809,91 +1795,26 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
 
         if (i_ret)
         {
-            if (p_sys->mc_out.type == MC_OUT_TYPE_CONF)
+            uint8_t* p_buffer = out_block->p_buffer;
+            out_block = block_Alloc(p_sys->mc_out.buf.i_size + p_enc->fmt_out.i_extra);
+            if (!out_block)
             {
-                p_enc->fmt_out.p_extra = malloc(p_sys->mc_out.buf.i_ts);
-                // TODO: I don't know what to do
-                if (p_enc->fmt_out.p_extra == NULL)
-                    return NULL;
-                memcpy(p_enc->fmt_out.p_extra, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
-                p_enc->fmt_out.i_extra = p_sys->mc_out.buf.i_size;
-                fprintf(stderr, "Found PPS/SPS\n");
+                msg_Err(p_enc, "Couln't allocate memory for block allocation");
+                return NULL;
             }
-            else {
-                fprintf(stderr, "MC_OUT TYPE: %.2x\n", p_sys->mc_out.buf.p_ptr[4]);
+            out_block->i_pts = p_sys->mc_out.buf.i_ts;
+            out_block->i_dts = p_sys->mc_out.buf.i_ts;
+            memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
 
-                uint8_t* p_buffer = out_block->p_buffer;
-                if ((p_sys->mc_out.buf.p_ptr[4] & 0x1F) == 0x01)
-                {
-                    fprintf(stderr, "Filling output block of size %d\n", p_sys->mc_out.buf.i_size);
-                    out_block = block_Alloc(p_sys->mc_out.buf.i_size + p_enc->fmt_out.i_extra);
-                    if (out_block)
-                    {
-                        out_block->i_flags = BLOCK_FLAG_TYPE_I;
-                        p_buffer = out_block->p_buffer;
-                        if (p_enc->fmt_out.p_extra)
-                        {
-                            fprintf(stderr, "Putting extra data on top of the packet\n");
-                            memcpy(p_buffer, p_enc->fmt_out.p_extra, p_enc->fmt_out.i_extra);
-                            p_buffer += p_enc->fmt_out.i_extra;
-                        }
-                    }
-                    else
-                    {
-                        msg_Err(p_enc, "Couln't allocate memory for block allocation");
-                        return NULL;
-                    }
-                }
-                else {
-                    out_block = block_Alloc(p_sys->mc_out.buf.i_size + p_enc->fmt_out.i_extra);
-                    p_buffer = out_block->p_buffer;
-                    if (!out_block)
-                    {
-                        msg_Err(p_enc, "Couln't allocate memory for block allocation");
-                        return NULL;
-                    }
-                }
-                fprintf(stderr, "New packet DTS: %"PRId64"\n", p_sys->mc_out.buf.i_ts);
-                out_block->i_pts = p_sys->mc_out.buf.i_ts;
-                out_block->i_dts = p_sys->mc_out.buf.i_ts;
-                memcpy(p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
-
-                if (p_sys->mc_out.b_eos)
-                    out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
-                fprintf(stderr, "############# IMAGE DATA ##############\n");
-                const uint8_t* p = out_block->p_buffer;
-                for(int i=0; i<32; ++i)
-                {
-                    fprintf(stderr, "%.2X", p[i]);
-                };
-                fprintf(stderr, "\n\n");
-            }
-        }
-        else {
-            fprintf(stderr, "MC_OUT is not a buffer\n");
+            if (p_sys->mc_out.b_eos)
+                out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
         }
         p_sys->api.release_out(&p_sys->api, i_index, false);
     }
 
-    //if (!p_sys->b_has_headers && out_block)
-    //{
-    //    fprintf(stderr, "Trying to get config packet from encoder\n");
-    //    block_t *p_headers = p_sys->api.get_csd(&p_sys->api);
-    ////    if (p_headers)
-    ////    {
-    ////        fprintf(stderr, "Adding config paquet to buffer\n");
-    ////        block_t *head  = NULL;
-    ////        block_t **tail = &head;
-    ////        block_ChainLastAppend(&tail, out_block);
-    ////        block_ChainLastAppend(&tail, p_headers);
-    ////        out_block = block_ChainGather(head);
-    ////        p_sys->b_has_headers = true;
-    ////    }
-    //}
-
-    if (!out_block)
+    if (out_block || !picture)
     {
-        fprintf(stderr, "Warning, block is NULL\n");
+        out_block = p_sys->p_packetizer->pf_packetize(p_sys->p_packetizer, out_block ? &out_block : NULL);
     }
 
     /* There can be no available output buffer, because the encoder

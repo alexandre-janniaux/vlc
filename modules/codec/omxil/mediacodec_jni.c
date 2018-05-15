@@ -690,8 +690,9 @@ error:
     return i_ret;
 }
 
-static int StartEncoder(mc_api *api, const picture_t *p_picture)
+static int StartEncoder(mc_api *api, const video_format_t *p_format)
 {
+    fprintf(stderr, "Starting encoder jni\n");
     mc_api_sys *p_sys = api->p_sys;
     JNIEnv* env = NULL;
     int i_ret = MC_API_ERROR;
@@ -722,21 +723,24 @@ static int StartEncoder(mc_api *api, const picture_t *p_picture)
     }
     p_sys->codec = (*env)->NewGlobalRef(env, jcodec);
 
+    fprintf(stderr, "Creating media format\n");
+
     jformat = (*env)->CallStaticObjectMethod(env,
                                              jfields.media_format_class,
                                              jfields.create_video_format,
                                              jmime,
-                                             p_picture->p[0].i_visible_pitch,
-                                             p_picture->p[0].i_visible_lines);
+                                             p_format->i_visible_width,
+                                             p_format->i_visible_height);
 
     SET_INTEGER(jformat, "frame-rate", 30);
     SET_INTEGER(jformat, "max-input-size", 0);
-    SET_INTEGER(jformat, "color-format", 21);
+    SET_INTEGER(jformat, "color-format", 0x7f420888);
     SET_INTEGER(jformat, "bitrate", 7680000);
     SET_INTEGER(jformat, "i-frame-interval", 4);
     SET_INTEGER(jformat, "profile", 1);
     SET_INTEGER(jformat, "level", 0x10);
 
+    fprintf(stderr, "Configuring encoder\n");
     (*env)->CallVoidMethod(env, p_sys->codec, jfields.configure,
                            jformat, NULL, NULL, MC_API_FLAG_ENCODER);
     if (CHECK_EXCEPTION())
@@ -745,6 +749,7 @@ static int StartEncoder(mc_api *api, const picture_t *p_picture)
         goto error;
     }
 
+    fprintf(stderr, "Starting encoder\n");
     (*env)->CallVoidMethod(env, p_sys->codec, jfields.start);
     if (CHECK_EXCEPTION())
     {
@@ -763,7 +768,7 @@ static int StartEncoder(mc_api *api, const picture_t *p_picture)
 
     msg_Dbg(api->p_obj, "MediaCodec via JNI opened");
 
-    fprintf(stderr, "MediaCodec start_decoder finished\n");
+    fprintf(stderr, "MediaCodec start_encoder finished\n");
 
 error:
     if (jmime)
