@@ -32,6 +32,7 @@
 
 #include <math.h>
 #include <vlc_meta.h>
+#include <vlc_demux.h>
 #include <vlc_spu.h>
 #include <vlc_modules.h>
 
@@ -123,6 +124,8 @@ static void* EncoderThread( void *obj )
             picture_Release( p_pic );
             vlc_mutex_lock( &p_sys->lock_out );
 
+            if(id->p_packetizer)
+                p_block = id->p_packetizer->pf_packetize(id->p_packetizer, p_block ? &p_block : NULL);
             block_ChainAppend( &p_sys->p_buffers, p_block );
         }
 
@@ -136,12 +139,16 @@ static void* EncoderThread( void *obj )
         vlc_sem_post( &p_sys->picture_pool_has_room );
         p_block = id->p_encoder->pf_encode_video( id->p_encoder, p_pic );
         picture_Release( p_pic );
+        if(id->p_packetizer)
+            p_block = id->p_packetizer->pf_packetize(id->p_packetizer, p_block ? &p_block : NULL);
         block_ChainAppend( &p_sys->p_buffers, p_block );
     }
 
     /*Now flush encoder*/
     do {
         p_block = id->p_encoder->pf_encode_video(id->p_encoder, NULL );
+        if(id->p_packetizer)
+            p_block = id->p_packetizer->pf_packetize(id->p_packetizer, p_block ? &p_block : NULL);
         block_ChainAppend( &p_sys->p_buffers, p_block );
     } while( p_block );
 
@@ -640,11 +647,21 @@ static int transcode_video_encoder_open( sout_stream_t *p_stream,
     id->p_encoder->fmt_out.i_codec =
         vlc_fourcc_GetCodec( VIDEO_ES, id->p_encoder->fmt_out.i_codec );
 
-    id->id = sout_StreamIdAdd( p_stream->p_next, &id->p_encoder->fmt_out );
-    if( !id->id )
+    if( !id->p_encoder->fmt_out.b_packetized )
     {
-        msg_Err( p_stream, "cannot add this stream" );
-        return VLC_EGENERIC;
+        es_format_t fmt;
+        es_format_Init(&fmt, VIDEO_ES, id->p_encoder->fmt_out.i_codec);
+        id->p_packetizer = demux_PacketizerNew( id->p_encoder, &fmt, "");
+        es_format_Copy( &id->last_fmt, &id->p_packetizer->fmt_out );
+    }
+    else
+    {
+        id->id = sout_StreamIdAdd( p_stream->p_next, &id->p_encoder->fmt_out );
+        if( !id->id )
+        {
+            msg_Err( p_stream, "cannot add this stream" );
+            return VLC_EGENERIC;
+        }
     }
 
     return VLC_SUCCESS;
@@ -740,7 +757,25 @@ static void OutputFrame( sout_stream_t *p_stream, picture_t *p_pic, sout_stream_
         block_t *p_block;
 
         p_block = id->p_encoder->pf_encode_video( id->p_encoder, p_pic );
-        block_ChainAppend( out, p_block );
+
+        if( id->p_packetizer )
+        {
+            for( ;; )
+            {
+                p_block = id->p_packetizer->pf_packetize( id->p_packetizer, &p_block );
+                if( !es_format_IsSimilar( &id->p_packetizer->fmt_out, &id->last_fmt ) )
+                {
+                    id->id = sout_StreamIdAdd( p_stream->p_next, &id->p_packetizer->fmt_out );
+                    es_format_Copy( &id->last_fmt, &id->p_packetizer->fmt_out);
+                }
+                block_ChainAppend( out, p_block );
+
+                if( !p_block )
+                    break;
+            }
+        }
+        else
+            block_ChainAppend( out, p_block );
     }
 
     if( p_sys->i_threads )
@@ -887,6 +922,8 @@ end:
                 block_t *p_block;
                 do {
                     p_block = id->p_encoder->pf_encode_video(id->p_encoder, NULL );
+                    if(id->p_packetizer)
+                        p_block = id->p_packetizer->pf_packetize(id->p_packetizer, p_block ? &p_block : NULL);
                     block_ChainAppend( out, p_block );
                 } while( p_block );
             }

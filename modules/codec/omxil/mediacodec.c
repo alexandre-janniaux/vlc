@@ -140,8 +140,6 @@ struct encoder_sys_t
     mc_api          api;
     mc_api_out      mc_out;
 
-    decoder_t        *p_packetizer;
-
     bool b_eos;
     bool b_started;
     bool b_flush_out;
@@ -877,9 +875,6 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         return VLC_EGENERIC;
     }
 
-    es_format_t fmt;
-    es_format_Init(&fmt, VIDEO_ES, VLC_CODEC_H264);
-
     switch (p_enc->fmt_out.i_codec) {
     case VLC_CODEC_H264:
         mime = "video/avc";
@@ -915,16 +910,10 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     p_enc->fmt_in.i_codec = VLC_CODEC_NV12;
     p_enc->fmt_out.i_codec = VLC_CODEC_H264;
     p_enc->fmt_out.i_cat = VIDEO_ES;
+    p_enc->fmt_out.b_packetized = false;
 
     p_sys->b_flush_out = false;
     p_sys->b_eos = false;
-
-    fprintf(stderr, "Creating packetizer for encoder\n");
-    p_sys->p_packetizer = demux_PacketizerNew (p_this, &fmt, "h264");
-    fprintf(stderr, "Created packetizer for encoder\n");
-    if (!p_sys->p_packetizer) {
-        return VLC_EGENERIC;
-    }
 
     /* Initialize MediaCodec API/symbols */
     if (pf_init(&p_sys->api) != 0)
@@ -1810,11 +1799,6 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
                 out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
         }
         p_sys->api.release_out(&p_sys->api, i_index, false);
-    }
-
-    if (out_block || !picture)
-    {
-        out_block = p_sys->p_packetizer->pf_packetize(p_sys->p_packetizer, out_block ? &out_block : NULL);
     }
 
     /* There can be no available output buffer, because the encoder

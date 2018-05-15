@@ -495,6 +495,7 @@ static sout_stream_id_sys_t *Add( sout_stream_t *p_stream,
     id->id = NULL;
     id->p_decoder = NULL;
     id->p_encoder = NULL;
+    id->p_packetizer = NULL;
 
     /* Create decoder object */
     id->p_decoder = vlc_object_create( p_stream, sizeof( decoder_t ) );
