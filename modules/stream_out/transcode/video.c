@@ -124,8 +124,6 @@ static void* EncoderThread( void *obj )
             picture_Release( p_pic );
             vlc_mutex_lock( &p_sys->lock_out );
 
-            if(id->p_packetizer)
-                p_block = id->p_packetizer->pf_packetize(id->p_packetizer, p_block ? &p_block : NULL);
             block_ChainAppend( &p_sys->p_buffers, p_block );
         }
 
@@ -139,16 +137,12 @@ static void* EncoderThread( void *obj )
         vlc_sem_post( &p_sys->picture_pool_has_room );
         p_block = id->p_encoder->pf_encode_video( id->p_encoder, p_pic );
         picture_Release( p_pic );
-        if(id->p_packetizer)
-            p_block = id->p_packetizer->pf_packetize(id->p_packetizer, p_block ? &p_block : NULL);
         block_ChainAppend( &p_sys->p_buffers, p_block );
     }
 
     /*Now flush encoder*/
     do {
         p_block = id->p_encoder->pf_encode_video(id->p_encoder, NULL );
-        if(id->p_packetizer)
-            p_block = id->p_packetizer->pf_packetize(id->p_packetizer, p_block ? &p_block : NULL);
         block_ChainAppend( &p_sys->p_buffers, p_block );
     } while( p_block );
 
@@ -757,25 +751,7 @@ static void OutputFrame( sout_stream_t *p_stream, picture_t *p_pic, sout_stream_
         block_t *p_block;
 
         p_block = id->p_encoder->pf_encode_video( id->p_encoder, p_pic );
-
-        if( id->p_packetizer )
-        {
-            for( ;; )
-            {
-                p_block = id->p_packetizer->pf_packetize( id->p_packetizer, &p_block );
-                if( !es_format_IsSimilar( &id->p_packetizer->fmt_out, &id->last_fmt ) )
-                {
-                    id->id = sout_StreamIdAdd( p_stream->p_next, &id->p_packetizer->fmt_out );
-                    es_format_Copy( &id->last_fmt, &id->p_packetizer->fmt_out);
-                }
-                block_ChainAppend( out, p_block );
-
-                if( !p_block )
-                    break;
-            }
-        }
-        else
-            block_ChainAppend( out, p_block );
+        block_ChainAppend( out, p_block );
     }
 
     if( p_sys->i_threads )
@@ -922,8 +898,6 @@ end:
                 block_t *p_block;
                 do {
                     p_block = id->p_encoder->pf_encode_video(id->p_encoder, NULL );
-                    if(id->p_packetizer)
-                        p_block = id->p_packetizer->pf_packetize(id->p_packetizer, p_block ? &p_block : NULL);
                     block_ChainAppend( out, p_block );
                 } while( p_block );
             }
@@ -944,6 +918,37 @@ end:
 
             msg_Dbg( p_stream, "Flushing done");
         }
+
+    }
+
+
+    if( id->p_packetizer && out )
+    {
+        block_t *p_out = NULL;
+        for( block_t* p_block=*out; p_block; p_block=p_block->p_next )
+        {
+            for( ;; )
+            {
+                block_t* p_packetized = id->p_packetizer->pf_packetize( id->p_packetizer, &p_block );
+                vlc_mutex_lock( &p_sys->lock_out );
+                bool is_similar = es_format_IsSimilar( &id->p_packetizer->fmt_out, &id->last_fmt );
+                if( !is_similar && p_block )
+                {
+                    es_format_Copy( &id->last_fmt, &id->p_packetizer->fmt_out );
+                    vlc_mutex_unlock( &p_sys->lock_out );
+                    id->id = sout_StreamIdAdd( p_stream->p_next, &id->p_packetizer->fmt_out );
+                }
+                else
+                {
+                    vlc_mutex_unlock( &p_sys->lock_out );
+                }
+                block_ChainAppend( &p_out, p_packetized );
+
+                if( !p_packetized )
+                    break;
+            }
+        }
+        *out = p_out;
     }
 
     return id->b_error ? VLC_EGENERIC : VLC_SUCCESS;
