@@ -70,7 +70,7 @@ struct jfields
     jmethodID dequeue_input_buffer, dequeue_output_buffer, queue_input_buffer;
     jmethodID release_output_buffer;
     jmethodID create_video_format, create_audio_format;
-    jmethodID set_integer, set_bytebuffer, get_integer, get_bytebuffer;
+    jmethodID set_integer, set_bytebuffer, get_integer, get_bytebuffer, set_float;
     jmethodID buffer_info_ctor;
     jfieldID size_field, offset_field, pts_field, flags_field;
 };
@@ -143,6 +143,7 @@ static const struct member members[] = {
     { "getInteger", "(Ljava/lang/String;)I", "android/media/MediaFormat", OFF(get_integer), METHOD, true },
     { "setByteBuffer", "(Ljava/lang/String;Ljava/nio/ByteBuffer;)V", "android/media/MediaFormat", OFF(set_bytebuffer), METHOD, true },
     { "getByteBuffer", "(Ljava/lang/String;)Ljava/nio/ByteBuffer;", "android/media/MediaFormat", OFF(get_bytebuffer), METHOD, false },
+    { "setFloat", "(Ljava/lang/String;F)V", "android/media/MediaFormat", OFF(set_float), METHOD, true },
 
     { "<init>", "()V", "android/media/MediaCodec$BufferInfo", OFF(buffer_info_ctor), METHOD, true },
     { "size", "I", "android/media/MediaCodec$BufferInfo", OFF(size_field), FIELD, true },
@@ -213,6 +214,18 @@ static inline void set_integer(JNIEnv *env, jobject jobj, const char *psz_name,
     }
 }
 #define SET_INTEGER(obj, name, value) set_integer(env, obj, name, value)
+
+static inline void set_float(JNIEnv *env, jobject jobj, const char *psz_name,
+                             float f_value)
+{
+    jstring jname = JNI_NEW_STRING(psz_name);
+    if (jname)
+    {
+        (*env)->CallVoidMethod(env, jobj, jfields.set_float, jname, f_value);
+        (*env)->DeleteLocalRef(env, jname);
+    }
+}
+#define SET_FLOAT(obj, name, value) set_float(env, obj, name, value)
 
 /* Initialize all jni fields.
  * Done only one time during the first initialisation */
