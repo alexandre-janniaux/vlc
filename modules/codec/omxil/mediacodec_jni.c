@@ -692,7 +692,6 @@ error:
 
 static int StartEncoder(mc_api *api, const video_format_t *p_format)
 {
-    fprintf(stderr, "Starting encoder jni\n");
     mc_api_sys *p_sys = api->p_sys;
     JNIEnv* env = NULL;
     int i_ret = MC_API_ERROR;
@@ -723,8 +722,6 @@ static int StartEncoder(mc_api *api, const video_format_t *p_format)
     }
     p_sys->codec = (*env)->NewGlobalRef(env, jcodec);
 
-    fprintf(stderr, "Creating media format\n");
-
     jformat = (*env)->CallStaticObjectMethod(env,
                                              jfields.media_format_class,
                                              jfields.create_video_format,
@@ -740,7 +737,6 @@ static int StartEncoder(mc_api *api, const video_format_t *p_format)
     SET_INTEGER(jformat, "profile", 1);
     SET_INTEGER(jformat, "level", 0x10);
 
-    fprintf(stderr, "Configuring encoder\n");
     (*env)->CallVoidMethod(env, p_sys->codec, jfields.configure,
                            jformat, NULL, NULL, MC_API_FLAG_ENCODER);
     if (CHECK_EXCEPTION())
@@ -748,8 +744,6 @@ static int StartEncoder(mc_api *api, const video_format_t *p_format)
         msg_Warn(api->p_obj, "Exception occured in MediaCodec.configure");
         goto error;
     }
-
-    fprintf(stderr, "Starting encoder\n");
     (*env)->CallVoidMethod(env, p_sys->codec, jfields.start);
     if (CHECK_EXCEPTION())
     {
@@ -767,8 +761,6 @@ static int StartEncoder(mc_api *api, const video_format_t *p_format)
     (*env)->DeleteLocalRef(env, jbuffer_info);
 
     msg_Dbg(api->p_obj, "MediaCodec via JNI opened");
-
-    fprintf(stderr, "MediaCodec start_encoder finished\n");
 
 error:
     if (jmime)
@@ -921,10 +913,6 @@ static int QueueInputPicture(mc_api *api, int i_index, const picture_t *p_pictur
         return MC_API_ERROR;
     }
 
-    fprintf(stderr, "mc_buf of size %d\n", j_mc_size);
-
-    // TODO: idem ndk
-
     uint8_t *p_cursor = p_mc_buf;
     int i_size = 0;
     if (p_picture)
@@ -932,17 +920,6 @@ static int QueueInputPicture(mc_api *api, int i_index, const picture_t *p_pictur
         for(int i=0; i<p_picture->i_planes; ++i)
         {
             const plane_t *current_plane = &p_picture->p[i];
-
-            fprintf(stderr, "lines: %d\n"
-                    "pitch: %d\n"
-                    "visible_lines: %d\n"
-                    "visible_pitch: %d\n"
-                    "pixel_pitch: %d\n",
-                    current_plane->i_lines,
-                    current_plane->i_pitch,
-                    current_plane->i_visible_lines,
-                    current_plane->i_visible_pitch,
-                    current_plane->i_pixel_pitch);
 
             // Don't copy margins, stop at i_visible_lines
             memcpy(p_cursor, current_plane->p_pixels,
@@ -954,8 +931,6 @@ static int QueueInputPicture(mc_api *api, int i_index, const picture_t *p_pictur
             i_size   += i_plane_size;
         }
     }
-
-    fprintf(stderr, "i_mc_size : %d / i_size : %d\n", j_mc_size, i_size);
 
     if (j_mc_size > i_size)
         j_mc_size = i_size;
@@ -1062,13 +1037,6 @@ static int GetOutput(mc_api *api, int i_index, mc_api_out *p_out)
 
             if (flags & BUFFER_FLAG_CODEC_CONFIG)
             {
-                uint8_t* p = p_out->buf.p_ptr;
-                fprintf(stderr, "############# CODEC CONFIG:\n");
-                for(int i=0; i<p_out->buf.i_size; ++i)
-                {
-                    fprintf(stderr, "%.2X", p[i]);
-                }
-                fprintf(stderr, "\n\n");
                 p_out->type = MC_OUT_TYPE_CONF;
             }
             (*env)->DeleteLocalRef(env, buf);
@@ -1076,7 +1044,6 @@ static int GetOutput(mc_api *api, int i_index, mc_api_out *p_out)
         return 1;
     } else if (i_index == MC_API_INFO_OUTPUT_FORMAT_CHANGED)
     {
-        fprintf(stderr, "================== MC_API_INFO_OUTPUT_FORMAT_CHANGED ==========================\n\n\n");
         jobject format = NULL;
         jobject format_string = NULL;
         jsize format_len;
@@ -1211,100 +1178,6 @@ static int Configure(mc_api *api, int i_profile, int flags)
 /*****************************************************************************
  * MediaCodecJni_New
  *****************************************************************************/
-static block_t *GetCsd(mc_api *api)
-{
-    JNIEnv *env;
-    jobject jformat = NULL, jcsd0 = NULL, jcsd1 = NULL;
-
-    block_t *p_block = NULL;
-
-    if (!(env = android_getEnv(api->p_obj, THREAD_NAME))) return NULL;
-
-    if (!jfields.get_bytebuffer)
-    {
-        fprintf(stderr, "No get_bytebuffer function in JNI mediacodec\n");
-        return NULL;
-    }
-
-    jformat = (*env)->CallObjectMethod(env, api->p_sys->codec, jfields.get_output_format);
-
-    if (CHECK_EXCEPTION() || !jformat)
-    {
-        fprintf(stderr, "Couldn't retrieve output format in MediaCodec JNI encoder\n");
-        return NULL;
-    }
-
-    jstring csd0 = JNI_NEW_STRING("csd-0");
-    jstring csd1 = JNI_NEW_STRING("csd-1");
-
-    if (!csd0 || !csd1)
-    {
-        fprintf(stderr, "Couldn't allocate csd-x JNI strings\n");
-        goto cleanup;
-    }
-
-    fprintf(stderr, "Getting csd0 data\n");
-    jcsd0 = (*env)->CallObjectMethod(env, jformat, jfields.get_bytebuffer, csd0);
-
-    if (CHECK_EXCEPTION() || !jcsd0)
-    {
-        fprintf(stderr, "Couldn't retrieve csd-0 data from codec\n");
-
-        goto cleanup;
-    }
-
-    fprintf(stderr, "Getting csd1\n");
-    jcsd1 = (*env)->CallObjectMethod(env, jformat, jfields.get_bytebuffer, csd1);
-
-    if (CHECK_EXCEPTION())
-    {
-        fprintf(stderr, "Couldn't retrieve csd-1 data from codec\n");
-        goto cleanup;
-    }
-
-    fprintf(stderr, "Getting address\n");
-    const uint8_t* p_csd0 = (*env)->GetDirectBufferAddress(env, jcsd0);
-
-    const uint8_t* p = p_csd0;
-
-    if (p) {
-    fprintf(stderr, "############# CODEC CSD : %x%x %x%x %x%x %x%x \n\n\n", p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
-    }
-    return NULL;
-
-    fprintf(stderr, "getting size\n");
-    const size_t   i_csd0 = (*env)->GetIntField(env, jcsd0, jfields.size_field);
-    const uint8_t* p_csd1 = (*env)->GetDirectBufferAddress(env, jcsd1);
-    const size_t   i_csd1 = (*env)->GetIntField(env, jcsd1, jfields.size_field);
-
-    fprintf(stderr, "Allocating block\n");
-    p_block = block_Alloc(i_csd0 /*+ i_csd1 */);
-    memcpy(p_block->p_buffer, p_csd0, i_csd0);
-    //memcpy(p_block->p_buffer + i_csd0, p_csd1, i_csd1);
-
-    p_block->i_size = i_csd0;//+ i_csd1;
-    p_block->i_flags |= BLOCK_FLAG_HEADER;
-
-cleanup:
-
-    if (jcsd1)
-        (*env)->DeleteLocalRef(env, jcsd1);
-
-    if (jcsd0)
-        (*env)->DeleteLocalRef(env, jcsd0);
-
-    if (csd1)
-        (*env)->DeleteLocalRef(env, csd1);
-
-    if (csd0)
-        (*env)->DeleteLocalRef(env, csd0);
-
-    return p_block;
-}
-
-/*****************************************************************************
- * MediaCodecJni_New
- *****************************************************************************/
 int MediaCodecJni_Init(mc_api *api)
 {
     JNIEnv *env;
@@ -1332,7 +1205,6 @@ int MediaCodecJni_Init(mc_api *api)
     api->release_out = ReleaseOutput;
     api->release_out_ts = NULL;
     api->set_output_surface = SetOutputSurface;
-    api->get_csd = GetCsd;
 
     /* Allow rotation only after API 21 */
     if (jfields.get_input_buffer && jfields.get_output_buffer)

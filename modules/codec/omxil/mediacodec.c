@@ -555,8 +555,6 @@ static int StartMediaCodec_Encoder(encoder_t *p_enc)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
     assert(p_sys->api.start_encoder);
-    fprintf(stderr, "Starting mediacodecencoder\n");
-
     return p_sys->api.start_encoder(&p_sys->api, &p_enc->fmt_in.video);
 }
 
@@ -577,7 +575,6 @@ static void StopMediaCodec(decoder_t *p_dec)
 
 static void StopMediaCodec_Encoder(encoder_t *p_enc)
 {
-    msg_Dbg(p_enc, "Stopping mediacodec encoder");
     encoder_sys_t *p_sys = p_enc->p_sys;
     p_sys->api.stop(&p_sys->api);
 }
@@ -929,8 +926,6 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         return VLC_EGENERIC;
     }
 
-    fprintf(stderr, "Codec encoder has been configured\n");
-
     p_enc->pf_encode_video = EncodeVideo;
     p_enc->pf_encode_audio = NULL;
     p_enc->pf_encode_sub   = NULL;
@@ -941,8 +936,6 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         msg_Err(p_enc, "Can't start MediaCodec encoder");
         return VLC_EGENERIC;
     }
-
-    fprintf(stderr, "Codec encoder has been started\n");
 
     msg_Dbg(p_enc, "Mediacodec encoder successfully created");
 
@@ -1002,10 +995,7 @@ static void CleanEncoder(encoder_t *p_enc)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
 
-    fprintf(stderr, "Stopping MediaCodec\n");
     StopMediaCodec_Encoder(p_enc);
-
-    fprintf(stderr, "Cleaning MediaCodec\n");
     p_sys->api.clean(&p_sys->api);
 
     free(p_sys);
@@ -1750,8 +1740,6 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
 
     //// Request input buffer to MC
     int i_index = p_sys->api.dequeue_in(&p_sys->api, 0);
-    fprintf(stderr, "enqueue input with index %d\n", i_index);
-
     if (i_index >= 0)
     {
         ///*
@@ -1759,12 +1747,6 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
         // * configure buffer. If p_buff is null, it will send
         // * an end_of_stream signal to MC
         // */
-        if (picture != NULL)
-        {
-    //        fprintf(stderr, "Queue picture in at index %d with date %"PRId64"\n", i_index, picture->date);
-        }
-        else
-            fprintf(stderr, "Queue EOS at index %d", i_index);
         int ret = p_sys->api.queue_picture_in(&p_sys->api, i_index, picture,
                                           picture ? picture->date : 0, false);
         if (ret != 0)
@@ -1779,7 +1761,6 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
 
     if (i_index >= 0)
     {
-        fprintf(stderr, "dequeue output with index %d\n", i_index);
         int i_ret = p_sys->api.get_out(&p_sys->api, i_index, &p_sys->mc_out);
 
         if (i_ret)

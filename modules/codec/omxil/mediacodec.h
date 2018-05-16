@@ -167,9 +167,6 @@ struct mc_api
     /* Dynamically sets the output surface
      * Returns 0 on success, or MC_API_ERROR */
     int (*set_output_surface)(mc_api*, void *p_surface, void *p_jsurface);
-
-    /* Get CSD buffer for encoder */
-    block_t *(*get_csd)(mc_api*);
 };
 
 #endif
