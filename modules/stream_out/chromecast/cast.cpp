@@ -790,6 +790,7 @@ static void Del(sout_stream_t *p_stream, sout_stream_id_sys_t *id)
 
 bool sout_stream_sys_t::canDecodeVideo( vlc_fourcc_t i_codec ) const
 {
+    return false;
     if( transcoding_state & TRANSCODING_VIDEO )
         return false;
     return i_codec == VLC_CODEC_H264 || i_codec == VLC_CODEC_HEVC
@@ -917,6 +918,13 @@ static std::string GetVencVPXOption( sout_stream_t * /* p_stream */,
     return "venc=vpx{quality-mode=1}";
 }
 
+static std::string GetVencMediaCodecOption( sout_stream_t * /* p_stream */,
+                                            const video_format_t* /* p_vid */,
+                                            int /* i_quality */ )
+{
+    return "venc=mediacodec_jni";
+}
+
 static std::string GetVencX264Option( sout_stream_t * /* p_stream */,
                                       const video_format_t *p_vid,
                                       int i_quality )
@@ -963,6 +971,7 @@ static struct
     vlc_fourcc_t fcc;
     std::string (*get_opt)( sout_stream_t *, const video_format_t *, int);
 } venc_opt_list[] = {
+    { .fcc = VLC_CODEC_H264, .get_opt = GetVencMediaCodecOption },
     { .fcc = VLC_CODEC_H264, .get_opt = GetVencX264Option },
     { .fcc = VLC_CODEC_VP8,  .get_opt = GetVencVPXOption },
     { .fcc = VLC_CODEC_H264, .get_opt = NULL },
