@@ -140,6 +140,8 @@ struct encoder_sys_t
     mc_api          api;
     mc_api_out      mc_out;
 
+    date_t dts;
+
     bool b_eos;
     bool b_started;
     bool b_flush_out;
@@ -147,6 +149,7 @@ struct encoder_sys_t
     /* if true, start to pop frames from the encoder and push them in the fifo */
     bool b_output_ready;
     bool b_input_dequeued;
+    bool b_first_frame;
 };
 
 /*****************************************************************************
@@ -911,6 +914,12 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
 
     p_sys->b_flush_out = false;
     p_sys->b_eos = false;
+    p_sys->b_first_frame = false;
+
+    fprintf(stderr, "Initializing with framerate = %d/%d\n",
+            p_enc->fmt_out.video.i_frame_rate,
+            p_enc->fmt_out.video.i_frame_rate_base);
+    date_Init(&p_sys->dts, p_enc->fmt_out.video.i_frame_rate * 2, p_enc->fmt_out.video.i_frame_rate_base);
 
     /* Initialize MediaCodec API/symbols */
     if (pf_init(&p_sys->api) != 0)
@@ -1105,6 +1114,7 @@ static int Video_ProcessOutput(decoder_t *p_dec, mc_api_out *p_out,
          * due to an invalid format or a preroll */
         int64_t forced_ts = timestamp_FifoGet(p_sys->video.timestamp_fifo);
 
+        fprintf(stderr, "DECODER DATE: FORCE=%"PRId64" / TS=%"PRId64"\n", forced_ts, p_out->buf.i_ts);
         if (!p_sys->b_has_format) {
             msg_Warn(p_dec, "Buffers returned before output format is set, dropping frame");
             return p_sys->api.release_out(&p_sys->api, p_out->buf.i_index, false);
@@ -1776,8 +1786,28 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
             if (p_sys->mc_out.type == MC_OUT_TYPE_BUF)
             {
                 int64_t i_ts = p_sys->mc_out.buf.i_ts;
+
+                if (!p_sys->b_first_frame)
+                {
+                    fprintf(stderr, "Settings BASE DTS = %"PRId64"\n", i_ts);
+                    date_Set(&p_sys->dts, i_ts);
+                    p_sys->b_first_frame = true;
+                }
+                out_block->i_dts = date_Get(&p_sys->dts);
                 out_block->i_pts = i_ts;
-                out_block->i_dts = i_ts;
+                /* Copied from x264.c: This isn't really valid for streams with B-frames */
+                out_block->i_length = CLOCK_FREQ * p_enc->fmt_out.video.i_frame_rate_base /
+                                      p_enc->fmt_out.video.i_frame_rate;
+
+                fprintf(stderr, "Setting DTS=%"PRId64" / PTS=%"PRId64"\n",
+                        out_block->i_dts, out_block->i_pts);
+
+                date_Increment(&p_sys->dts, 1);
+            }
+            else
+            {
+                out_block->i_dts = VLC_TS_INVALID;
+                out_block->i_pts = VLC_TS_INVALID;
             }
             memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
 
