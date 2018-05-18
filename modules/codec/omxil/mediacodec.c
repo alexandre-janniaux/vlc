@@ -1772,8 +1772,13 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
                 msg_Err(p_enc, "Couln't allocate memory for block allocation");
                 return NULL;
             }
-            out_block->i_pts = p_sys->mc_out.buf.i_ts;
-            out_block->i_dts = p_sys->mc_out.buf.i_ts;
+
+            if (p_sys->mc_out.type == MC_OUT_TYPE_BUF)
+            {
+                int64_t i_ts = p_sys->mc_out.buf.i_ts;
+                out_block->i_pts = i_ts;
+                out_block->i_dts = i_ts;
+            }
             memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
 
             if (p_sys->mc_out.b_eos)
