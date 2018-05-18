@@ -51,7 +51,7 @@ int MediaCodecNdk_Init(mc_api*);
 
 /* Flags to choose the type of codec */
 #define MC_API_FLAG_ENCODER 0x1
-#define MC_API_FLAG_DECODER 0x0
+#define MC_API_FLAG_DECODER 0x2
 
 struct mc_api_out
 {
