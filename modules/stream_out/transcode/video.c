@@ -693,6 +693,9 @@ void transcode_video_close( sout_stream_t *p_stream,
     if( id->p_encoder->p_module )
         module_unneed( id->p_encoder, id->p_encoder->p_module );
 
+    if( id->p_packetizer )
+        demux_PacketizerDestroy( id->p_packetizer );
+
     /* Close filters */
     if( id->p_f_chain )
         filter_chain_Delete( id->p_f_chain );
@@ -897,7 +900,7 @@ end:
             {
                 block_t *p_block;
                 do {
-                    p_block = id->p_encoder->pf_encode_video(id->p_encoder, NULL );
+                    p_block = id->p_encoder->pf_encode_video( id->p_encoder, NULL );
                     block_ChainAppend( out, p_block );
                 } while( p_block );
             }
@@ -927,9 +930,10 @@ end:
         block_t *p_out = NULL;
         for( block_t* p_block=*out; p_block; p_block=p_block->p_next )
         {
-            for( ;; )
+            block_t* p_packetized = NULL;
+            do
             {
-                block_t* p_packetized = id->p_packetizer->pf_packetize( id->p_packetizer, &p_block );
+                p_packetized = id->p_packetizer->pf_packetize( id->p_packetizer, &p_block );
                 vlc_mutex_lock( &p_sys->lock_out );
                 bool is_similar = es_format_IsSimilar( &id->p_packetizer->fmt_out, &id->last_fmt );
                 if( !is_similar && p_block )
@@ -944,9 +948,7 @@ end:
                 }
                 block_ChainAppend( &p_out, p_packetized );
 
-                if( !p_packetized )
-                    break;
-            }
+            } while( p_packetized );
         }
         *out = p_out;
     }
