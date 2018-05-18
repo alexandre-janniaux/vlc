@@ -644,7 +644,7 @@ static int transcode_video_encoder_open( sout_stream_t *p_stream,
     if( !id->p_encoder->fmt_out.b_packetized )
     {
         es_format_t fmt;
-        es_format_Init(&fmt, VIDEO_ES, id->p_encoder->fmt_out.i_codec);
+        es_format_Copy( &fmt, &id->p_encoder->fmt_out );
         id->p_packetizer = demux_PacketizerNew( id->p_encoder, &fmt, "");
         es_format_Copy( &id->last_fmt, &id->p_packetizer->fmt_out );
     }
