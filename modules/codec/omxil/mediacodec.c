@@ -555,7 +555,7 @@ static int StartMediaCodec_Encoder(encoder_t *p_enc)
 {
     encoder_sys_t *p_sys = p_enc->p_sys;
     assert(p_sys->api.start_encoder);
-    return p_sys->api.start_encoder(&p_sys->api, &p_enc->fmt_in.video);
+    return p_sys->api.start_encoder(&p_sys->api, &p_enc->fmt_in, &p_enc->fmt_out);
 }
 
 /*****************************************************************************

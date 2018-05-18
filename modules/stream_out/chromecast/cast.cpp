@@ -919,10 +919,28 @@ static std::string GetVencVPXOption( sout_stream_t * /* p_stream */,
 }
 
 static std::string GetVencMediaCodecOption( sout_stream_t * /* p_stream */,
-                                            const video_format_t* /* p_vid */,
-                                            int /* i_quality */ )
+                                            const video_format_t* p_vid,
+                                            int i_quality )
 {
-    return "venc=mediacodec_jni";
+    std::stringstream ssout;
+    static const char video_bitrate_high[] = "vb=8000000";
+    static const char video_bitrate_low[]  = "vb=3000000";
+
+    ssout << "venc=mediacodec_jni,";
+
+    switch ( i_quality )
+    {
+        case CONVERSION_QUALITY_HIGH:
+        case CONVERSION_QUALITY_MEDIUM:
+            ssout << video_bitrate_high;
+            break;
+        case CONVERSION_QUALITY_LOW:
+        case CONVERSION_QUALITY_LOWCPU:
+            ssout << video_bitrate_low;
+            break;
+    }
+
+    return ssout.str();
 }
 
 static std::string GetVencX264Option( sout_stream_t * /* p_stream */,

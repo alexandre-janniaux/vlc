@@ -132,7 +132,8 @@ struct mc_api
     void (*clean)(mc_api *);
     int (*configure)(mc_api *, int i_profile, int flags);
     int (*start)(mc_api *, union mc_api_args *p_args);
-    int (*start_encoder)(mc_api *, const video_format_t* picture);
+    int (*start_encoder)(mc_api *, const es_format_t *fmt_in,
+                         const es_format_t *fmt_out);
     int (*stop)(mc_api *);
     int (*flush)(mc_api *);
 

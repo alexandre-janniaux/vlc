@@ -703,7 +703,7 @@ error:
     return i_ret;
 }
 
-static int StartEncoder(mc_api *api, const video_format_t *p_format)
+static int StartEncoder(mc_api *api, const es_format_t *fmt_in, const es_format_t *fmt_out)
 {
     mc_api_sys *p_sys = api->p_sys;
     JNIEnv* env = NULL;
@@ -735,17 +735,19 @@ static int StartEncoder(mc_api *api, const video_format_t *p_format)
     }
     p_sys->codec = (*env)->NewGlobalRef(env, jcodec);
 
+    const video_format_t *p_vid_in  = &fmt_in->video;
+    const video_format_t *p_vid_out = &fmt_out->video;
     jformat = (*env)->CallStaticObjectMethod(env,
                                              jfields.media_format_class,
                                              jfields.create_video_format,
                                              jmime,
-                                             p_format->i_visible_width,
-                                             p_format->i_visible_height);
-
-    SET_INTEGER(jformat, "frame-rate", 30);
+                                             p_vid_in->i_visible_width,
+                                             p_vid_in->i_visible_height);
+    float framerate = p_vid_out->i_frame_rate / (float) p_vid_out->i_frame_rate_base;
+    SET_FLOAT(jformat, "frame-rate", framerate);
     SET_INTEGER(jformat, "max-input-size", 0);
-    SET_INTEGER(jformat, "color-format", 0x7f420888);
-    SET_INTEGER(jformat, "bitrate", 7680000);
+    SET_INTEGER(jformat, "color-format", 0x7f420888); // TODO: check negociated input format
+    SET_INTEGER(jformat, "bitrate", fmt_out->i_bitrate);
     SET_INTEGER(jformat, "i-frame-interval", 4);
     SET_INTEGER(jformat, "profile", 1);
     SET_INTEGER(jformat, "level", 0x10);
