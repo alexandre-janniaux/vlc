@@ -142,6 +142,8 @@ struct encoder_sys_t
 
     date_t dts;
 
+    int64_t i_last_date;
+
     bool b_eos;
     bool b_started;
     bool b_flush_out;
@@ -916,10 +918,12 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
     p_sys->b_eos = false;
     p_sys->b_first_frame = false;
 
+    p_sys->i_last_date = 0;
+
     fprintf(stderr, "Initializing with framerate = %d/%d\n",
             p_enc->fmt_out.video.i_frame_rate,
             p_enc->fmt_out.video.i_frame_rate_base);
-    date_Init(&p_sys->dts, p_enc->fmt_out.video.i_frame_rate * 2, p_enc->fmt_out.video.i_frame_rate_base);
+    date_Init(&p_sys->dts, p_enc->fmt_out.video.i_frame_rate, p_enc->fmt_out.video.i_frame_rate_base);
 
     /* Initialize MediaCodec API/symbols */
     if (pf_init(&p_sys->api) != 0)
@@ -1746,28 +1750,47 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
     encoder_sys_t *p_sys = p_enc->p_sys;
     assert(p_sys->api.b_started);
 
+    bool queue_picture = true;
+
+    if (picture)
+    {
+        fprintf(stderr, "PICTURE DATE: %"PRId64"\n", picture->date);
+        if (p_sys->i_last_date <= picture->date)
+        {
+            fprintf(stderr, "DROPPING PICTURE BECAUSE IT WAS ANTERIOR TO THE PREVIOUS IMAGE\n");
+            queue_picture = false;
+        }
+        else
+        {
+            p_sys->i_last_date = picture->date;
+        }
+    }
+
     p_sys->b_eos |= picture == NULL;
 
-    //// Request input buffer to MC
-    int i_index = p_sys->api.dequeue_in(&p_sys->api, 0);
-    if (i_index >= 0)
+    if (queue_picture)
     {
-        ///*
-        // * Send data with timestamp, telling MC it's not a
-        // * configure buffer. If p_buff is null, it will send
-        // * an end_of_stream signal to MC
-        // */
-        int ret = p_sys->api.queue_picture_in(&p_sys->api, i_index, picture,
-                                          picture ? picture->date : 0, false);
-        if (ret != 0)
+        //// Request input buffer to MC
+        int i_index = p_sys->api.dequeue_in(&p_sys->api, 0);
+        if (i_index >= 0)
         {
-            fprintf(stderr, "Couldn't queue the picture\n");
+            ///*
+            // * Send data with timestamp, telling MC it's not a
+            // * configure buffer. If p_buff is null, it will send
+            // * an end_of_stream signal to MC
+            // */
+            int ret = p_sys->api.queue_picture_in(&p_sys->api, i_index, picture,
+                                              picture ? picture->date : 0, false);
+            if (ret != 0)
+            {
+                fprintf(stderr, "Couldn't queue the picture\n");
+            }
         }
     }
 
     block_t *out_block = NULL;
     /* Return any encoded block available */
-    i_index = p_sys->api.dequeue_out(&p_sys->api, 0);
+    int i_index = p_sys->api.dequeue_out(&p_sys->api, 0);
 
     if (i_index >= 0)
     {
@@ -1783,21 +1806,22 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
                 return NULL;
             }
 
+            int64_t i_ts = p_sys->mc_out.buf.i_ts;
+
             if (p_sys->mc_out.type == MC_OUT_TYPE_BUF)
             {
-                int64_t i_ts = p_sys->mc_out.buf.i_ts;
 
+                out_block->i_dts = VLC_TS_INVALID; //date_Get(&p_sys->dts)-1;
                 if (!p_sys->b_first_frame)
                 {
                     fprintf(stderr, "Settings BASE DTS = %"PRId64"\n", i_ts);
                     date_Set(&p_sys->dts, i_ts);
+                    out_block->i_dts = i_ts - 3 * CLOCK_FREQ * p_enc->fmt_out.video.i_frame_rate_base / 
+                                       p_enc->fmt_out.video.i_frame_rate;
                     p_sys->b_first_frame = true;
                 }
-                out_block->i_dts = date_Get(&p_sys->dts);
+                // Without -1, we can have dts > pts
                 out_block->i_pts = i_ts;
-                /* Copied from x264.c: This isn't really valid for streams with B-frames */
-                out_block->i_length = CLOCK_FREQ * p_enc->fmt_out.video.i_frame_rate_base /
-                                      p_enc->fmt_out.video.i_frame_rate;
 
                 fprintf(stderr, "Setting DTS=%"PRId64" / PTS=%"PRId64"\n",
                         out_block->i_dts, out_block->i_pts);
@@ -1806,10 +1830,13 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
             }
             else
             {
-                out_block->i_dts = VLC_TS_INVALID;
+                out_block->i_dts = i_ts;
                 out_block->i_pts = VLC_TS_INVALID;
             }
             memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
+            const uint8_t* p = out_block->p_buffer;
+            if (p_sys->mc_out.buf.i_size >= 7)
+                fprintf(stderr, "DATA: %.2x %.2x %.2x %.2x %.2x %.2x\n", p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
 
             if (p_sys->mc_out.b_eos)
                 out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;

@@ -946,6 +946,8 @@ end:
                 {
                     vlc_mutex_unlock( &p_sys->lock_out );
                 }
+                if (p_packetized)
+                    fprintf(stderr, "PACKETIZED DTS=%"PRId64" / PTS=%"PRId64"\n", p_packetized->i_dts, p_packetized->i_pts);
                 block_ChainAppend( &p_out, p_packetized );
 
             } while( p_packetized );
