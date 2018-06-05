@@ -47,6 +47,7 @@
 #include "objects.h"
 
 #include "opengl_debug.h"
+#include "culling.h"
 
 #ifndef GL_CLAMP_TO_EDGE
 # define GL_CLAMP_TO_EDGE 0x812F
@@ -290,6 +291,51 @@ static void matrixMul(float ret[], const float m1[], const float m2[])
     }
 }
 
+static void matrix_transpose(float *dst, float *src) {
+    for(int i=0; i<4; ++i)
+    {
+        for(int j=0; j<4; ++j)
+        {
+            dst[j*4+i] = src[i*4+j];
+        }
+    }
+}
+
+static void matrix_HomogenicInverse(float *dst, float *src) {
+    matrix_transpose(dst, src);
+
+    float T[3] = { src[3], src[4], src[5] };
+
+    dst[12] = -dst[0] * T[0] - dst[1] * T[1] - dst[2] * T[2];
+    dst[13] = -dst[4] * T[0] - dst[5] * T[1] - dst[6] * T[2];
+    dst[14] = -dst[8] * T[0] - dst[9] * T[1] - dst[10] * T[2];
+    dst[3] = dst[7] = dst[11] = 0;
+}
+
+static void matrix_VecMul(float* dst, size_t dim, float* mat, float* vec)
+{
+    for(size_t i=0; i<dim; ++i)
+    {
+        dst[i] = 0;
+        for(size_t j=0; j<dim; ++j)
+        {
+            dst[i] += mat[j]*vec[j];
+        }
+    }
+}
+
+
+static void print_matrix(const char* name, float* mat) {
+    fprintf(stderr, "Printing matrix: %s\n", name);
+    for (int i=0; i<4; ++i)
+        fprintf(stderr, "[%f  %f  %f  %f]\n", mat[4*i+0], mat[4*i+1], mat[4*i+2], mat[4*i+3]);
+}
+
+static void print_vec(const char* name, float* vec) {
+    fprintf(stderr, "Printing vec: %s\n", name);
+    fprintf(stderr, "[%f  %f  %f]\n", vec[0], vec[1], vec[2]);
+}
+
 /* rotation around the Z axis */
 static void getZRotMatrix(float theta, GLfloat matrix[static 16])
 {
@@ -415,12 +461,26 @@ static void updateViewMatrix(struct prgm *prgm)
     float ret1_matrix[16];
     float ret2_matrix[16];
 
+    print_matrix("Scene transform", prgm->var.SceneTransformMatrix);
+    print_matrix("Head position", prgm->var.HeadPositionMatrix);
+    print_matrix("Model view HMD", prgm->var.ModelViewMatrix);
+    print_matrix("Y rot", prgm->var.YRotMatrix);
+    print_matrix("X rot", prgm->var.XRotMatrix);
+    print_matrix("Z rot", prgm->var.ZRotMatrix);
+
     matrixMul(ret1_matrix, prgm->var.SceneTransformMatrix, prgm->var.HeadPositionMatrix);
     matrixMul(ret2_matrix, ret1_matrix, prgm->var.YRotMatrix);
     matrixMul(ret1_matrix, ret2_matrix, prgm->var.XRotMatrix);
     matrixMul(ret2_matrix, ret1_matrix, prgm->var.ZRotMatrix);
-    matrixMul(ret1_matrix, ret2_matrix, prgm->var.ZoomMatrix);
+    matrixMul(prgm->var.ViewMatrix, ret2_matrix, prgm->var.ZoomMatrix);
     matrixMul(prgm->var.ViewMatrix, ret1_matrix, prgm->var.ModelViewMatrix);
+
+    float ret_test[16];
+    float inverse[16];
+    matrix_transpose(inverse, prgm->var.ViewMatrix);
+    matrixMul(ret_test, prgm->var.ViewMatrix, inverse);
+
+    print_matrix("Rot * Rot^T", ret_test);
 }
 
 
@@ -2489,9 +2549,9 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
         return;
 
     memcpy(prgm->var.SceneTransformMatrix, p_scene->transformMatrix,
-           sizeof(p_scene->transformMatrix));
+           16*sizeof(float));
     memcpy(prgm->var.HeadPositionMatrix, p_scene->headPositionMatrix,
-           sizeof(p_scene->headPositionMatrix));
+           16*sizeof(float));
 
     if (vgl->b_sideBySide)
     {
@@ -2564,18 +2624,31 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
     vgl->vt.VertexAttribDivisor(prgm->aloc.InstanceTransformMatrix+2, 1);
     vgl->vt.VertexAttribDivisor(prgm->aloc.InstanceTransformMatrix+3, 1);
 
-    float p_eye_pos[3] = {
-        prgm->var.ViewMatrix[12] / prgm->var.ViewMatrix[15],
-        prgm->var.ViewMatrix[13] / prgm->var.ViewMatrix[15] + 500,
-        prgm->var.ViewMatrix[14] / prgm->var.ViewMatrix[15] - 1000
+    float invView[16];
+    matrix_HomogenicInverse(invView, prgm->var.ViewMatrix);
+
+    float p_eye_dir[3] = {
+        -invView[8],
+        -invView[9],
+        -invView[10]
     };
 
-    // HACK: TODO: compute the forward vector through the inverse transform
-    float p_eye_dir[3] = {
-        prgm->var.ViewMatrix[8],
-        -prgm->var.ViewMatrix[9],
-        -prgm->var.ViewMatrix[10]
+    vec_Normalize(p_eye_dir);
+
+    float p_eye_pos[4] = { 
+        -invView[12],
+        -invView[13],
+        -invView[14],
+        1
     };
+
+    float p_eye_pos_view[4];
+    matrix_VecMul(p_eye_pos_view, 4, prgm->var.ViewMatrix, p_eye_pos);
+
+    print_matrix("View Matrix", prgm->var.ViewMatrix);
+    print_vec("Eye position", p_eye_pos);
+    print_vec("Eye position in view space", p_eye_pos_view);
+    print_vec("Eye direction", p_eye_dir);
 
     // Compress consecutive object with same mesh with instanced rendering
     unsigned instance_count = 1;
@@ -2702,7 +2775,55 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
     vgl->vt.VertexAttribDivisor(prgm->aloc.InstanceTransformMatrix+2, 0);
     vgl->vt.VertexAttribDivisor(prgm->aloc.InstanceTransformMatrix+3, 0);
 
+    //vgl->vt.Disable(GL_DEPTH_TEST);
+
     printf("=> %u instances have been culled out\n", instances_dropped);
+
+    float p_red[] = {1.f, 0.f, 0.f};
+    float p_blue[] = {0.f, 1.f, 0.f};
+    float p_green[] = {0.f, 0.f, 1.f};
+    float p_white[] = {1.f, 1.f, 1.f};
+    float p_purple[] = {1.f, 0.f, 1.f};
+
+    void add_vec(float* ret, float* a, float* b) {
+        ret[0] = a[0] + b[0];
+        ret[1] = a[1] + b[1];
+        ret[2] = a[2] + b[2];
+    }
+
+    float p_origin[] = { 0, 0, 0};
+    float p_x[] = { 1000000, 0, 0};
+    float p_y[] = { 0, 1000000, 0 };
+    float p_z[] = { 0, 0, 1000000 };
+
+    float p1[3], p2[2], p3[3];
+
+    add_vec(p1, p_origin, p_x);
+    add_vec(p2, p_origin, p_y);
+    add_vec(p3, p_origin, p_z);
+
+    float p_eye_dir_elevated[3];
+
+    p_eye_dir[0] *= 1000000;
+    p_eye_dir[1] *= 1000000;
+    p_eye_dir[2] *= 1000000;
+
+    add_vec(p_eye_dir_elevated, p_eye_pos, p_eye_dir);
+
+    opengl_debug_DrawLine(vgl->vt, prgm->var.ProjectionMatrix, prgm->var.ViewMatrix,
+                          identity, p_eye_pos, p1, p_red);
+
+    opengl_debug_DrawLine(vgl->vt, prgm->var.ProjectionMatrix, prgm->var.ViewMatrix,
+                          identity, p_eye_pos, p2, p_green);
+
+    opengl_debug_DrawLine(vgl->vt, prgm->var.ProjectionMatrix, prgm->var.ViewMatrix,
+                          identity, p_eye_pos, p3, p_blue);
+
+    opengl_debug_DrawLine(vgl->vt, prgm->var.ProjectionMatrix, prgm->var.ViewMatrix,
+                          identity, p_eye_pos, p_eye_pos, p_white);
+
+    opengl_debug_DrawLine(vgl->vt, prgm->var.ProjectionMatrix, prgm->var.ViewMatrix,
+                          identity, p_eye_pos, p_eye_dir_elevated, p_purple);
 }
 
 static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, side_by_side_eye eye)
