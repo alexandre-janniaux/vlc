@@ -6,9 +6,9 @@ EXTRA_DIST += video_output/README
 OPENGL_COMMONSOURCES = video_output/opengl/vout_helper.c \
 	video_output/opengl/vout_helper.h video_output/opengl/converter.h \
 	video_output/opengl/internal.h video_output/opengl/fragment_shaders.c \
-        video_output/opengl/converter_sw.c video_output/opengl/objects.c \
-        video_output/opengl/objects.h video_output/opengl/opengl_debug.c \
-		video_output/opengl/culling.c
+	video_output/opengl/converter_sw.c video_output/opengl/objects.c \
+	video_output/opengl/objects.h video_output/opengl/opengl_debug.c \
+	video_output/opengl/culling.c
 
 OPENGL_COMMONCLFAGS = $(LIBPLACEBO_CFLAGS)
 OPENGL_COMMONLIBS = $(LIBPLACEBO_LIBS)

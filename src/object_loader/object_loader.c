@@ -70,6 +70,19 @@ scene_object_t *scene_object_New(float *transformMatrix, unsigned meshId,
     p_object->meshId = meshId;
     p_object->textureId = textureId;
 
+    float vec_length(float* vec)
+    {
+        return sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+    }
+
+    float scale[] =
+    {
+        vec_length(&transformMatrix[0]),
+        vec_length(&transformMatrix[4]),
+        vec_length(&transformMatrix[8])
+    };
+    memcpy(p_object->scale, scale, sizeof(scale));
+
     return p_object;
 }
 
@@ -79,16 +92,47 @@ void scene_object_Release(scene_object_t *p_object)
     free(p_object);
 }
 
+static void ComputeBoundingBox(scene_mesh_t *p_mesh, float* bb)
+{
+    if (p_mesh->nVertices <= 0) return;
+
+    // initialize with first coordinate so we always have valid values
+    bb[0] = bb[1] = p_mesh->vCoords[0];
+    bb[2] = bb[3] = p_mesh->vCoords[1];
+    bb[4] = bb[5] = p_mesh->vCoords[2];
+
+    for (unsigned i = 1; i< p_mesh->nVertices; ++i)
+    {
+        bb[0] = fmin(bb[0], p_mesh->vCoords[3*i]);
+        bb[1] = fmax(bb[1], p_mesh->vCoords[3*i]);
+        bb[2] = fmin(bb[2], p_mesh->vCoords[3*i+1]);
+        bb[3] = fmax(bb[3], p_mesh->vCoords[3*i+1]);
+        bb[4] = fmin(bb[4], p_mesh->vCoords[3*i+2]);
+        bb[5] = fmax(bb[5], p_mesh->vCoords[3*i+2]);
+    }
+}
+
 float scene_mesh_computeBoundingSquareRadius(scene_mesh_t *p_mesh)
 {
-    float center[] = {0.f, 0.f, 0.f};
-    for (unsigned i = 0; i < p_mesh->nVertices; ++i)
+    float boundings[6];
+    ComputeBoundingBox(p_mesh, boundings);
+
+    float xrad = abs(boundings[1] - boundings[0]);
+    float yrad = abs(boundings[2] - boundings[1]);
+    float zrad = abs(boundings[4] - boundings[3]);
+
+    float radius = sqrt(2) / 2 * fmax(xrad, fmax(yrad, zrad));
+    float center[] =
     {
-        center[0] += p_mesh->vCoords[i*3+0] / p_mesh->nVertices;
-        center[1] += p_mesh->vCoords[i*3+1] / p_mesh->nVertices;
-        center[2] += p_mesh->vCoords[i*3+2] / p_mesh->nVertices;
-    }
-    return center[0]*center[0] + center[1]*center[1] + center[2]*center[2];
+        (boundings[0] + boundings[1]) / 2,
+        (boundings[2] + boundings[3]) / 2,
+        (boundings[4] + boundings[5]) / 2
+    };
+
+    memcpy(p_mesh->center, center, sizeof(center));
+    p_mesh->boundingSquareRadius = radius*radius;
+
+    return radius*radius;
 }
 
 
@@ -132,7 +176,7 @@ scene_mesh_t *scene_mesh_New(unsigned nVertices, unsigned nFaces,
         memcpy(p_mesh->tCoords, tCoords, 2 * nVertices * sizeof(float));
     memcpy(p_mesh->faces, faces, 3 * nFaces * sizeof(unsigned));
 
-    p_mesh->boundingSquareRadius = scene_mesh_computeBoundingSquareRadius(p_mesh);
+    scene_mesh_computeBoundingSquareRadius(p_mesh);
 
     return p_mesh;
 error:

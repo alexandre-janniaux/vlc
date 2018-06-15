@@ -17,6 +17,8 @@ typedef struct
     float transformMatrix[16];
     unsigned meshId;
     unsigned textureId;
+
+    float scale[3];
 } scene_object_t;
 
 
@@ -31,6 +33,7 @@ typedef struct
     unsigned nVertices;
     unsigned nFaces;
 
+    float center[3];
     float boundingSquareRadius;
 } scene_mesh_t;
 

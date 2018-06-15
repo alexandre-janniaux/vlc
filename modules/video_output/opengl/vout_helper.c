@@ -2696,17 +2696,24 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
         1
     };
 
+    float up[] = { 0, 0, 1.f };
+    frustrum_t frustrum;
+    culling_BuildFrustrum(&frustrum, up, p_eye_dir, vgl->f_fovx,
+                          vgl->f_fovy, 0.01, 1000);
+
     // Compress consecutive object with same mesh with instanced rendering
     unsigned instance_count = 1;
     // For statistics only, count how much object have been culled out
     unsigned instances_dropped = 0;
+    float culling_tolerance = 100.f;
     for (unsigned o = 0; o < p_scene->nObjects; o += instance_count)
     {
         scene_object_t *p_object = p_scene->objects[o];
         scene_mesh_t *p_mesh = p_scene->meshes[p_object->meshId];
         scene_material_t *p_material = p_scene->materials[p_object->textureId];
 
-        if (!is_object_visible(p_object, p_mesh, p_eye_pos, p_eye_dir))
+        if (!is_object_visible(p_object, p_mesh, p_eye_pos, p_eye_dir) ||
+            !culling_Frustrum(&frustrum, p_object, p_mesh, p_eye_pos, culling_tolerance))
         {
             // Skip this instance
             instance_count = 1;
@@ -2726,7 +2733,8 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
 
             next_object = vgl->p_objDisplay->p_scene->objects[next_object_idx];
             // suboptimal, the next instance can be skipped, but it's more complex
-            if (!is_object_visible(next_object, p_scene->meshes[next_object->meshId], p_eye_pos, p_eye_dir))
+            if (!is_object_visible(next_object, p_scene->meshes[next_object->meshId], p_eye_pos, p_eye_dir) ||
+                !culling_Frustrum(&frustrum, p_object, p_mesh, p_eye_pos, culling_tolerance))
                 break;
         }
 
