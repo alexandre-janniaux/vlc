@@ -291,7 +291,8 @@ static void matrixMul(float ret[], const float m1[], const float m2[])
     }
 }
 
-static void matrix_transpose(float *dst, float *src) {
+static void matrix_Transpose(float *dst, float *src)
+{
     for(int i=0; i<4; ++i)
     {
         for(int j=0; j<4; ++j)
@@ -301,29 +302,83 @@ static void matrix_transpose(float *dst, float *src) {
     }
 }
 
-static void matrix_HomogenicInverse(float *dst, float *src) {
-    matrix_transpose(dst, src);
+static void swap_line(float mat[], int i, int j)
+{
+    float tmp[4];
 
-    float T[3] = { src[3], src[7], src[11] };
-
-    dst[12] = -dst[0] * T[0] - dst[1] * T[1] - dst[2] * T[2];
-    dst[13] = -dst[4] * T[0] - dst[5] * T[1] - dst[6] * T[2];
-    dst[14] = -dst[8] * T[0] - dst[9] * T[1] - dst[10] * T[2];
-    dst[3] = dst[7] = dst[11] = 0;
+    memcpy(tmp, &mat[4*i], sizeof(tmp));
+    memcpy(&mat[4*i], &mat[4*j], sizeof(tmp));
+    memcpy(&mat[4*j], tmp, sizeof(tmp));
 }
 
-static void matrix_VecMul(float* dst, size_t dim, float* mat, float* vec)
+static void reduce_line(float mat[], int i, float scale, float from[], int j)
 {
-    for(size_t i=0; i<dim; ++i)
+    for(int k = 0; k < 4; ++k)
     {
-        dst[i] = 0;
-        for(size_t j=0; j<dim; ++j)
-        {
-            dst[i] += mat[j]*vec[j];
-        }
+        mat[i*4+k] -= scale * from[j*4 + k];
     }
 }
 
+static void scale_line(float mat[], int i, float scale)
+{
+    for(int k = 0; k < 4; ++k)
+    {
+        mat[i*4 + k] *= scale;
+    }
+}
+
+static void matrix_Inverse(float rslt[], const float mat[])
+{
+    float cpy[16];
+    memcpy(cpy, mat, sizeof(cpy));
+    memset(rslt, 0, sizeof(cpy));
+    rslt[0] = rslt[5] = rslt[10] = rslt[15] = 1;
+    int n = 4;
+
+    // nothing to swap for the very last line, end at 3
+    for(int j = 0; j < 3; ++j)
+    {
+        // find the row whose j-eme element is maximum
+        int max_idx = j+1;
+        for(int i = j+1; i < n; ++i)
+        {
+            if(mat[4*i + j] > mat[4*max_idx + j])
+            {
+                max_idx = i;
+            }
+        }
+
+        // swap L_i and L_j
+        swap_line(cpy, max_idx, j);
+        swap_line(rslt, max_idx, j);
+
+        for(int i = j+1; i < 4; ++i)
+        {
+            float scale = cpy[i*4+j] / cpy[j*4+j];
+            reduce_line(rslt, i, scale, rslt, j);
+            reduce_line(cpy, i, scale, cpy, j);
+        }
+    }
+
+    // the matrix is triangular, diagonalise backward
+    for(int j=3; j >= 0; --j)
+    {
+        for(int i=j-1; i >= 0; --i)
+        {
+            float scale = cpy[i*4+j] / cpy[j*4+j];
+            reduce_line(cpy, i, scale, cpy, j);
+            reduce_line(rslt, i, scale, rslt, j);
+        }
+    }
+
+    // Rescale diagonal
+    for(int i = 0; i < n; ++i)
+    {
+        float scale = 1 / cpy[i*4 + i];
+        scale_line(cpy, i, scale);
+        scale_line(rslt, i, scale);
+    }
+}
 
 static void print_matrix(const char* name, float* mat) {
     fprintf(stderr, "Printing matrix: %s\n", name);
@@ -390,7 +445,8 @@ static void getXRotMatrix(float phi, GLfloat matrix[static 16])
     memcpy(matrix, m, sizeof(m));
 }
 
-static void getZoomMatrix(float zoom, GLfloat matrix[static 16]) {
+static void getZoomMatrix(float zoom, GLfloat matrix[static 16])
+{
 
     const GLfloat m[] = {
         /* x   y     z     w */
@@ -472,12 +528,12 @@ static void updateViewMatrix(struct prgm *prgm)
     matrixMul(ret2_matrix, ret1_matrix, prgm->var.YRotMatrix);
     matrixMul(ret1_matrix, ret2_matrix, prgm->var.XRotMatrix);
     matrixMul(ret2_matrix, ret1_matrix, prgm->var.ZRotMatrix);
-    matrixMul(prgm->var.ViewMatrix, ret2_matrix, prgm->var.ZoomMatrix);
+    matrixMul(ret1_matrix, ret2_matrix, prgm->var.ZoomMatrix);
     matrixMul(prgm->var.ViewMatrix, ret1_matrix, prgm->var.ModelViewMatrix);
 
     float ret_test[16];
     float inverse[16];
-    matrix_transpose(inverse, prgm->var.ViewMatrix);
+    matrix_Transpose(inverse, prgm->var.ViewMatrix);
     matrixMul(ret_test, prgm->var.ViewMatrix, inverse);
 
     print_matrix("Rot * Rot^T", ret_test);
@@ -2623,7 +2679,7 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
     vgl->vt.VertexAttribDivisor(prgm->aloc.InstanceTransformMatrix+3, 1);
 
     float invView[16];
-    matrix_HomogenicInverse(invView, prgm->var.ViewMatrix);
+    matrix_Inverse(invView, prgm->var.ViewMatrix);
 
     float p_eye_dir[3] = {
         -invView[8],
@@ -2633,20 +2689,12 @@ static void DrawSceneObjects(vout_display_opengl_t *vgl, struct prgm *prgm,
 
     vec_Normalize(p_eye_dir);
 
-    float p_eye_pos[4] = { 
-        -invView[12],
-        -invView[13],
-        -invView[14],
+    float p_eye_pos[4] = {
+        invView[12],
+        invView[13],
+        invView[14],
         1
     };
-
-    float p_eye_pos_view[4];
-    matrix_VecMul(p_eye_pos_view, 4, prgm->var.ViewMatrix, p_eye_pos);
-
-    print_matrix("View Matrix", prgm->var.ViewMatrix);
-    print_vec("Eye position", p_eye_pos);
-    print_vec("Eye position in view space", p_eye_pos_view);
-    print_vec("Eye direction", p_eye_dir);
 
     // Compress consecutive object with same mesh with instanced rendering
     unsigned instance_count = 1;
