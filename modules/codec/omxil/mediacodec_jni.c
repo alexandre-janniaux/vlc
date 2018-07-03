@@ -776,7 +776,8 @@ static int StartEncoder(mc_api *api, const es_format_t *fmt_in, const es_format_
                                              p_vid_in->i_visible_width,
                                              p_vid_in->i_visible_height);
     float framerate = p_vid_out->i_frame_rate / (float) p_vid_out->i_frame_rate_base;
-    SET_FLOAT(jformat, "frame-rate", framerate);
+    SET_STRING(jformat, "frame-rate", NULL);
+    //SET_FLOAT(jformat, "frame-rate", framerate);
     SET_INTEGER(jformat, "max-input-size", 0);
     SET_INTEGER(jformat, "color-format", 0x7f420888); // TODO: check negociated input format
     SET_INTEGER(jformat, "bitrate", fmt_out->i_bitrate);
