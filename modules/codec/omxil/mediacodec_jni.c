@@ -70,7 +70,8 @@ struct jfields
     jmethodID dequeue_input_buffer, dequeue_output_buffer, queue_input_buffer;
     jmethodID release_output_buffer;
     jmethodID create_video_format, create_audio_format;
-    jmethodID set_integer, set_bytebuffer, get_integer, get_bytebuffer, set_float;
+    jmethodID set_string, set_integer, set_bytebuffer, set_float;
+    jmethodID get_string, get_integer, get_bytebuffer;
     jmethodID buffer_info_ctor;
     jfieldID size_field, offset_field, pts_field, flags_field;
 };
@@ -139,6 +140,8 @@ static const struct member members[] = {
 
     { "createVideoFormat", "(Ljava/lang/String;II)Landroid/media/MediaFormat;", "android/media/MediaFormat", OFF(create_video_format), STATIC_METHOD, true },
     { "createAudioFormat", "(Ljava/lang/String;II)Landroid/media/MediaFormat;", "android/media/MediaFormat", OFF(create_audio_format), STATIC_METHOD, true },
+    { "setString", "(Ljava/lang/String;Ljava/lang/String;)V", "android/media/MediaFormat", OFF(set_string), METHOD, true },
+    { "getString", "(Ljava/lang/String;)Ljava/lang/String;", "android/media/MediaFormat", OFF(get_string), METHOD, true },
     { "setInteger", "(Ljava/lang/String;I)V", "android/media/MediaFormat", OFF(set_integer), METHOD, true },
     { "getInteger", "(Ljava/lang/String;)I", "android/media/MediaFormat", OFF(get_integer), METHOD, true },
     { "setByteBuffer", "(Ljava/lang/String;Ljava/nio/ByteBuffer;)V", "android/media/MediaFormat", OFF(set_bytebuffer), METHOD, true },
@@ -226,6 +229,35 @@ static inline void set_float(JNIEnv *env, jobject jobj, const char *psz_name,
     }
 }
 #define SET_FLOAT(obj, name, value) set_float(env, obj, name, value)
+
+static inline void set_string(JNIEnv *env, jobject jobj, const char *psz_name,
+                               int i_value)
+{
+    jstring jname = JNI_NEW_STRING(psz_name);
+    if (jname)
+    {
+        (*env)->CallVoidMethod(env, jobj, jfields.set_string, jname, i_value);
+        (*env)->DeleteLocalRef(env, jname);
+    }
+}
+#define SET_STRING(obj, name, value) set_string(env, obj, name, value)
+
+static inline jobject get_string(JNIEnv *env, jobject obj, const char *psz_name)
+{
+    jstring jname = JNI_NEW_STRING(psz_name);
+    if (jname)
+    {
+        jobject result = (*env)->CallObjectMethod(env, obj, jfields.get_string, jname);
+        (*env)->DeleteLocalRef(env, jname);
+
+        if (CHECK_EXCEPTION())
+            return NULL;
+        return result;
+    }
+    else
+        return NULL;
+}
+#define GET_STRING(obj, name) get_string(env, obj, name, value)
 
 /* Initialize all jni fields.
  * Done only one time during the first initialisation */
