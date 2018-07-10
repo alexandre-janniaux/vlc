@@ -122,6 +122,12 @@ struct sout_stream_id_sys_t
     /* Encoder */
     encoder_t       *p_encoder;
 
+    /* Packetizer */
+    decoder_t       *p_packetizer;
+
+    /* Last registered format */
+    es_format_t     last_fmt;
+
     /* Sync */
     date_t          next_input_pts; /**< Incoming calculated PTS */
     date_t          next_output_pts; /**< output calculated PTS */

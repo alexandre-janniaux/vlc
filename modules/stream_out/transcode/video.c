@@ -32,6 +32,7 @@
 
 #include <math.h>
 #include <vlc_meta.h>
+#include <vlc_demux.h>
 #include <vlc_spu.h>
 #include <vlc_modules.h>
 
@@ -642,11 +643,21 @@ static int transcode_video_encoder_open( sout_stream_t *p_stream,
     id->p_encoder->fmt_out.i_codec =
         vlc_fourcc_GetCodec( VIDEO_ES, id->p_encoder->fmt_out.i_codec );
 
-    id->id = sout_StreamIdAdd( p_stream->p_next, &id->p_encoder->fmt_out );
-    if( !id->id )
+    if( !id->p_encoder->fmt_out.b_packetized )
     {
-        msg_Err( p_stream, "cannot add this stream" );
-        return VLC_EGENERIC;
+        es_format_t fmt;
+        es_format_Copy( &fmt, &id->p_encoder->fmt_out );
+        id->p_packetizer = demux_PacketizerNew( id->p_encoder, &fmt, "");
+        es_format_Copy( &id->last_fmt, &id->p_packetizer->fmt_out );
+    }
+    else
+    {
+        id->id = sout_StreamIdAdd( p_stream->p_next, &id->p_encoder->fmt_out );
+        if( !id->id )
+        {
+            msg_Err( p_stream, "cannot add this stream" );
+            return VLC_EGENERIC;
+        }
     }
 
     return VLC_SUCCESS;
@@ -683,6 +694,9 @@ void transcode_video_close( sout_stream_t *p_stream,
     /* Close encoder */
     if( id->p_encoder->p_module )
         module_unneed( id->p_encoder, id->p_encoder->p_module );
+
+    if( id->p_packetizer )
+        demux_PacketizerDestroy( id->p_packetizer );
 
     /* Close filters */
     if( id->p_f_chain )
@@ -888,7 +902,7 @@ end:
             {
                 block_t *p_block;
                 do {
-                    p_block = id->p_encoder->pf_encode_video(id->p_encoder, NULL );
+                    p_block = id->p_encoder->pf_encode_video( id->p_encoder, NULL );
                     block_ChainAppend( out, p_block );
                 } while( p_block );
             }
@@ -909,6 +923,38 @@ end:
 
             msg_Dbg( p_stream, "Flushing done");
         }
+
+    }
+
+
+    if( id->p_packetizer && out )
+    {
+        block_t *p_out = NULL;
+        for( block_t* p_block=*out; p_block; p_block=p_block->p_next )
+        {
+            block_t* p_packetized = NULL;
+            do
+            {
+                p_packetized = id->p_packetizer->pf_packetize( id->p_packetizer, &p_block );
+                vlc_mutex_lock( &p_sys->lock_out );
+                bool is_similar = es_format_IsSimilar( &id->p_packetizer->fmt_out, &id->last_fmt );
+                if( !is_similar && p_block )
+                {
+                    es_format_Copy( &id->last_fmt, &id->p_packetizer->fmt_out );
+                    vlc_mutex_unlock( &p_sys->lock_out );
+                    id->id = sout_StreamIdAdd( p_stream->p_next, &id->p_packetizer->fmt_out );
+                }
+                else
+                {
+                    vlc_mutex_unlock( &p_sys->lock_out );
+                }
+                if (p_packetized)
+                    fprintf(stderr, "PACKETIZED DTS=%"PRId64" / PTS=%"PRId64"\n", p_packetized->i_dts, p_packetized->i_pts);
+                block_ChainAppend( &p_out, p_packetized );
+
+            } while( p_packetized );
+        }
+        *out = p_out;
     }
 
     return id->b_error ? VLC_EGENERIC : VLC_SUCCESS;
