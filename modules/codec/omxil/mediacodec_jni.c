@@ -775,7 +775,11 @@ static int ConfigureEncoder(mc_api *api, const es_format_t *fmt_in, const es_for
     jcodec_name = JNI_NEW_STRING(api->psz_name);
 
     if (!jmime || !jcodec_name)
+    {
+        msg_Err(api->p_obj, "MediaCodec.ConfigureEncoder failed because "
+                            "no mime type or codec name has been provided");
         goto error;
+    }
 
     jcodec = (*env)->CallStaticObjectMethod(env, jfields.media_codec_class,
                                             jfields.create_by_codec_name,
@@ -801,10 +805,10 @@ static int ConfigureEncoder(mc_api *api, const es_format_t *fmt_in, const es_for
     SET_INTEGER(jformat, "max-input-size", 0);
     SET_INTEGER(jformat, "color-format", 0x7f420888); // TODO: check negociated input format
     SET_INTEGER(jformat, "bitrate", fmt_out->i_bitrate);
-    SET_INTEGER(jformat, "i-frame-interval", 4);
+    SET_INTEGER(jformat, "i-frame-interval", 0);
     SET_INTEGER(jformat, "profile", 1);
     SET_INTEGER(jformat, "level", 0x10);
-    SET_INTEGER(jformat, "priority", 0);
+    //SET_INTEGER(jformat, "priority", 0);
 
     (*env)->CallVoidMethod(env, p_sys->codec, jfields.configure,
                            jformat, NULL, NULL, MC_API_FLAG_ENCODER);
