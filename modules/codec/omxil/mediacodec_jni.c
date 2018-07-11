@@ -818,6 +818,8 @@ static int ConfigureEncoder(mc_api *api, const es_format_t *fmt_in, const es_for
         goto error;
     }
 
+    i_ret = 0;
+
 error:
     if (jmime)
         (*env)->DeleteLocalRef(env, jmime);
