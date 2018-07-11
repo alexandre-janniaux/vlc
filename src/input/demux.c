@@ -522,6 +522,7 @@ decoder_t *demux_PacketizerNew( demux_t *p_demux, es_format_t *p_fmt, const char
 
     p_packetizer->fmt_in = *p_fmt;
     es_format_Init( &p_packetizer->fmt_out, p_fmt->i_cat, 0 );
+    p_packetizer->fmt_out.i_bitrate = p_fmt->i_bitrate;
 
     p_packetizer->p_module = module_need( p_packetizer, "packetizer", NULL, false );
     if( !p_packetizer->p_module )
