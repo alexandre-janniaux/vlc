@@ -1778,7 +1778,7 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
     if (picture)
     {
         fprintf(stderr, "PICTURE DATE: %"PRId64"\n", picture->date);
-        if (p_sys->i_last_date >= picture->date)
+        if (p_sys->i_last_date > picture->date)
         {
             fprintf(stderr, "DROPPING PICTURE BECAUSE IT WAS ANTERIOR TO THE PREVIOUS IMAGE\n");
             queue_picture = false;
