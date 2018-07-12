@@ -33,6 +33,7 @@
 
 #include <vlc_common.h>
 #include <vlc_meta.h>
+#include <vlc_demux.h>
 #include <vlc_spu.h>
 #include <vlc_modules.h>
 #include <vlc_sout.h>
@@ -676,13 +677,24 @@ static int transcode_video_encoder_open( sout_stream_t *p_stream,
     id->p_encoder->fmt_out.i_codec =
         vlc_fourcc_GetCodec( VIDEO_ES, id->p_encoder->fmt_out.i_codec );
 
-    id->downstream_id = sout_StreamIdAdd( p_stream->p_next, &id->p_encoder->fmt_out );
-    if( !id->downstream_id )
+    if( !id->p_encoder->fmt_out.b_packetized )
     {
-        msg_Err( p_stream, "cannot add this stream" );
-        module_unneed( id->p_encoder, id->p_encoder->p_module );
-        id->p_encoder->p_module = NULL;
-        return VLC_EGENERIC;
+        es_format_t fmt;
+        es_format_Copy( &fmt, &id->p_encoder->fmt_out );
+        id->p_packetizer = vlc_packetizer_new( id->p_encoder, &fmt, "");
+        es_format_Copy( &id->last_fmt, &id->p_packetizer->fmt_out );
+    }
+    else
+    {
+        id->downstream_id = sout_StreamIdAdd( p_stream->p_next, &id->p_encoder->fmt_out );
+
+        if( !id->downstream_id )
+        {
+            msg_Err( p_stream, "cannot add this stream" );
+            module_unneed( id->p_encoder, id->p_encoder->p_module );
+            id->p_encoder->p_module = NULL;
+            return VLC_EGENERIC;
+        }
     }
 
     vlc_sem_init( &id->picture_pool_has_room, id->p_enccfg->video.threads.pool_size );
@@ -722,6 +734,9 @@ void transcode_video_close( sout_stream_t *p_stream,
     transcode_video_encoder_close( p_stream, id );
     block_ChainRelease( id->p_buffers );
     picture_fifo_Delete( id->pp_pics );
+
+    if( id->p_packetizer )
+        vlc_packetizer_destroy( id->p_packetizer );
 
     /* Close filters */
     if( id->p_f_chain )
@@ -962,7 +977,7 @@ error:
         {
             block_t *p_block;
             do {
-                p_block = id->p_encoder->pf_encode_video(id->p_encoder, NULL );
+                p_block = id->p_encoder->pf_encode_video( id->p_encoder, NULL );
                 block_ChainAppend( out, p_block );
             } while( p_block );
         }
@@ -974,6 +989,36 @@ error:
             id->p_buffers = NULL;
             msg_Dbg( p_stream, "Flushing done");
         }
+
+    }
+
+
+    if( id->p_packetizer && out )
+    {
+        block_t *p_out = NULL;
+        for( block_t* p_block=*out; p_block; p_block=p_block->p_next )
+        {
+            block_t* p_packetized = NULL;
+            do
+            {
+                p_packetized = id->p_packetizer->pf_packetize( id->p_packetizer, &p_block );
+                vlc_mutex_lock( &id->lock_out );
+                bool is_similar = es_format_IsSimilar( &id->p_packetizer->fmt_out, &id->last_fmt );
+                if( !is_similar && p_block )
+                {
+                    es_format_Copy( &id->last_fmt, &id->p_packetizer->fmt_out );
+                    vlc_mutex_unlock( &id->lock_out );
+                    id->downstream_id = sout_StreamIdAdd( p_stream->p_next, &id->p_packetizer->fmt_out );
+                }
+                else
+                {
+                    vlc_mutex_unlock( &id->lock_out );
+                }
+                block_ChainAppend( &p_out, p_packetized );
+
+            } while( p_packetized );
+        }
+        *out = p_out;
     }
 
     return id->b_error ? VLC_EGENERIC : VLC_SUCCESS;

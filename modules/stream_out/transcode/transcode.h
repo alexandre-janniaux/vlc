@@ -196,6 +196,12 @@ struct sout_stream_id_sys_t
     /* output buffers */
     block_t         *p_buffers;
 
+    /* Packetizer */
+    decoder_t       *p_packetizer;
+
+    /* Last registered format */
+    es_format_t     last_fmt;
+
     /* Sync */
     date_t          next_input_pts; /**< Incoming calculated PTS */
     vlc_tick_t      i_drift; /** how much buffer is ahead of calculated PTS */

@@ -550,6 +550,7 @@ static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt )
     id->downstream_id = NULL;
     id->p_decoder = NULL;
     id->p_encoder = NULL;
+    id->p_packetizer = NULL;
 
     /* Create decoder object */
     struct decoder_owner * p_owner = vlc_object_create( p_stream, sizeof( *p_owner ) );
