@@ -87,8 +87,6 @@ vlc_encoder_GetDecoderDevice
 vlc_decoder_device_Create
 vlc_decoder_device_Hold
 vlc_decoder_device_Release
-demux_PacketizerDestroy
-demux_PacketizerNew
 demux_New
 demux_vaControl
 demux_vaControlHelper
@@ -216,6 +214,8 @@ input_resource_Release
 input_resource_GetAout
 input_resource_HoldAout
 input_resource_PutAout
+vlc_packetizer_new
+vlc_packetizer_destroy
 vlc_readdir_helper_init
 vlc_readdir_helper_finish
 vlc_readdir_helper_additem
