@@ -39,7 +39,7 @@
 #include "mediacodec.h"
 
 char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
-                         int profile, bool *p_adaptive);
+                         int profile, bool *p_adaptive, int flags);
 
 #define THREAD_NAME "mediacodec_jni"
 
@@ -318,7 +318,7 @@ struct mc_api_sys
  * MediaCodec_GetName
  *****************************************************************************/
 char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
-                         int profile, bool *p_adaptive)
+                         int profile, bool *p_adaptive, int flags)
 {
     JNIEnv *env;
     int num_codecs;
@@ -362,7 +362,11 @@ char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
         if (OMXCodec_IsBlacklisted(name_ptr, name_len))
             goto loopclean;
 
-        if ((*env)->CallBooleanMethod(env, info, jfields.is_encoder))
+        bool is_encoder = (*env)->CallBooleanMethod(env, info, jfields.is_encoder);
+        if (is_encoder && !(flags & MC_API_FLAG_ENCODER))
+            goto loopclean;
+
+        if (!is_encoder && !(flags & MC_API_FLAG_DECODER))
             goto loopclean;
 
         codec_capabilities = (*env)->CallObjectMethod(env, info,
@@ -1006,12 +1010,12 @@ static void Clean(mc_api *api)
 /*****************************************************************************
  * Prepare
  *****************************************************************************/
-static int Prepare(mc_api *api, int i_profile)
+static int Prepare(mc_api *api, int i_profile, int flags)
 {
     free(api->psz_name);
     bool b_adaptive;
     api->psz_name = MediaCodec_GetName(api->p_obj, api->psz_mime,
-                                       i_profile, &b_adaptive);
+                                       i_profile, &b_adaptive, flags);
     if (!api->psz_name)
         return MC_API_ERROR;
     api->i_quirks = OMXCodec_GetQuirks(api->i_cat, api->i_codec, api->psz_name,
