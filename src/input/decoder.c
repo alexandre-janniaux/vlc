@@ -2453,22 +2453,18 @@ decoder_t *(vlc_packetizer_new)( vlc_object_t *p_parent, es_format_t *p_fmt, con
     p_packetizer = vlc_custom_create( p_parent, sizeof( *p_packetizer ),
                                       "packetizer" );
     if( !p_packetizer )
-    {
-        es_format_Clean( p_fmt );
         return NULL;
-    }
     p_fmt->b_packetized = false;
 
     p_packetizer->pf_decode = NULL;
     p_packetizer->pf_packetize = NULL;
 
-    p_packetizer->fmt_in = *p_fmt;
+    es_format_Copy( &p_packetizer->fmt_in, p_fmt );
     es_format_Init( &p_packetizer->fmt_out, p_fmt->i_cat, 0 );
 
     p_packetizer->p_module = module_need( p_packetizer, "packetizer", NULL, false );
     if( !p_packetizer->p_module )
     {
-        es_format_Clean( p_fmt );
         vlc_object_release( p_packetizer );
         msg_Err( p_parent, "cannot find packetizer for %s", psz_msg );
         return NULL;

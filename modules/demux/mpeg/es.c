@@ -241,6 +241,8 @@ static int OpenCommon( demux_t *p_demux,
     es_format_Init( &fmt, i_cat, p_sys->codec.i_codec );
     fmt.i_original_fourcc = p_sys->i_original;
     p_sys->p_packetizer = vlc_packetizer_new( p_demux, &fmt, p_sys->codec.psz_name );
+    es_format_Clean( &fmt );
+
     if( !p_sys->p_packetizer )
     {
         free( p_sys );

@@ -357,6 +357,8 @@ static int GenericOpen( demux_t *p_demux, const char *psz_module,
     fmt.video.i_frame_rate = p_sys->dts.i_divider_num;
     fmt.video.i_frame_rate_base = p_sys->dts.i_divider_den;
     p_sys->p_packetizer = vlc_packetizer_new( p_demux, &fmt, psz_module );
+    es_format_Clean( &fmt );
+
     if( !p_sys->p_packetizer )
     {
         free( p_sys );

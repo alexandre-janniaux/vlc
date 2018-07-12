@@ -112,6 +112,8 @@ static int Open( vlc_object_t * p_this )
     /* Load the packetizer */
     es_format_Init( &fmt, VIDEO_ES, VLC_CODEC_VC1 );
     p_sys->p_packetizer = vlc_packetizer_new( p_demux, &fmt, "VC-1" );
+    es_format_Clean( &fmt );
+
     if( !p_sys->p_packetizer )
     {
         free( p_sys );
