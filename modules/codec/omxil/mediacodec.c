@@ -1786,7 +1786,7 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
 
     if (picture)
     {
-        fprintf(stderr, "PICTURE DATE: %"PRId64"\n", picture->date);
+        //fprintf(stderr, "PICTURE DATE: %"PRId64"\n", picture->date);
         if (p_sys->i_last_date > picture->date)
         {
             fprintf(stderr, "DROPPING PICTURE BECAUSE IT WAS ANTERIOR TO THE PREVIOUS IMAGE\n");
@@ -1817,7 +1817,8 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
             {
                 fprintf(stderr, "Couldn't queue the picture\n");
             }
-            date_Increment(&p_sys->pts, 1);
+            if (picture)
+                date_Increment(&p_sys->pts, 1);
         }
     }
 
@@ -1863,8 +1864,8 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
             }
             memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
             const uint8_t* p = out_block->p_buffer;
-            if (p_sys->mc_out.buf.i_size >= 7)
-                fprintf(stderr, "DATA: %.2x %.2x %.2x %.2x %.2x %.2x\n", p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
+            //if (p_sys->mc_out.buf.i_size >= 7)
+            //    fprintf(stderr, "DATA: %.2x %.2x %.2x %.2x %.2x %.2x\n", p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
 
             if (p_sys->mc_out.b_eos)
                 out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;

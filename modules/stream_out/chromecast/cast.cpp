@@ -344,7 +344,7 @@ static int ProxySend(sout_stream_t *p_stream, void *_id, block_t *p_buffer)
         {
             /* Start the chromecast only when all streams are added into the
              * last sout (the http one) */
-            p_sys->p_intf->setHasInput(p_sys->mime);
+            //p_sys->p_intf->setHasInput(p_sys->mime);
             p_sys->cc_has_input = true;
         }
         return ret;
@@ -520,7 +520,10 @@ int sout_access_out_sys_t::url_cb(httpd_client_t *cl, httpd_message_t *answer,
     /* Send data per 512kB minimum */
     size_t i_min_buffer = 524288;
     while (m_client && vlc_fifo_GetBytes(m_fifo) < i_min_buffer && !m_eof)
+    {
+        fprintf( stderr, "NEED TO FILL BUFFER\n" );
         vlc_fifo_Wait(m_fifo);
+    }
 
     block_t *p_block = NULL;
     if (m_client && vlc_fifo_GetBytes(m_fifo) > 0)
@@ -1341,13 +1344,13 @@ bool sout_stream_sys_t::UpdateOutput( sout_stream_t *p_stream )
         const int i_quality = var_InheritInteger( p_stream, SOUT_CFG_PREFIX "conversion-quality" );
 
         /* TODO: provide audio samplerate and channels */
-        ssout << "transcode{";
-        if ( i_codec_audio == 0 && p_original_audio )
-        {
-            ssout << GetAcodecOption( p_stream, &i_codec_audio,
-                                      &p_original_audio->audio, i_quality );
-            new_transcoding_state |= TRANSCODING_AUDIO;
-        }
+        ssout << "transcode{acodec=none,";
+        //if ( i_codec_audio == 0 && p_original_audio )
+        //{
+        //    ssout << GetAcodecOption( p_stream, &i_codec_audio,
+        //                              &p_original_audio->audio, i_quality );
+        //    new_transcoding_state |= TRANSCODING_AUDIO;
+        //}
         if ( i_codec_video == 0 && p_original_video )
         {
             ssout << GetVcodecOption( p_stream, &i_codec_video,
@@ -1385,7 +1388,10 @@ bool sout_stream_sys_t::UpdateOutput( sout_stream_t *p_stream )
 
     if ( !startSoutChain( p_stream, new_streams, ssout.str(),
                           new_transcoding_state ) )
+    {
+        msg_Err( p_stream, "Request to stop player because couldn't creat sout chain" );
         p_intf->requestPlayerStop();
+    }
     return true;
 }
 
@@ -1448,13 +1454,17 @@ static int Send(sout_stream_t *p_stream, void *_id, block_t *p_buffer)
     sout_stream_id_sys_t *next_id = p_sys->GetSubId( p_stream, id );
     if ( next_id == NULL )
     {
+        fprintf( stderr, "Next id is null, aborting chromecast streaming\n" );
         block_ChainRelease( p_buffer );
         return VLC_EGENERIC;
     }
 
     int ret = sout_StreamIdSend(p_sys->p_out, next_id, p_buffer);
     if (ret != VLC_SUCCESS)
+    {
+        fprintf( stderr, "Error during chromecast streaming, couldn't sout_StreamIdSend\n" );
         DelInternal(p_stream, id, false);
+    }
 
     return ret;
 }

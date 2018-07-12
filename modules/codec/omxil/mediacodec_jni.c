@@ -61,7 +61,7 @@ struct jfields
     jmethodID tostring;
     jmethodID get_codec_count, get_codec_info_at, is_encoder, get_capabilities_for_type;
     jmethodID is_feature_supported;
-    jfieldID profile_levels_field, profile_field, level_field;
+    jfieldID color_formats_field, profile_levels_field, profile_field, level_field;
     jmethodID get_supported_types, get_name;
     jmethodID create_by_codec_name, configure, start, stop, flush, release;
     jmethodID get_output_format;
@@ -118,6 +118,7 @@ static const struct member members[] = {
     { "getName", "()Ljava/lang/String;", "android/media/MediaCodecInfo", OFF(get_name), METHOD, true },
     { "getCapabilitiesForType", "(Ljava/lang/String;)Landroid/media/MediaCodecInfo$CodecCapabilities;", "android/media/MediaCodecInfo", OFF(get_capabilities_for_type), METHOD, true },
     { "isFeatureSupported", "(Ljava/lang/String;)Z", "android/media/MediaCodecInfo$CodecCapabilities", OFF(is_feature_supported), METHOD, false },
+    { "colorFormats", "[I", "android/media/MediaCodecInfo$CodecCapabilities", OFF(color_formats_field), FIELD, true },
     { "profileLevels", "[Landroid/media/MediaCodecInfo$CodecProfileLevel;", "android/media/MediaCodecInfo$CodecCapabilities", OFF(profile_levels_field), FIELD, true },
     { "profile", "I", "android/media/MediaCodecInfo$CodecProfileLevel", OFF(profile_field), FIELD, true },
     { "level", "I", "android/media/MediaCodecInfo$CodecProfileLevel", OFF(level_field), FIELD, true },
@@ -172,6 +173,7 @@ static inline bool check_exception(JNIEnv *env)
 {
     if ((*env)->ExceptionCheck(env))
     {
+        (*env)->ExceptionDescribe(env);
         (*env)->ExceptionClear(env);
         return true;
     }
@@ -362,11 +364,32 @@ struct mc_api_sys
     jobject input_buffers, output_buffers;
 };
 
+static int ChooseColorFormat(int nb_format, int color_formats[])
+{
+#define TRY_FMT(_mc_fmt) \
+    do {\
+        for(int _fmt = 0; _fmt < nb_format; _fmt++) { \
+            if (color_formats[_fmt] == _mc_fmt) \
+                return _mc_fmt;\
+        } \
+    } while(0)
+
+    TRY_FMT(MC_COLOR_FORMAT_YUV420_PACKED_PLANAR);
+    TRY_FMT(MC_COLOR_FORMAT_YUV420_PACKED_SEMI_PLANAR);
+    TRY_FMT(MC_COLOR_FORMAT_YUV420_PLANAR);
+    TRY_FMT(MC_COLOR_FORMAT_YUV420_SEMI_PLANAR);
+
+    return -1;
+#undef TRY_FMT
+}
+
 /*****************************************************************************
  * MediaCodec_GetName
  *****************************************************************************/
-char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
-                         int profile, bool *p_adaptive, int flags)
+char* MediaCodec_GetName(vlc_object_t *p_obj,
+                       const char *psz_mime,
+                       int profile, bool *p_adaptive,
+                       int flags)
 {
     JNIEnv *env;
     int num_codecs;
@@ -390,11 +413,13 @@ char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
     for (int i = 0; i < num_codecs; i++)
     {
         jobject codec_capabilities = NULL;
+        jobject color_formats = NULL;
         jobject profile_levels = NULL;
         jobject info = NULL;
         jobject name = NULL;
         jobject types = NULL;
         jsize name_len = 0;
+        jsize color_formats_len = 0;
         int profile_levels_len = 0, num_types = 0;
         const char *name_ptr = NULL;
         bool found = false;
@@ -427,6 +452,10 @@ char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
         }
         else if (codec_capabilities)
         {
+            color_formats = (*env)->GetObjectField(env, codec_capabilities, jfields.color_formats_field);
+            if (color_formats)
+                color_formats_len = (*env)->GetArrayLength(env, color_formats);
+
             profile_levels = (*env)->GetObjectField(env, codec_capabilities, jfields.profile_levels_field);
             if (profile_levels)
                 profile_levels_len = (*env)->GetArrayLength(env, profile_levels);
@@ -508,12 +537,15 @@ char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
             }
             *p_adaptive = b_adaptive;
         }
+
 loopclean:
         if (name)
         {
             (*env)->ReleaseStringUTFChars(env, name, name_ptr);
             (*env)->DeleteLocalRef(env, name);
         }
+        if (color_formats)
+            (*env)->DeleteLocalRef(env, color_formats);
         if (profile_levels)
             (*env)->DeleteLocalRef(env, profile_levels);
         if (types)

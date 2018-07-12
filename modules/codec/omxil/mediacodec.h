@@ -171,4 +171,14 @@ struct mc_api
     int (*set_output_surface)(mc_api*, void *p_surface, void *p_jsurface);
 };
 
+#define MC_COLOR_FORMAT_YUV420_PACKED_PLANAR        20
+#define MC_COLOR_FORMAT_YUV420_PACKED_SEMI_PLANAR   39
+#define MC_COLOR_FORMAT_YUV420_PLANAR               19
+#define MC_COLOR_FORMAT_YUV420_SEMI_PLANAR          21
+
+#define MC_COLOR_FORMAT_SURFACE                     0x7f000789
+#define MC_COLOR_FORMAT_YUV420_FLEXIBLE             0x7f420888
+
+
+
 #endif
