@@ -464,6 +464,22 @@ static inline float decoder_GetDisplayRate( decoder_t *dec )
     return dec->cbs->video.get_display_rate( dec );
 }
 
+/**
+ * This function will create a packetizer suitable for a demuxer that parses
+ * elementary stream.
+ *
+ * The provided es_format_t will be cleaned on error or by
+ * vlc_packetizer_destroy.
+ */
+VLC_API decoder_t * vlc_packetizer_new( vlc_object_t *p_obj, es_format_t *p_fmt, const char *psz_msg ) VLC_USED;
+#define vlc_packetizer_new(obj, f, m) vlc_packetizer_new(VLC_OBJECT( obj ), f, m)
+
+/**
+ * This function will destroy a packetizer create by vlc_packetizer_new.
+ */
+VLC_API void vlc_packetizer_destroy( decoder_t *p_packetizer );
+
+
 /** @} */
 /** @} */
 #endif /* _VLC_CODEC_H */

@@ -74,8 +74,6 @@ date_Increment
 date_Init
 decoder_AbortPictures
 decoder_NewAudioBuffer
-demux_PacketizerDestroy
-demux_PacketizerNew
 demux_New
 demux_vaControl
 demux_vaControlHelper
@@ -208,6 +206,8 @@ input_Stop
 input_vaControl
 input_SetTime
 input_SetPosition
+vlc_packetizer_new
+vlc_packetizer_destroy
 vlc_readdir_helper_init
 vlc_readdir_helper_finish
 vlc_readdir_helper_additem

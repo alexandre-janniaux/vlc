@@ -161,7 +161,7 @@ static int Open( vlc_object_t * p_this )
         goto error;
 
     /* Load the FLAC packetizer */
-    p_sys->p_packetizer = demux_PacketizerNew( p_demux, &fmt, "flac" );
+    p_sys->p_packetizer = vlc_packetizer_new( p_demux, &fmt, "flac" );
     if( !p_sys->p_packetizer )
         goto error;
 
@@ -210,7 +210,7 @@ static void Close( vlc_object_t * p_this )
 
     /* Delete the decoder */
     if( p_sys->p_packetizer )
-        demux_PacketizerDestroy( p_sys->p_packetizer );
+        vlc_packetizer_destroy( p_sys->p_packetizer );
 
     if( p_sys->p_meta )
         vlc_meta_Delete( p_sys->p_meta );

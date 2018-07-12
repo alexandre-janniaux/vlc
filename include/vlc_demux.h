@@ -367,20 +367,6 @@ static inline bool demux_IsForced( demux_t *p_demux, const char *psz_name )
     return true;
 }
 
-/**
- * This function will create a packetizer suitable for a demuxer that parses
- * elementary stream.
- *
- * The provided es_format_t will be cleaned on error or by
- * demux_PacketizerDestroy.
- */
-VLC_API decoder_t * demux_PacketizerNew( demux_t *p_demux, es_format_t *p_fmt, const char *psz_msg ) VLC_USED;
-
-/**
- * This function will destroy a packetizer create by demux_PacketizerNew.
- */
-VLC_API void demux_PacketizerDestroy( decoder_t *p_packetizer );
-
 /* */
 #define DEMUX_INIT_COMMON() do {            \
     p_demux->pf_control = Control;          \
