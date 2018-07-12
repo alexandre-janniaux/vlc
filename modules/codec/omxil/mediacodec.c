@@ -34,6 +34,7 @@
 #include <vlc_aout.h>
 #include <vlc_plugin.h>
 #include <vlc_codec.h>
+#include <vlc_demux.h>
 #include <vlc_block_helper.h>
 #include <vlc_timestamp_helper.h>
 #include <vlc_threads.h>
@@ -133,6 +134,27 @@ typedef struct
     };
 } decoder_sys_t;
 
+struct encoder_sys_t
+{
+    mc_api          api;
+    mc_api_out      mc_out;
+
+    date_t dts;
+    date_t pts;
+
+    int64_t i_last_date;
+
+    bool b_eos;
+    bool b_started;
+    bool b_flush_out;
+    bool b_headers_sent;
+    /* if true, start to pop frames from the encoder and push them in the fifo */
+    bool b_output_ready;
+    bool b_input_dequeued;
+    bool b_first_frame;
+    bool b_first_frame_queued;
+};
+
 /*****************************************************************************
  * Local prototypes
  *****************************************************************************/
@@ -140,6 +162,11 @@ static int  OpenDecoderJni(vlc_object_t *);
 static int  OpenDecoderNdk(vlc_object_t *);
 static void CleanDecoder(decoder_t *);
 static void CloseDecoder(vlc_object_t *);
+
+static int OpenEncoderNdk(vlc_object_t *);
+static int OpenEncoderJni(vlc_object_t *);
+static void CleanEncoder(encoder_t *);
+static void CloseEncoder(vlc_object_t *);
 
 static int Video_OnNewBlock(decoder_t *, block_t **);
 static int VideoHXXX_OnNewBlock(decoder_t *, block_t **);
@@ -150,6 +177,10 @@ static int Video_ProcessOutput(decoder_t *, mc_api_out *, picture_t **,
                                block_t **);
 static int DecodeBlock(decoder_t *, block_t *);
 
+static block_t* EncodeVideo(encoder_t *, picture_t *);
+static block_t* EncodeAudio(encoder_t *, block_t *);
+static block_t* EncodeSub(encoder_t *, subpicture_t *);
+
 static int Audio_OnNewBlock(decoder_t *, block_t **);
 static void Audio_OnFlush(decoder_t *);
 static int Audio_ProcessOutput(decoder_t *, mc_api_out *, picture_t **,
@@ -157,8 +188,11 @@ static int Audio_ProcessOutput(decoder_t *, mc_api_out *, picture_t **,
 
 static void DecodeFlushLocked(decoder_t *);
 static void DecodeFlush(decoder_t *);
+static void EncodeFlush(encoder_t *);
 static void StopMediaCodec(decoder_t *);
+static void StopMediaCodec_encoder(encoder_t *);
 static void *OutThread(void *);
+static void *EncoderOutputThread(void *);
 
 static void InvalidateAllPictures(decoder_t *);
 static void RemoveInflightPictures(decoder_t *);
@@ -207,6 +241,16 @@ vlc_module_begin ()
         set_capability("audio decoder", 0)
         set_callbacks(OpenDecoderJni, CloseDecoder)
         add_shortcut("mediacodec_jni")
+    add_submodule ()
+        set_description("Video encoder using Android MediaCodec via JNI")
+        set_capability("encoder", 0)
+        set_callbacks(OpenEncoderJni, CloseEncoder)
+        add_shortcut("mediacodec_jni")
+    add_submodule ()
+        set_description("Video encoder using Android MediaCodec via NDK")
+        set_capability("encoder", 0)
+        set_callbacks(OpenEncoderNdk, CloseEncoder)
+        add_shortcut("mediacodec")
 vlc_module_end ()
 
 static void CSDFree(decoder_t *p_dec)
@@ -523,6 +567,13 @@ static int StartMediaCodec(decoder_t *p_dec)
     return p_sys->api.start(&p_sys->api);
 }
 
+static int StartMediaCodec_Encoder(encoder_t *p_enc)
+{
+    struct encoder_sys_t *p_sys = p_enc->p_sys;
+    assert(p_sys->api.start);
+    return p_sys->api.start(&p_sys->api);
+}
+
 /*****************************************************************************
  * StopMediaCodec: Close the mediacodec instance
  *****************************************************************************/
@@ -535,6 +586,12 @@ static void StopMediaCodec(decoder_t *p_dec)
     if (p_sys->api.b_direct_rendering)
         RemoveInflightPictures(p_dec);
 
+    p_sys->api.stop(&p_sys->api);
+}
+
+static void StopMediaCodec_Encoder(encoder_t *p_enc)
+{
+    struct encoder_sys_t *p_sys = p_enc->p_sys;
     p_sys->api.stop(&p_sys->api);
 }
 
@@ -814,6 +871,131 @@ static int OpenDecoderJni(vlc_object_t *p_this)
     return OpenDecoder(p_this, MediaCodecJni_Init);
 }
 
+static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
+{
+    encoder_t *p_enc = (encoder_t *)p_this;
+    struct encoder_sys_t *p_sys;
+
+    msg_Dbg(p_enc, "Opening MediaCodec Encoder");
+
+    const char *mime = NULL;
+
+    if (p_enc->fmt_out.i_cat != VIDEO_ES)
+    {
+        msg_Err(p_enc, "MediaCodec encoder only support video encoding");
+        return VLC_EGENERIC;
+    }
+
+    if (!p_enc->fmt_in.video.i_width || !p_enc->fmt_in.video.i_height)
+    {
+        msg_Err(p_enc, "MediaCodec might not work with video of size 0");
+        return VLC_EGENERIC;
+    }
+
+    switch (p_enc->fmt_out.i_codec) {
+    case VLC_CODEC_H264:
+        mime = "video/avc";
+        break;
+    default:
+        return VLC_EGENERIC;
+    }
+
+    /* Fail if this module already failed to encode this ES */
+    //if (var_Type(p_enc, "mediacodec-encoder-failed") != 0)
+    //    return VLC_EGENERIC;
+
+    if (mime == NULL)
+    {
+        msg_Err(p_enc, "Codec %4.4s not supported", (char *)&p_enc->fmt_out.i_codec);
+        return VLC_EGENERIC;
+    }
+
+    /* Allocate the memory needed to store the decoder's structure */
+    if ((p_sys = calloc(1, sizeof(*p_sys))) == NULL)
+    {
+        msg_Err(p_this, "Can't allocate encoder_sys_t");
+        return VLC_ENOMEM;
+    }
+
+    p_sys->api.p_obj = p_this;
+    p_sys->api.i_codec = p_enc->fmt_in.i_codec;
+    p_sys->api.i_cat = p_enc->fmt_in.i_cat;
+    p_sys->api.psz_mime = mime;
+    p_sys->api.b_started = false;
+
+    fprintf(stderr, "Initializing with framerate = %d/%d\n",
+            p_enc->fmt_out.video.i_frame_rate,
+            p_enc->fmt_out.video.i_frame_rate_base);
+    date_Init(&p_sys->dts, p_enc->fmt_out.video.i_frame_rate, p_enc->fmt_out.video.i_frame_rate_base);
+    date_Init(&p_sys->pts, p_enc->fmt_out.video.i_frame_rate, p_enc->fmt_out.video.i_frame_rate_base);
+
+    /* Initialize MediaCodec API/symbols */
+    if (pf_init(&p_sys->api) != 0)
+    {
+        msg_Err(p_enc, "Can't initialize mediacodec API for mediacodec encoder");
+        goto bailout;
+    }
+
+    /* Find the right codec and codec options */
+    if (p_sys->api.prepare(&p_sys->api, p_enc->fmt_out.i_profile, MC_API_FLAG_ENCODER) != 0)
+    {
+        msg_Err(p_enc, "Can't prepare MediaCodec encoder");
+        return VLC_EGENERIC;
+    }
+
+    p_enc->p_sys = p_sys;
+    /* TODO: select correct format */
+    p_enc->fmt_in.i_codec = VLC_CODEC_NV12;
+    p_enc->fmt_out.i_codec = VLC_CODEC_H264;
+    p_enc->fmt_out.i_cat = VIDEO_ES;
+    /* the video format will be created after the open by the encoder as
+     * soon as the first picture is sent, so we need to packetize the 
+     * output so as to capture it before adding the stream */
+    p_enc->fmt_out.b_packetized = false;
+
+    p_sys->b_flush_out = false;
+    p_sys->b_eos = false;
+    p_sys->b_first_frame = false;
+    p_sys->b_first_frame_queued = false;
+
+    p_sys->i_last_date = 0;
+    p_enc->pf_encode_video = EncodeVideo;
+    p_enc->pf_encode_audio = NULL;
+    p_enc->pf_encode_sub   = NULL;
+
+    if (p_sys->api.configure_encoder(&p_sys->api, &p_enc->fmt_in, &p_enc->fmt_out) == MC_API_ERROR)
+    {
+        msg_Err(p_enc, "Can't configure MediaCodec encoder for the given format");
+        return VLC_EGENERIC;
+    }
+
+    if (StartMediaCodec_Encoder(p_enc) != 0)
+    {
+        msg_Err(p_enc, "Can't start MediaCodec encoder");
+        return VLC_EGENERIC;
+    }
+
+    msg_Dbg(p_enc, "Mediacodec encoder successfully created");
+
+    return VLC_SUCCESS;
+
+bailout:
+    CleanEncoder(p_enc);
+    return VLC_EGENERIC;
+}
+
+static int OpenEncoderNdk(vlc_object_t *p_this)
+{
+    msg_Dbg(p_this, "Opening MediaCodec NDK encoder");
+    return OpenEncoder(p_this, MediaCodecNdk_Init);
+}
+
+static int OpenEncoderJni(vlc_object_t *p_this)
+{
+    msg_Dbg(p_this, "Opening MediaCodec JNI encoder");
+    return OpenEncoder(p_this, MediaCodecJni_Init);
+}
+
 static void AbortDecoderLocked(decoder_t *p_dec)
 {
     decoder_sys_t *p_sys = p_dec->p_sys;
@@ -843,10 +1025,17 @@ static void CleanDecoder(decoder_t *p_dec)
         if (p_dec->fmt_in.i_codec == VLC_CODEC_H264
          || p_dec->fmt_in.i_codec == VLC_CODEC_HEVC)
             hxxx_helper_clean(&p_sys->video.hh);
-
-        if (p_sys->video.timestamp_fifo)
-            timestamp_FifoRelease(p_sys->video.timestamp_fifo);
     }
+    free(p_sys);
+}
+
+static void CleanEncoder(encoder_t *p_enc)
+{
+    struct encoder_sys_t *p_sys = p_enc->p_sys;
+
+    StopMediaCodec_Encoder(p_enc);
+    p_sys->api.clean(&p_sys->api);
+
     free(p_sys);
 }
 
@@ -868,6 +1057,17 @@ static void CloseDecoder(vlc_object_t *p_this)
     vlc_join(p_sys->out_thread, NULL);
 
     CleanDecoder(p_dec);
+}
+
+static void CloseEncoder(vlc_object_t *p_this)
+{
+    encoder_t *p_enc = (encoder_t *)p_this;
+    struct encoder_sys_t *p_sys = p_enc->p_sys;
+
+    //EncodeFlush(p_enc);
+
+    p_sys->api.stop(&p_sys->api);
+    CleanEncoder(p_enc);
 }
 
 /*****************************************************************************
@@ -943,6 +1143,7 @@ static int Video_ProcessOutput(decoder_t *p_dec, mc_api_out *p_out,
          * due to an invalid format or a preroll */
         int64_t forced_ts = timestamp_FifoGet(p_sys->video.timestamp_fifo);
 
+        fprintf(stderr, "DECODER DATE: FORCE=%"PRId64" / TS=%"PRId64"\n", forced_ts, p_out->buf.i_ts);
         if (!p_sys->b_has_format) {
             msg_Warn(p_dec, "Buffers returned before output format is set, dropping frame");
             return p_sys->api.release_out(&p_sys->api, p_out->buf.i_index, false);
@@ -1199,6 +1400,18 @@ static void DecodeFlush(decoder_t *p_dec)
     vlc_mutex_lock(&p_sys->lock);
     DecodeFlushLocked(p_dec);
     vlc_mutex_unlock(&p_sys->lock);
+}
+
+static void EncodeFlush(encoder_t *p_enc)
+{
+    struct encoder_sys_t *p_sys = p_enc->p_sys;
+    bool b_had_input = p_sys->b_input_dequeued;
+
+    if (b_had_input && p_sys->api.flush(&p_sys->api) != VLC_SUCCESS)
+    {
+        // TODO: error
+        return;
+    }
 }
 
 static void *OutThread(void *data)
@@ -1556,6 +1769,113 @@ reload:
      * for this ES */
     var_Create(p_dec, "mediacodec-failed", VLC_VAR_VOID);
     return VLCDEC_RELOAD;
+}
+
+static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
+{
+    struct encoder_sys_t *p_sys = p_enc->p_sys;
+    assert(p_sys->api.b_started);
+
+    bool queue_picture = true;
+
+    if (!p_sys->b_first_frame_queued && picture)
+    {
+        date_Set(&p_sys->pts, picture->date);
+        p_sys->b_first_frame_queued = true;
+    }
+
+    if (picture)
+    {
+        fprintf(stderr, "PICTURE DATE: %"PRId64"\n", picture->date);
+        if (p_sys->i_last_date >= picture->date)
+        {
+            fprintf(stderr, "DROPPING PICTURE BECAUSE IT WAS ANTERIOR TO THE PREVIOUS IMAGE\n");
+            queue_picture = false;
+        }
+        else
+        {
+            p_sys->i_last_date = picture->date;
+        }
+    }
+
+    p_sys->b_eos |= picture == NULL;
+
+    if (queue_picture)
+    {
+        //// Request input buffer to MC
+        int i_index = p_sys->api.dequeue_in(&p_sys->api, 0);
+        if (i_index >= 0)
+        {
+            ///*
+            // * Send data with timestamp, telling MC it's not a
+            // * configure buffer. If p_buff is null, it will send
+            // * an end_of_stream signal to MC
+            // */
+            int ret = p_sys->api.queue_picture_in(&p_sys->api, i_index, picture,
+                                              picture ? date_Get(&p_sys->pts) : 0, false);
+            if (ret != 0)
+            {
+                fprintf(stderr, "Couldn't queue the picture\n");
+            }
+            date_Increment(&p_sys->pts, 1);
+        }
+    }
+
+    block_t *out_block = NULL;
+    /* Return any encoded block available */
+    int i_index = p_sys->api.dequeue_out(&p_sys->api, 0);
+
+    if (i_index >= 0)
+    {
+        int i_ret = p_sys->api.get_out(&p_sys->api, i_index, &p_sys->mc_out);
+
+        if (i_ret)
+        {
+            uint8_t* p_buffer = out_block->p_buffer;
+            out_block = block_Alloc(p_sys->mc_out.buf.i_size + p_enc->fmt_out.i_extra);
+            if (!out_block)
+            {
+                msg_Err(p_enc, "Couln't allocate memory for block allocation");
+                return NULL;
+            }
+
+            int64_t i_ts = p_sys->mc_out.buf.i_ts;
+
+            if (p_sys->mc_out.type == MC_OUT_TYPE_BUF)
+            {
+                if (!p_sys->b_first_frame)
+                {
+                    date_Set(&p_sys->dts, i_ts);
+                    p_sys->b_first_frame = true;
+                }
+                else
+                {
+                    out_block->i_dts = date_Get(&p_sys->dts);
+                }
+                out_block->i_pts = i_ts;
+
+                date_Increment(&p_sys->dts, 1);
+            }
+            else
+            {
+                out_block->i_dts = i_ts;
+                out_block->i_pts = VLC_TICK_INVALID;
+            }
+            memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
+            const uint8_t* p = out_block->p_buffer;
+            if (p_sys->mc_out.buf.i_size >= 7)
+                fprintf(stderr, "DATA: %.2x %.2x %.2x %.2x %.2x %.2x\n", p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
+
+            if (p_sys->mc_out.b_eos)
+                out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
+        }
+        p_sys->api.release_out(&p_sys->api, i_index, false);
+    }
+
+    /* There can be no available output buffer, because the encoder
+     * might need multiple frame so as to output some data.
+     * In this case we return NULL */
+    return out_block;
 }
 
 static int Video_OnNewBlock(decoder_t *p_dec, block_t **pp_block)

@@ -47,6 +47,8 @@ char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
  * buffers and not via "csd-*" buffers from AMediaFormat */
 #define AMEDIACODEC_FLAG_CODEC_CONFIG 2
 
+#define COLOR_FormatYUV420Flexible (0x7f420888)
+
 /*****************************************************************************
  * NdkMediaError.h
  *****************************************************************************/
@@ -149,6 +151,32 @@ typedef media_status_t (*pf_AMediaCodec_releaseOutputBufferAtTime)(AMediaCodec*,
 typedef media_status_t (*pf_AMediaCodec_setOutputSurface)(AMediaCodec*,
         ANativeWindow *surface);
 
+/*
+ * AMediaCodec async API
+ */
+
+typedef void (*AMediaCodecOnAsyncError)(AMediaCodec*, void *userdata,
+        media_status_t error, int32_t actionCode, const char* detail);
+
+typedef void (*AMediaCodecOnAsyncFormatChanged)(AMediaCodec*,
+        void *userdata, AMediaFormat *format);
+
+typedef void (*AMediaCodecOnAsyncInputAvailable)(AMediaCodec*,
+        void *userdata, int32_t index);
+
+typedef void (*AMediaCodecOnAsyncOutputAvailable)(AMediaCodec*,
+        void *userdata, int32_t index, AMediaCodecBufferInfo *bufferInfo);
+
+typedef struct {
+    AMediaCodecOnAsyncInputAvailable onAsyncInputAvailable;
+    AMediaCodecOnAsyncOutputAvailable onAsyncOutputAvailable;
+    AMediaCodecOnAsyncFormatChanged onAsyncFormatChanged;
+    AMediaCodecOnAsyncError onAsyncError;
+} AMediaCodecOnAsyncNotifyCallback;
+
+typedef media_status_t (*pf_AMediaCodec_setAsyncNotifyCallback)(AMediaCodec*,
+        AMediaCodecOnAsyncNotifyCallback, void* userdata);
+
 typedef AMediaFormat *(*pf_AMediaFormat_new)();
 typedef media_status_t (*pf_AMediaFormat_delete)(AMediaFormat*);
 
@@ -157,6 +185,9 @@ typedef void (*pf_AMediaFormat_setString)(AMediaFormat*,
 
 typedef void (*pf_AMediaFormat_setInt32)(AMediaFormat*,
         const char* name, int32_t value);
+
+typedef void (*pf_AMediaFormat_setFloat)(AMediaFormat*,
+        const char* name, float value);
 
 typedef bool (*pf_AMediaFormat_getInt32)(AMediaFormat*,
         const char *name, int32_t *out);
@@ -179,12 +210,14 @@ struct syms
         pf_AMediaCodec_releaseOutputBuffer releaseOutputBuffer;
         pf_AMediaCodec_releaseOutputBufferAtTime releaseOutputBufferAtTime;
         pf_AMediaCodec_setOutputSurface setOutputSurface;
+        pf_AMediaCodec_setAsyncNotifyCallback setAsyncNotifyCallback;
     } AMediaCodec;
     struct {
         pf_AMediaFormat_new new;
         pf_AMediaFormat_delete delete;
         pf_AMediaFormat_setString setString;
         pf_AMediaFormat_setInt32 setInt32;
+        pf_AMediaFormat_setFloat setFloat;
         pf_AMediaFormat_getInt32 getInt32;
     } AMediaFormat;
 };
@@ -214,12 +247,14 @@ static struct members members[] =
     { "AMediaCodec_releaseOutputBuffer", OFF(releaseOutputBuffer), true },
     { "AMediaCodec_releaseOutputBufferAtTime", OFF(releaseOutputBufferAtTime), true },
     { "AMediaCodec_setOutputSurface", OFF(setOutputSurface), false },
+    { "AMediaCodec_setAsyncNotifyCallback", OFF(setAsyncNotifyCallback), false },
 #undef OFF
 #define OFF(x) offsetof(struct syms, AMediaFormat.x)
     { "AMediaFormat_new", OFF(new), true },
     { "AMediaFormat_delete", OFF(delete), true },
     { "AMediaFormat_setString", OFF(setString), true },
     { "AMediaFormat_setInt32", OFF(setInt32), true },
+    { "AMediaFormat_setFloat", OFF(setFloat), true },
     { "AMediaFormat_getInt32", OFF(getInt32), true },
 #undef OFF
     { NULL, 0, false }
@@ -394,6 +429,67 @@ error:
     return i_ret;
 }
 
+static int ConfigureEncoder(mc_api *api, const picture_t* p_picture)
+{
+    mc_api_sys *p_sys = api->p_sys;
+    int i_ret = MC_API_ERROR;
+    ANativeWindow *p_anw = NULL;
+
+    assert(api->psz_mime && api->psz_name);
+
+    p_sys->p_codec = syms.AMediaCodec.createCodecByName(api->psz_name);
+    if (!p_sys->p_codec)
+    {
+        msg_Err(api->p_obj, "AMediaCodec.createEncoderByName for %s failed",
+                api->psz_name);
+        return MC_API_ERROR;
+    }
+
+    p_sys->p_format = syms.AMediaFormat.new();
+    if (!p_sys->p_format)
+    {
+        msg_Err(api->p_obj, "AMediaFormat.new failed");
+        return MC_API_ERROR;
+    }
+
+    // Configure media format as an encoder
+    syms.AMediaFormat.setInt32(p_sys->p_format, "decoder", 0);
+    syms.AMediaFormat.setString(p_sys->p_format, "mime", api->psz_mime);
+    syms.AMediaFormat.setInt32(p_sys->p_format, "color-format", COLOR_FormatYUV420Flexible);
+
+    syms.AMediaFormat.setInt32(p_sys->p_format, "bitrate", 10000000);
+    syms.AMediaFormat.setInt32(p_sys->p_format, "frame-rate", 30);
+    syms.AMediaFormat.setInt32(p_sys->p_format, "i-frame-interval", 5);
+    //float frame_rate = 25;
+    //syms.AMediaFormat.setFloat(p_sys->p_format, "frame-rate", frame_rate);
+    //syms.AMediaFormat.setInt32(p_sys->p_format, "i-frame-interval", p_enc->i_iframes);
+
+    if (p_picture)
+    {
+        const video_frame_format_t *p_format = &p_picture->format;
+        syms.AMediaFormat.setInt32(p_sys->p_format, "width", p_format->i_visible_width);
+        syms.AMediaFormat.setInt32(p_sys->p_format, "height", p_format->i_visible_height);
+        syms.AMediaFormat.setInt32(p_sys->p_format, "slice-height",
+                                   p_format->i_height * p_picture->p[0].i_pixel_pitch);
+        syms.AMediaFormat.setInt32(p_sys->p_format, "stride",
+                                   p_format->i_width * p_picture->p[0].i_pixel_pitch);
+    }
+    else
+    {
+        syms.AMediaFormat.setInt32(p_sys->p_format, "width", 1920);
+        syms.AMediaFormat.setInt32(p_sys->p_format, "height", 1080);
+    }
+
+    if (syms.AMediaCodec.configure(p_sys->p_codec, p_sys->p_format,
+                p_anw, NULL, AMEDIACODEC_CONFIGURE_FLAG_ENCODE) != AMEDIA_OK)
+    {
+        msg_Err(api->p_obj, "AMediaCodec.configure failed");
+        return MC_API_ERROR;
+    }
+
+    return 0;
+}
+
 /*****************************************************************************
  * Flush
  *****************************************************************************/
@@ -412,6 +508,10 @@ static int Flush(mc_api *api)
  *****************************************************************************/
 static int DequeueInput(mc_api *api, vlc_tick_t i_timeout)
 {
+    assert(api);
+    assert(api->p_sys);
+    assert(api->p_sys->p_codec);
+
     mc_api_sys *p_sys = api->p_sys;
     ssize_t i_index;
 
@@ -422,7 +522,7 @@ static int DequeueInput(mc_api *api, vlc_tick_t i_timeout)
         return MC_API_INFO_TRYAGAIN;
     else
     {
-        msg_Err(api->p_obj, "AMediaCodec.dequeueInputBuffer failed");
+        msg_Err(api->p_obj, "AMediaCodec.dequeueInputBuffer failed with code %d", i_index);
         return MC_API_ERROR;
     }
 }
@@ -453,6 +553,56 @@ static int QueueInput(mc_api *api, int i_index, const void *p_buf,
     if (syms.AMediaCodec.queueInputBuffer(p_sys->p_codec, i_index, 0, i_mc_size,
                                           i_ts, i_flags) == AMEDIA_OK)
         return 0;
+    else
+    {
+        msg_Err(api->p_obj, "AMediaCodec.queueInputBuffer failed");
+        return MC_API_ERROR;
+    }
+}
+
+static int QueueInputPicture(mc_api *api, int i_index,
+                             const picture_t *p_picture,
+                             mtime_t i_ts, bool b_config)
+{
+    assert(p_picture);
+
+
+    mc_api_sys *p_sys = api->p_sys;
+    uint8_t *p_mc_buf;
+    size_t i_mc_size;
+    int i_flags = (b_config ? AMEDIACODEC_FLAG_CODEC_CONFIG : 0)
+                | (p_picture == NULL ? AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM : 0);
+
+    assert(i_index >= 0);
+
+    p_mc_buf = syms.AMediaCodec.getInputBuffer(p_sys->p_codec,
+                                               i_index, &i_mc_size);
+    if (!p_mc_buf)
+        return MC_API_ERROR;
+
+    uint8_t *p_cursor = p_mc_buf;
+    size_t i_size;
+    for(int i=0; i<p_picture->i_planes; ++i)
+    {
+        const plane_t *current_plane = &p_picture->p[i];
+
+        // Don't copy margins, stop at i_visible_lines
+        memcpy(p_cursor, current_plane->p_pixels,
+                current_plane->i_pitch * current_plane->i_visible_lines);
+        size_t i_plane_size = current_plane->i_pitch * current_plane->i_lines
+                            * current_plane->i_pixel_pitch;
+        p_cursor += i_plane_size;
+        i_size   += i_plane_size;
+    }
+
+    if (i_mc_size > i_size)
+        i_mc_size = i_size;
+
+    if (syms.AMediaCodec.queueInputBuffer(p_sys->p_codec, i_index, 0, i_mc_size,
+                                          i_ts, i_flags) == AMEDIA_OK)
+    {
+        return 0;
+    }
     else
     {
         msg_Err(api->p_obj, "AMediaCodec.queueInputBuffer failed");
@@ -647,11 +797,13 @@ int MediaCodecNdk_Init(mc_api *api)
     api->clean = Clean;
     api->prepare = Prepare;
     api->configure_decoder = ConfigureDecoder;
+    api->configure_encoder = ConfigureEncoder;
     api->start = Start;
     api->stop = Stop;
     api->flush = Flush;
     api->dequeue_in = DequeueInput;
     api->queue_in = QueueInput;
+    api->queue_picture_in = QueueInputPicture;
     api->dequeue_out = DequeueOutput;
     api->get_out = GetOutput;
     api->release_out = ReleaseOutput;

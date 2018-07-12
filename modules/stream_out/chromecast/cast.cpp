@@ -807,6 +807,7 @@ static void Del(sout_stream_t *p_stream, void *_id)
 
 bool sout_stream_sys_t::canDecodeVideo( vlc_fourcc_t i_codec ) const
 {
+    return false;
     if( transcoding_state & TRANSCODING_VIDEO )
         return false;
     return i_codec == VLC_CODEC_H264 || i_codec == VLC_CODEC_HEVC
@@ -975,6 +976,31 @@ static std::string GetVencQSVH264Option( sout_stream_t * /* p_stream */,
     return ssout.str();
 }
 
+static std::string GetVencMediaCodecOption( sout_stream_t * /* p_stream */,
+                                            const video_format_t* p_vid,
+                                            int i_quality )
+{
+    std::stringstream ssout;
+    static const char video_bitrate_high[] = "vb=8000000";
+    static const char video_bitrate_low[]  = "vb=3000000";
+
+    ssout << "venc=mediacodec_jni,";
+
+    switch( i_quality )
+    {
+        case CONVERSION_QUALITY_HIGH:
+        case CONVERSION_QUALITY_MEDIUM:
+            ssout << video_bitrate_high;
+            break;
+        case CONVERSION_QUALITY_LOW:
+        case CONVERSION_QUALITY_LOWCPU:
+            ssout << video_bitrate_low;
+            break;
+    }
+
+    return ssout.str();
+}
+
 static std::string GetVencX264Option( sout_stream_t * /* p_stream */,
                                       const video_format_t *p_vid,
                                       int i_quality )
@@ -1051,6 +1077,8 @@ static struct
     { .fcc = VLC_CODEC_H264, .get_opt = GetVencAvcodecVTOption },
 #endif
     { .fcc = VLC_CODEC_H264, .get_opt = GetVencQSVH264Option },
+    // TODO: check android
+    { .fcc = VLC_CODEC_H264, .get_opt = GetVencMediaCodecOption },
     { .fcc = VLC_CODEC_H264, .get_opt = GetVencX264Option },
     { .fcc = VLC_CODEC_VP8,  .get_opt = GetVencVPXOption },
     { .fcc = VLC_CODEC_H264, .get_opt = NULL },

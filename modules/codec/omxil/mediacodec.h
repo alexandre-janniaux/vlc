@@ -22,6 +22,7 @@
 #define VLC_MEDIACODEC_H
 
 #include <vlc_common.h>
+#include <vlc_block.h>
 #include "../../video_output/android/utils.h"
 
 typedef struct mc_api mc_api;
@@ -131,6 +132,8 @@ struct mc_api
     void (*clean)(mc_api *);
     int (*prepare)(mc_api *, int i_profile, int flags);
     int (*configure_decoder)(mc_api *, union mc_api_args* p_args);
+    int (*configure_encoder)(mc_api *, const es_format_t *fmt_in,
+                             const es_format_t *fmt_out);
     int (*start)(mc_api *);
     int (*stop)(mc_api *);
     int (*flush)(mc_api *);
@@ -148,6 +151,9 @@ struct mc_api
      * Returns 0 if buffer is successfully queued, or MC_API_ERROR */
     int (*queue_in)(mc_api *, int i_index, const void *p_buf, size_t i_size,
                     vlc_tick_t i_ts, bool b_config);
+
+    int (*queue_picture_in)(mc_api *, int i_index, const picture_t *picture,
+                            mtime_t i_ts, bool b_config);
 
     /* i_index is the index returned by dequeue_out and should be >= 0,
      * MC_API_INFO_OUTPUT_FORMAT_CHANGED, or MC_API_INFO_OUTPUT_BUFFERS_CHANGED.
