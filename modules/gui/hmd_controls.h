@@ -102,7 +102,7 @@ public:
         {
             newHasHoover = true;
             if (!hasHoover)
-                hooverDate = mdate();
+                hooverDate = vlc_tick_now();
         }
 
         hasHoover = newHasHoover;
@@ -115,7 +115,7 @@ public:
             return false;
 
         bool ret = false;
-        mtime_t currentDate = mdate();
+        vlc_tick_t currentDate = vlc_tick_now();
 
         if (hasHoover && currentDate >= hooverDate + CLOCK_FREQ * 2)
         {
@@ -129,7 +129,7 @@ public:
         return ret;
     }
 
-    mtime_t getHooverDate() const
+    vlc_tick_t getHooverDate() const
     {
         return hooverDate;
     }
@@ -185,7 +185,7 @@ protected:
 
     bool canHaveHoover;
     bool hasHoover;
-    mtime_t hooverDate;
+    vlc_tick_t hooverDate;
 
     void (*pressedCallback)(intf_thread_t *p_intf);
 
@@ -308,7 +308,7 @@ public:
 
     virtual void updateValidationProgress(const Control *hooveredControl)
     {
-        float p = (float)(mdate() - hooveredControl->getHooverDate()) / (2 * CLOCK_FREQ);
+        float p = (float)(vlc_tick_now() - hooveredControl->getHooverDate()) / (2 * CLOCK_FREQ);
         // Clip to the [0, 1] range.
         validationProgress = std::min(1.f, std::max(0.f, p));
     }
@@ -385,7 +385,7 @@ public:
             return false;
 
         bool ret = false;
-        mtime_t currentDate = mdate();
+        vlc_tick_t currentDate = vlc_tick_now();
 
         if (hasHoover && currentDate >= hooverDate + CLOCK_FREQ * 2)
         {

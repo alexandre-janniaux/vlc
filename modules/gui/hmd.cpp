@@ -462,20 +462,19 @@ static int ViewpointEvent(vlc_object_t *p_this, char const *psz_var,
 
     // Determine the visibility of the controller.
     #define CONTROLLER_VISIBILITY_TIMEOUT 5
+    vlc_tick_t curDate = vlc_tick_now();
     if (p_sys->b_ctlVisible)
     {
-        mtime_t curDate = mdate();
         if (u >= p_ctl->pos.f_left && u <= p_ctl->pos.f_right
             && v >= p_ctl->pos.f_bottom && v <= p_ctl->pos.f_top)
             p_sys->ctlSetVisibleDate = curDate;
 
-        if (mdate() > p_sys->ctlSetVisibleDate
+        if (curDate > p_sys->ctlSetVisibleDate
             + CONTROLLER_VISIBILITY_TIMEOUT * CLOCK_FREQ)
             p_sys->b_ctlVisible = false;
     }
     else if (fabs(p_vp->pitch) > 45.f)
     {
-        mtime_t curDate = mdate();
         p_sys->b_ctlVisible = true;
         p_sys->ctlSetVisibleDate = curDate;
     }
