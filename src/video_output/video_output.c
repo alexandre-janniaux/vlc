@@ -607,7 +607,7 @@ void vout_ControlChangeHMDController(vout_thread_t* vout, vlc_hmd_controller_t* 
     vout_control_cmd_t cmd;
     vout_control_cmd_Init(&cmd, VOUT_CONTROL_HMD_CONTROLLER);
     picture_Hold(p_ctl->p_pic);
-    cmd.u.hmd_controller = *p_ctl;
+    cmd.hmd_controller = *p_ctl;
     vout_control_Push(&vout->p->control, &cmd);
 }
 
@@ -1840,7 +1840,7 @@ static int ThreadControl(vout_thread_t *vout, vout_control_cmd_t cmd)
         ThreadChangeHMDConfiguration(vout, &cmd.hmd_cfg);
         break;
     case VOUT_CONTROL_HMD_CONTROLLER:
-        ThreadChangeHMDController(vout, &cmd.u.hmd_controller);
+        ThreadChangeHMDController(vout, &cmd.hmd_controller);
         break;
     default:
         break;

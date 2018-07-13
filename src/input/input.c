@@ -1634,7 +1634,7 @@ static void ControlRelease( int i_type, input_control_param_t *p_param )
             input_item_slave_Delete( p_param->val.p_address );
         break;
     case INPUT_CONTROL_UPDATE_HMD_CONTROLLER:
-        vlc_hmd_controller_Release(val.p_address);
+        vlc_hmd_controller_Release( p_param->val.p_address );
         break;
     case INPUT_CONTROL_SET_RENDERER:
         if( p_param->val.p_address )
