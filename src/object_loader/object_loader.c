@@ -229,13 +229,16 @@ static void embededTextureDataRelease(block_t *block)
     VLC_UNUSED(block);
 }
 
+static const struct vlc_block_callbacks block_texture_callbacks =
+{
+    embededTextureDataRelease
+};
 
 picture_t *scene_material_LoadTextureFromData(object_loader_t *p_loader, const char *p_data, size_t size)
 {
     block_t dataBlock;
 
-    block_Init(&dataBlock, (void *)p_data, size);
-    dataBlock.pf_release = embededTextureDataRelease;
+    block_Init(&dataBlock, &block_texture_callbacks, (void *)p_data, size);
 
     picture_t *p_pic = image_Read(p_loader->p_imgHandler, &dataBlock,
                                   &p_loader->texPic_fmt_in,
