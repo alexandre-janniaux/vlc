@@ -347,13 +347,13 @@ static std::string getPicPath(std::string fileName)
 {
     std::string HRTFPath;
 
-    char *dataDir = config_GetDataDir();
+    std::stringstream ss;
+    ss << CONTROL_PICTURE_DIR << DIR_SEP << fileName;
+
+    char *dataDir = config_GetSysPath(VLC_PKG_DATA_DIR, ss.str().c_str());
     if (dataDir != NULL)
     {
-        std::stringstream ss;
-        ss << std::string(dataDir) << DIR_SEP << CONTROL_PICTURE_DIR
-           << DIR_SEP << fileName;
-        HRTFPath = ss.str();
+        HRTFPath = dataDir;
         free(dataDir);
     }
 
