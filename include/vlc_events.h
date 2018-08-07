@@ -120,51 +120,87 @@ typedef struct vlc_event_manager_t
     vlc_event_listeners_group_t events[vlc_InputItemPreparseEnded + 1];
 } vlc_event_manager_t;
 
+/* Event payload types */
+struct vlc_input_item_meta_changed
+{
+    vlc_meta_type_t meta_type;
+};
+
+struct vlc_input_item_subitem_added
+{
+    input_item_t * p_new_child;
+};
+
+struct vlc_input_item_subitem_tree_added
+{
+    input_item_node_t * p_root;
+};
+
+struct vlc_input_item_duration_changed
+{
+    vlc_tick_t new_duration;
+};
+
+struct vlc_input_item_preparsed_changed
+{
+    int new_status;
+};
+
+struct vlc_input_item_name_changed
+{
+    const char * new_name;
+};
+
+struct vlc_input_item_info_changed
+{
+    void * unused;
+};
+
+struct input_item_error_when_reading_changed
+{
+    bool new_value;
+};
+
+struct input_item_preparse_ended
+{
+    int new_status;
+};
+
 /* Event definition */
 typedef struct vlc_event_t
 {
     vlc_event_type_t type;
     void * p_obj; /* Sender object, automatically filled by vlc_event_send() */
-    union vlc_event_type_specific
+    union
     {
         /* Input item events */
         struct vlc_input_item_meta_changed
-        {
-            vlc_meta_type_t meta_type;
-        } input_item_meta_changed;
+            input_item_meta_changed;
+
         struct vlc_input_item_subitem_added
-        {
-            input_item_t * p_new_child;
-        } input_item_subitem_added;
+            input_item_subitem_added;
+
         struct vlc_input_item_subitem_tree_added
-        {
-            input_item_node_t * p_root;
-        } input_item_subitem_tree_added;
+            input_item_subitem_tree_added;
+
         struct vlc_input_item_duration_changed
-        {
-            vlc_tick_t new_duration;
-        } input_item_duration_changed;
+            input_item_duration_changed;
+
         struct vlc_input_item_preparsed_changed
-        {
-            int new_status;
-        } input_item_preparsed_changed;
+            input_item_preparsed_changed;
+
         struct vlc_input_item_name_changed
-        {
-            const char * new_name;
-        } input_item_name_changed;
+            input_item_name_changed;
+
         struct vlc_input_item_info_changed
-        {
-            void * unused;
-        } input_item_info_changed;
+            input_item_info_changed;
+
         struct input_item_error_when_reading_changed
-        {
-            bool new_value;
-        } input_item_error_when_reading_changed;
+            input_item_error_when_reading_changed;
+
         struct input_item_preparse_ended
-        {
-            int new_status;
-        } input_item_preparse_ended;
-    } u;
+            input_item_preparse_ended;
+    };
 } vlc_event_t;
 
 /* Event callback type */
