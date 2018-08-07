@@ -128,7 +128,7 @@ static void input_item_preparsed_changed( const vlc_event_t *p_event,
                                           void * user_data )
 {
     libvlc_media_t *p_md = user_data;
-    if( p_event->u.input_item_preparsed_changed.new_status & ITEM_PREPARSED )
+    if( p_event->input_item_preparsed_changed.new_status & ITEM_PREPARSED )
     {
         /* Send the event */
         libvlc_event_t event;

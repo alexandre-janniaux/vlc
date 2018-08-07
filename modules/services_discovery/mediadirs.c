@@ -246,7 +246,7 @@ static void input_subnode_added( const vlc_event_t *p_event, void *user_data )
 {
     services_discovery_t *p_sd = user_data;
     services_discovery_sys_t *p_sys = p_sd->p_sys;
-    input_item_node_t *root = p_event->u.input_item_subitem_tree_added.p_root;
+    input_item_node_t *root = p_event->input_item_subitem_tree_added.p_root;
 
     for( int i = 0; i < root->i_children; i++ )
     {

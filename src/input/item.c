@@ -63,14 +63,14 @@ void input_item_SetErrorWhenReading( input_item_t *p_i, bool b_error )
     {
         vlc_event_send( &p_i->event_manager, &(vlc_event_t) {
             .type = vlc_InputItemErrorWhenReadingChanged,
-            .u.input_item_error_when_reading_changed.new_value = b_error } );
+            .input_item_error_when_reading_changed.new_value = b_error } );
     }
 }
 void input_item_SignalPreparseEnded( input_item_t *p_i, int status )
 {
     vlc_event_send( &p_i->event_manager, &(vlc_event_t) {
         .type = vlc_InputItemPreparseEnded,
-        .u.input_item_preparse_ended.new_status = status } );
+        .input_item_preparse_ended.new_status = status } );
 }
 
 void input_item_SetPreparsed( input_item_t *p_i, bool b_preparsed )
@@ -100,7 +100,7 @@ void input_item_SetPreparsed( input_item_t *p_i, bool b_preparsed )
     {
         vlc_event_send( &p_i->event_manager, &(vlc_event_t) {
             .type = vlc_InputItemPreparsedChanged,
-            .u.input_item_preparsed_changed.new_status = new_status } );
+            .input_item_preparsed_changed.new_status = new_status } );
     }
 }
 
@@ -153,7 +153,7 @@ void input_item_SetMeta( input_item_t *p_i, vlc_meta_type_t meta_type, const cha
     /* Notify interested third parties */
     vlc_event_send( &p_i->event_manager, &(vlc_event_t) {
         .type = vlc_InputItemMetaChanged,
-        .u.input_item_meta_changed.meta_type = meta_type } );
+        .input_item_meta_changed.meta_type = meta_type } );
 }
 
 void input_item_CopyOptions( input_item_t *p_child,
@@ -426,7 +426,7 @@ void input_item_SetDuration( input_item_t *p_i, vlc_tick_t i_duration )
     {
         vlc_event_send( &p_i->event_manager, &(vlc_event_t) {
             .type = vlc_InputItemDurationChanged,
-            .u.input_item_duration_changed.new_duration = i_duration } );
+            .input_item_duration_changed.new_duration = i_duration } );
     }
 }
 
@@ -1305,7 +1305,7 @@ void input_item_node_PostAndDelete( input_item_node_t *p_root )
 {
     vlc_event_send( &p_root->p_item->event_manager, &(vlc_event_t) {
         .type = vlc_InputItemSubItemTreeAdded,
-        .u.input_item_subitem_tree_added.p_root = p_root } );
+        .input_item_subitem_tree_added.p_root = p_root } );
 
     input_item_node_Delete( p_root );
 }

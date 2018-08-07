@@ -205,7 +205,7 @@ static void input_item_subitemtree_added( const vlc_event_t * p_event,
 {
     libvlc_media_t * p_md = user_data;
     libvlc_event_t event;
-    input_item_node_t *node = p_event->u.input_item_subitem_tree_added.p_root;
+    input_item_node_t *node = p_event->input_item_subitem_tree_added.p_root;
 
     /* FIXME FIXME FIXME
      * Recursive function calls seem much simpler for this. But playlists are
@@ -233,7 +233,7 @@ static void input_item_meta_changed( const vlc_event_t *p_event,
     /* Construct the event */
     event.type = libvlc_MediaMetaChanged;
     event.u.media_meta_changed.meta_type =
-        vlc_to_libvlc_meta[p_event->u.input_item_meta_changed.meta_type];
+        vlc_to_libvlc_meta[p_event->input_item_meta_changed.meta_type];
 
     /* Send the event */
     libvlc_event_send( &p_md->event_manager, &event );
@@ -251,7 +251,7 @@ static void input_item_duration_changed( const vlc_event_t *p_event,
     /* Construct the event */
     event.type = libvlc_MediaDurationChanged;
     event.u.media_duration_changed.new_duration =
-        from_mtime(p_event->u.input_item_duration_changed.new_duration);
+        from_mtime(p_event->input_item_duration_changed.new_duration);
 
     /* Send the event */
     libvlc_event_send( &p_md->event_manager, &event );
@@ -311,7 +311,7 @@ static void input_item_preparse_ended( const vlc_event_t * p_event,
     libvlc_media_t * p_md = user_data;
     libvlc_media_parsed_status_t new_status;
 
-    switch( p_event->u.input_item_preparse_ended.new_status )
+    switch( p_event->input_item_preparse_ended.new_status )
     {
         case ITEM_PREPARSE_SKIPPED:
             new_status = libvlc_media_parsed_status_skipped;
