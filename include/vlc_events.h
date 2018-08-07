@@ -125,46 +125,46 @@ typedef struct vlc_event_t
 {
     vlc_event_type_t type;
     void * p_obj; /* Sender object, automatically filled by vlc_event_send() */
-    union vlc_event_type_specific
+    union
     {
         /* Input item events */
-        struct vlc_input_item_meta_changed
+        struct
         {
             vlc_meta_type_t meta_type;
         } input_item_meta_changed;
-        struct vlc_input_item_subitem_added
+        struct
         {
             input_item_t * p_new_child;
         } input_item_subitem_added;
-        struct vlc_input_item_subitem_tree_added
+        struct
         {
             input_item_node_t * p_root;
         } input_item_subitem_tree_added;
-        struct vlc_input_item_duration_changed
+        struct
         {
             vlc_tick_t new_duration;
         } input_item_duration_changed;
-        struct vlc_input_item_preparsed_changed
+        struct
         {
             int new_status;
         } input_item_preparsed_changed;
-        struct vlc_input_item_name_changed
+        struct
         {
             const char * new_name;
         } input_item_name_changed;
-        struct vlc_input_item_info_changed
+        struct
         {
             void * unused;
         } input_item_info_changed;
-        struct input_item_error_when_reading_changed
+        struct
         {
             bool new_value;
         } input_item_error_when_reading_changed;
-        struct input_item_preparse_ended
+        struct
         {
             int new_status;
         } input_item_preparse_ended;
-    } u;
+    };
 } vlc_event_t;
 
 /* Event callback type */
