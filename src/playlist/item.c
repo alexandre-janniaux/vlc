@@ -57,7 +57,7 @@ static void input_item_add_subitem_tree ( const vlc_event_t * p_event,
     input_item_t *p_input = p_event->p_obj;
     playlist_t *p_playlist = user_data;
     playlist_private_t *p_sys = pl_priv( p_playlist );
-    input_item_node_t *p_new_root = p_event->u.input_item_subitem_tree_added.p_root;
+    input_item_node_t *p_new_root = p_event->input_item_subitem_tree_added.p_root;
 
     PL_LOCK;
 
