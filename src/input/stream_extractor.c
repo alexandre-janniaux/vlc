@@ -253,7 +253,7 @@ se_InitDirectory( struct stream_extractor_private* priv, stream_t* s )
 static int
 se_AttachWrapper( struct stream_extractor_private* priv, stream_t* source )
 {
-    stream_t* s = vlc_stream_CommonNew( source->obj.parent, se_StreamDelete );
+    stream_t* s = vlc_stream_CommonNew( source->obj.members.parent, se_StreamDelete );
 
     if( unlikely( !s ) )
         return VLC_ENOMEM;
@@ -283,7 +283,7 @@ StreamExtractorAttach( stream_t** source, char const* identifier,
                                        : "stream_directory";
 
     struct stream_extractor_private* priv = vlc_custom_create(
-        (*source)->obj.parent, sizeof( *priv ), capability );
+        (*source)->obj.members.parent, sizeof( *priv ), capability );
 
     if( unlikely( !priv ) )
         return VLC_ENOMEM;

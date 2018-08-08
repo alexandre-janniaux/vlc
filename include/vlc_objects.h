@@ -74,6 +74,33 @@ struct vlc_common_members
     vlc_object_t *parent;
 };
 
+/* Object flags */
+#define OBJECT_FLAGS_QUIET       0x0002
+#define OBJECT_FLAGS_NOINTERACT  0x0004
+
+struct vlc_object_priv_t
+{
+    struct vlc_common_members members;
+};
+/*****************************************************************************
+ * The vlc_object_t type. Yes, it's that simple :-)
+ *****************************************************************************/
+/** The main vlc_object_t structure */
+struct vlc_object_t
+{
+    union
+    {
+        struct vlc_object_priv_t obj;
+        struct vlc_common_members members;
+    };
+};
+
+/* The root object */
+struct libvlc_int_t
+{
+    struct vlc_object_t obj;
+};
+
 /**
  * Type-safe vlc_object_t cast
  *
@@ -85,30 +112,23 @@ struct vlc_common_members
 #if !defined(__cplusplus)
 # define VLC_OBJECT(x) \
     _Generic((x)->obj, \
-        struct vlc_common_members: (vlc_object_t *)(x) \
+        struct vlc_object_priv_t: (vlc_object_t *)(x), \
+        default: (vlc_object_t *)(&(x)->obj) \
     )
 #else
-# define VLC_OBJECT(x) ((vlc_object_t *)(x))
+    /* In C++, use template to emulate VLC_OBJECT and provide type checks */
+    template<typename T>
+    inline vlc_object_t *VLC_OBJECT(T *obj) {
+        // TODO: static_assert if available
+        return &obj->obj;
+    }
+
+    template<>
+    inline vlc_object_t *VLC_OBJECT(vlc_object_t *obj) { return obj; }
 #endif
 
-/* Object flags */
-#define OBJECT_FLAGS_QUIET       0x0002
-#define OBJECT_FLAGS_NOINTERACT  0x0004
 
-/*****************************************************************************
- * The vlc_object_t type. Yes, it's that simple :-)
- *****************************************************************************/
-/** The main vlc_object_t structure */
-struct vlc_object_t
-{
-    struct vlc_common_members obj;
-};
 
-/* The root object */
-struct libvlc_int_t
-{
-    struct vlc_common_members obj;
-};
 
 /*****************************************************************************
  * Prototypes

@@ -84,7 +84,7 @@ static int InputEvent( vlc_object_t *p_this, char const *psz_cmd,
     VLC_UNUSED(psz_cmd);
     VLC_UNUSED(oldval);
     input_thread_t *p_input = (input_thread_t *)p_this;
-    vlm_t *p_vlm = libvlc_priv( p_input->obj.libvlc )->p_vlm;
+    vlm_t *p_vlm = libvlc_priv( p_input->obj.members.libvlc )->p_vlm;
     assert( p_vlm );
     vlm_media_sys_t *p_media = p_data;
     const char *psz_instance_name = NULL;
@@ -135,7 +135,7 @@ vlm_t *vlm_New( libvlc_int_t *libvlc, const char *psz_vlmconf )
 
     msg_Dbg( p_this, "creating VLM" );
 
-    p_vlm = vlc_custom_create( p_this->obj.libvlc, sizeof( *p_vlm ),
+    p_vlm = vlc_custom_create( p_this->obj.members.libvlc, sizeof( *p_vlm ),
                                "vlm daemon" );
     if( !p_vlm )
     {
@@ -199,7 +199,7 @@ void vlm_Delete( vlm_t *p_vlm )
     vlc_mutex_lock( &vlm_mutex );
     assert( p_vlm->users > 0 );
     if( --p_vlm->users == 0 )
-        assert( libvlc_priv(p_vlm->obj.libvlc)->p_vlm == p_vlm );
+        assert( libvlc_priv(p_vlm->obj.members.libvlc)->p_vlm == p_vlm );
     else
         p_vlm = NULL;
 
@@ -226,7 +226,7 @@ void vlm_Delete( vlm_t *p_vlm )
         vlc_object_release( p_vlm->p_vod );
     }
 
-    libvlc_priv(p_vlm->obj.libvlc)->p_vlm = NULL;
+    libvlc_priv(p_vlm->obj.members.libvlc)->p_vlm = NULL;
     vlc_mutex_unlock( &vlm_mutex );
 
     vlc_join( p_vlm->thread, NULL );

@@ -413,7 +413,7 @@ static void VoutSaveSnapshot( vout_thread_t *p_vout )
     VoutOsdSnapshot( p_vout, p_picture, psz_filename );
 
     /* signal creation of a new snapshot file */
-    var_SetString( p_vout->obj.libvlc, "snapshot-file", psz_filename );
+    var_SetString( p_vout->obj.members.libvlc, "snapshot-file", psz_filename );
 
     free( psz_filename );
 

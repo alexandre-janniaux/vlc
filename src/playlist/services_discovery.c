@@ -47,7 +47,7 @@ static void playlist_sd_item_added(services_discovery_t *sd,
     assert(parent == NULL || psz_cat == NULL);
 
     vlc_sd_internal_t *sds = sd->owner.sys;
-    playlist_t *playlist = (playlist_t *)sd->obj.parent;
+    playlist_t *playlist = (playlist_t *)sd->obj.members.parent;
     playlist_item_t *node;
     const char *longname = (sd->description != NULL) ? sd->description : "?";
 
@@ -81,7 +81,7 @@ static void playlist_sd_item_removed(services_discovery_t *sd,
                                      input_item_t *p_input)
 {
     vlc_sd_internal_t *sds = sd->owner.sys;
-    playlist_t *playlist = (playlist_t *)sd->obj.parent;
+    playlist_t *playlist = (playlist_t *)sd->obj.members.parent;
     playlist_item_t *node, *item;
 
     msg_Dbg(sd, "removing: %s", p_input->psz_name ? p_input->psz_name : "(null)");

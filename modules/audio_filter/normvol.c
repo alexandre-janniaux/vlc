@@ -102,9 +102,9 @@ static int Open( vlc_object_t *p_this )
     p_sys = p_filter->p_sys = malloc( sizeof( *p_sys ) );
     if( !p_sys )
         return VLC_ENOMEM;
-    p_sys->i_nb = var_CreateGetInteger( p_filter->obj.parent,
+    p_sys->i_nb = var_CreateGetInteger( p_filter->obj.members.parent,
                                         "norm-buff-size" );
-    p_sys->f_max = var_CreateGetFloat( p_filter->obj.parent,
+    p_sys->f_max = var_CreateGetFloat( p_filter->obj.members.parent,
                                        "norm-max-level" );
 
     if( p_sys->f_max <= 0 ) p_sys->f_max = 0.01;
@@ -187,7 +187,7 @@ static block_t *DoWork( filter_t *p_filter, block_t *p_in_buf )
         f_average = f_average / p_sys->i_nb;
 
         /* Seuil arbitraire */
-        p_sys->f_max = var_GetFloat( p_filter->obj.parent,
+        p_sys->f_max = var_GetFloat( p_filter->obj.members.parent,
                                      "norm-max-level" );
 
         //fprintf(stderr,"Average %f, max %f\n", f_average, p_sys->f_max );

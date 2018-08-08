@@ -345,7 +345,7 @@ static inline vlc_ml_query_params_t vlc_ml_query_params_create()
 
 struct vlc_medialibrary_t
 {
-    struct vlc_common_members obj;
+    struct vlc_object_t obj;
 
     module_t *p_module;
 

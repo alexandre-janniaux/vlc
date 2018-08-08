@@ -46,7 +46,7 @@ typedef struct intf_sys_t intf_sys_t;
 /** Describe all interface-specific data of the interface thread */
 typedef struct intf_thread_t
 {
-    struct vlc_common_members obj;
+    struct vlc_object_t obj;
 
     struct intf_thread_t *p_next; /** LibVLC interfaces book keeping */
 
@@ -93,7 +93,7 @@ VLC_API void libvlc_Quit( libvlc_int_t * );
 
 static inline playlist_t *pl_Get( struct intf_thread_t *intf )
 {
-    return (playlist_t *)(intf->obj.parent);
+    return (playlist_t *)(intf->obj.members.parent);
 }
 
 /**

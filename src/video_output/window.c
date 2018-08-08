@@ -137,7 +137,7 @@ typedef struct vout_display_window
 static void vout_display_window_ResizeNotify(vout_window_t *window,
                                              unsigned width, unsigned height)
 {
-    vout_thread_t *vout = (vout_thread_t *)window->obj.parent;
+    vout_thread_t *vout = (vout_thread_t *)window->obj.members.parent;
 
     msg_Dbg(window, "resized to %ux%u", width, height);
     vout_ControlChangeDisplaySize(vout, width, height);
@@ -161,7 +161,7 @@ static void vout_display_window_StateNotify(vout_window_t *window,
 
     assert(state < ARRAY_SIZE(states));
     msg_Dbg(window, "window state changed: %s", states[state]);
-    var_SetInteger(window->obj.parent, "window-state", state);
+    var_SetInteger(window->obj.members.parent, "window-state", state);
 }
 
 static void vout_display_window_FullscreenNotify(vout_window_t *window,
@@ -169,22 +169,22 @@ static void vout_display_window_FullscreenNotify(vout_window_t *window,
 {
     msg_Dbg(window, (id != NULL) ? "window set to fullscreen on %s"
                                  : "window set to fullscreen", id);
-    var_SetString(window->obj.parent, "window-fullscreen-output",
+    var_SetString(window->obj.members.parent, "window-fullscreen-output",
                   (id != NULL) ? id : "");
-    var_SetBool(window->obj.parent, "window-fullscreen", true);
+    var_SetBool(window->obj.members.parent, "window-fullscreen", true);
 }
 
 static void vout_display_window_WindowingNotify(vout_window_t *window)
 {
     msg_Dbg(window, "window set windowed");
-    var_SetBool(window->obj.parent, "window-fullscreen", false);
+    var_SetBool(window->obj.members.parent, "window-fullscreen", false);
 }
 
 static void vout_display_window_MouseEvent(vout_window_t *window,
                                            const vout_window_mouse_event_t *ev)
 {
     vout_display_window_t *state = window->owner.sys;
-    vout_thread_t *vout = (vout_thread_t *)window->obj.parent;
+    vout_thread_t *vout = (vout_thread_t *)window->obj.members.parent;
     vlc_mouse_t *m = &state->mouse;
 
     m->b_double_click = false;
@@ -235,7 +235,7 @@ static void vout_display_window_MouseEvent(vout_window_t *window,
 static void vout_display_window_KeyboardEvent(vout_window_t *window,
                                               unsigned key)
 {
-    var_SetInteger(window->obj.libvlc, "key-pressed", key);
+    var_SetInteger(window->obj.members.libvlc, "key-pressed", key);
 }
 
 static void vout_display_window_OutputEvent(vout_window_t *window,
@@ -295,7 +295,7 @@ vout_window_t *vout_display_window_New(vout_thread_t *vout,
  */
 void vout_display_window_Delete(vout_window_t *window)
 {
-    vout_thread_t *vout = (vout_thread_t *)(window->obj.parent);
+    vout_thread_t *vout = (vout_thread_t *)(window->obj.members.parent);
     vout_display_window_t *state = window->owner.sys;
 
     vout_window_Delete(window);

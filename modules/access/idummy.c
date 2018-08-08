@@ -161,7 +161,7 @@ nop:
         msg_Info( p_demux, "command `quit'" );
         p_demux->pf_demux = DemuxNoOp;
         p_demux->pf_control = DemuxControl;
-        libvlc_Quit( p_demux->obj.libvlc );
+        libvlc_Quit( p_demux->obj.members.libvlc );
         return VLC_SUCCESS;
     }
 
