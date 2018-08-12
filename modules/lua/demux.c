@@ -252,6 +252,8 @@ static int ReadDir(stream_t *s, input_item_node_t *node)
         input_item_t *item = vlclua_read_input_item(VLC_OBJECT(s), L);
         if (item != NULL)
         {
+            input_item_CopyOptions(item, node->p_item);
+
             /* copy the original URL to the meta data,
              * if "URL" is still empty */
             char *url = input_item_GetURL(item);
