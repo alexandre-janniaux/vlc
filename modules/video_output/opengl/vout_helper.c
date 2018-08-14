@@ -1173,10 +1173,10 @@ static int BuildSphere(unsigned nbPlanes,
                         const float *right, const float *bottom)
 {
     unsigned nbLatBands = 128;
-    unsigned nbLonBands = 128;
+    unsigned nbLonBands = 64;
 
-    *nbVertices = (nbLatBands + 1) * (nbLonBands + 1);
-    *nbIndices = nbLatBands * nbLonBands * 3 * 2;
+    *nbVertices = (nbLatBands + 1) * (nbLonBands + 1) * 2;
+    *nbIndices = nbLatBands * nbLonBands * 3 * 2 * 2;
 
     *vertexCoord = vlc_alloc(*nbVertices * 3, sizeof(GLfloat));
     if (*vertexCoord == NULL)
@@ -1195,55 +1195,70 @@ static int BuildSphere(unsigned nbPlanes,
         return VLC_ENOMEM;
     }
 
-    for (unsigned lat = 0; lat <= nbLatBands; lat++) {
-        float theta = lat * (float) M_PI / nbLatBands;
-        float sinTheta, cosTheta;
-
-        sincosf(theta, &sinTheta, &cosTheta);
-
+    /* Draw two independant half-spheres */
+    for (unsigned hs = 0; hs < 2; ++hs) {
         for (unsigned lon = 0; lon <= nbLonBands; lon++) {
-            float phi = lon * 2 * (float) M_PI / nbLonBands;
+            float phi = lon * (float) M_PI / nbLonBands;
+            if (hs)
+                phi += M_PI;
             float sinPhi, cosPhi;
 
             sincosf(phi, &sinPhi, &cosPhi);
 
-            float x = cosPhi * sinTheta;
-            float y = cosTheta;
-            float z = sinPhi * sinTheta;
+            for (unsigned lat = 0; lat <= nbLatBands; lat++) {
+                float theta = lat * (float) M_PI / nbLatBands;
+                float sinTheta, cosTheta;
 
-            unsigned off1 = (lat * (nbLonBands + 1) + lon) * 3;
-            (*vertexCoord)[off1] = SPHERE_RADIUS * x;
-            (*vertexCoord)[off1 + 1] = SPHERE_RADIUS * y;
-            (*vertexCoord)[off1 + 2] = SPHERE_RADIUS * z;
+                sincosf(theta, &sinTheta, &cosTheta);
 
-            for (unsigned p = 0; p < nbPlanes; ++p)
-            {
-                unsigned off2 = (p * (nbLatBands + 1) * (nbLonBands + 1)
-                                + lat * (nbLonBands + 1) + lon) * 2;
-                float width = right[p] - left[p];
-                float height = bottom[p] - top[p];
-                float u = (float)lon / nbLonBands * width;
-                float v = (float)lat / nbLatBands * height;
-                (*textureCoord)[off2] = u;
-                (*textureCoord)[off2 + 1] = v;
+                float x = cosPhi * sinTheta;
+                float y = cosTheta;
+                float z = sinPhi * sinTheta;
+
+                unsigned off1 = ((nbLatBands + 1) * (nbLonBands + 1) * hs
+                                 + lat * (nbLonBands + 1) + lon) * 3;
+                (*vertexCoord)[off1] = SPHERE_RADIUS * x;
+                (*vertexCoord)[off1 + 1] = SPHERE_RADIUS * y;
+                (*vertexCoord)[off1 + 2] = SPHERE_RADIUS * z;
+
+                for (unsigned p = 0; p < nbPlanes; ++p)
+                {
+                    unsigned off2 = (p * (nbLatBands + 1) * (nbLonBands + 1) * 2
+                                     + (nbLatBands + 1) * (nbLonBands + 1) * hs
+                                     + (lat * (nbLonBands + 1) + lon)) * 2;
+                    float width = right[p] - left[p];
+                    float height = bottom[p] - top[p];
+
+                    /* 3D vector to 2D fisheye
+                     * http://paulbourke.net/dome/dualfish2sphere/ */
+                    float rTex = 2 * atan2(sqrt(y * y + x * x), fabs(z)) / (190.f / 180.f * M_PI);
+                    float thetaTex = atan2(x, y);
+
+                    (*textureCoord)[off2] = (rTex * sin(thetaTex) + 1) * width / 4;
+                    if (hs)
+                        (*textureCoord)[off2] = width - (*textureCoord)[off2];
+                    (*textureCoord)[off2 + 1] = height - (rTex * cos(thetaTex) + 1) * height / 2;
+                }
             }
         }
-    }
 
-    for (unsigned lat = 0; lat < nbLatBands; lat++) {
-        for (unsigned lon = 0; lon < nbLonBands; lon++) {
-            unsigned first = (lat * (nbLonBands + 1)) + lon;
-            unsigned second = first + nbLonBands + 1;
+        for (unsigned lat = 0; lat < nbLatBands; lat++) {
+            for (unsigned lon = 0; lon < nbLonBands; lon++) {
+                unsigned first = (nbLatBands + 1) * (nbLonBands + 1) * hs
+                                 + (lat * (nbLonBands + 1)) + lon;
+                unsigned second = first + nbLonBands + 1;
 
-            unsigned off = (lat * nbLatBands + lon) * 3 * 2;
+                unsigned off = (nbLatBands * nbLonBands * hs
+                                + (lat * nbLonBands + lon)) * 3 * 2;
 
-            (*indices)[off] = first;
-            (*indices)[off + 1] = second;
-            (*indices)[off + 2] = first + 1;
+                (*indices)[off] = first;
+                (*indices)[off + 1] = second;
+                (*indices)[off + 2] = first + 1;
 
-            (*indices)[off + 3] = second;
-            (*indices)[off + 4] = second + 1;
-            (*indices)[off + 5] = first + 1;
+                (*indices)[off + 3] = second;
+                (*indices)[off + 4] = second + 1;
+                (*indices)[off + 5] = first + 1;
+            }
         }
     }
 
