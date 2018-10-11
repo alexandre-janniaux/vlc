@@ -25,6 +25,11 @@
 #include <stdlib.h>
 #include <QApplication>
 
+#include <qconfig.h>
+
+#include "qt.hpp"
+#include "vlc-qt-static.hpp"
+
 static void messageOutput(QtMsgType type, const QMessageLogContext &,
                           const QString &)
 {

@@ -46,6 +46,7 @@ endif
 
 libqt_plugin_la_SOURCES = \
 	gui/qt/qt.cpp gui/qt/qt.hpp \
+	gui/qt/vlc-qt-static.hpp \
 	gui/qt/menus.cpp gui/qt/menus.hpp \
 	gui/qt/main_interface.cpp gui/qt/main_interface.hpp \
 	gui/qt/dialogs_provider.cpp gui/qt/dialogs_provider.hpp \
@@ -634,8 +635,9 @@ gui/qt/resources.cpp: gui/qt/vlc.qrc $(libqt_plugin_la_RES) $(libqt_plugin_la_QM
 endif
 
 vlc_qt_check_SOURCES = gui/qt/vlc-qt-check.cpp
-vlc_qt_check_CXXFLAGS = $(AM_CXXFLAGS) $(QT_CFLAGS) -fPIC
-vlc_qt_check_LDADD = $(QT_LIBS)
+vlc_qt_check_CPPFLAGS = $(AM_CPPFLAGS) $(libqt_plugin_la_CPPFLAGS)
+vlc_qt_check_CXXFLAGS = $(AM_CXXFLAGS) $(libqt_plugin_la_CXXFLAGS) -fPIC
+vlc_qt_check_LDADD = $(libqt_plugin_la_LIBADD)
 
 if ENABLE_QT
 gui_LTLIBRARIES += libqt_plugin.la
