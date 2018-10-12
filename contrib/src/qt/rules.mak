@@ -91,6 +91,10 @@ QT_CONFIG := -static -opensource -confirm-license -no-pkg-config \
 ifdef HAVE_LINUX
 # Force building of xcb platform, can it be detected?
 QT_CONFIG += -xcb
+# Building Qt with fontconfig requires non-embedded
+# freetype & fontconfig to be available
+QT_CONFIG += -fontconfig -system-freetype
+DEPS_qt += freetype2 $(DEPS_freetype2) fontconfig $(DEPS_fontconfig)
 endif
 
 QT_CONFIG += -release

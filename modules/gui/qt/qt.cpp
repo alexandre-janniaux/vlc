@@ -90,6 +90,10 @@ extern "C" char **environ;
   #ifdef _WIN32
    Q_IMPORT_PLUGIN(QWindowsVistaStylePlugin)
    Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+  #else
+    #if defined(QT5_HAS_X11)
+     Q_IMPORT_PLUGIN(QXcbIntegrationPlugin)
+    #endif
   #endif
  #endif
 #endif
