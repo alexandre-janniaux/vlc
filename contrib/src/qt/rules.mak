@@ -49,7 +49,7 @@ endif
 
 endif
 	$(APPLY) $(SRC)/qt/0001-qmake-Always-split-QMAKE_DEFAULT_LIBDIRS-using-with-.patch
-	
+
 	$(APPLY) $(SRC)/qt/0001-generate-different-pkg-config-files-for-debug-and-re.patch
 	$(APPLY) $(SRC)/qt/0001-include-MODULE_AUX_INCLUDES-in-the-generated-.pc-fil.patch
 	$(MOVE)
@@ -87,6 +87,13 @@ QT_CONFIG := -static -opensource -confirm-license -no-pkg-config \
 	-no-sql-sqlite -no-gif -qt-libjpeg -no-openssl $(QT_OPENGL) -no-dbus \
 	-no-vulkan -no-sql-odbc -no-pch \
 	-no-compile-examples -nomake examples -nomake tests -qt-zlib
+
+ifdef HAVE_LINUX
+# Building Qt with fontconfig requires non-embedded
+# freetype & fontconfig to be available
+QT_CONFIG += -fontconfig -system-freetype
+DEPS_qt += freetype2 $(DEPS_freetype2) fontconfig $(DEPS_fontconfig)
+endif
 
 QT_CONFIG += -release
 
