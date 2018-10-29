@@ -72,12 +72,15 @@ static void buffer_release_cb(void *data, struct wl_buffer *buffer)
 {
     picture_t *pic = data;
 
-#ifndef NDEBUG
-    assert(pic != NULL);
+    /* Detach the picture from the buffer so we don't release it again when
+     * reseting all the pictures */
     wl_buffer_set_user_data(buffer, NULL);
-#else
-    (void) buffer;
-#endif
+
+    /* We can't queue buffer without a corresponding picture */
+    assert(pic);
+
+    /* The release event happens when the compositor replaced our buffer by a
+     * new one, signaling it doesn't need it anymore */
     picture_Release(pic);
 }
 
@@ -90,7 +93,8 @@ static void PictureDetach(void *data, picture_t *pic)
 {
     struct wl_buffer *buf = (struct wl_buffer *)pic->p_sys;
 
-    /* Detach the buffer if it is attached */
+    /* Release the picture if it is still attached to the buffer, after calling
+     * VOUT_DISPLAY_RESET_PICTURES while rendering frames */
     pic = wl_buffer_get_user_data(buf);
     if (pic != NULL)
         buffer_release_cb(pic, buf);
@@ -189,6 +193,8 @@ static picture_pool_t *Pool(vout_display_t *vd, unsigned req)
             break;
         }
 
+        /* We won't queue a buffer without associating a picture before so we
+         * can set NULL as buffer userdata here */
         wl_buffer_add_listener(buf, &buffer_cbs, NULL);
         pics[count++] = pic;
     }
