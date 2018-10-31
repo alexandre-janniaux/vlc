@@ -22,6 +22,10 @@
 # include "config.h"
 #endif
 
+#ifdef QT_STATIC
+#define QT_STATICPLUGIN
+#endif
+
 #include <stdlib.h>
 #include <QApplication>
 
