@@ -132,6 +132,7 @@ typedef struct {
                                              * needs to call vout_display_SendEventMouseMoved()
                                              * or vout_display_SendEventMouseState() */
     bool has_pictures_invalid;              /* Will VOUT_DISPLAY_EVENT_PICTURES_INVALID be used */
+    bool can_scale_spu;                     /* Handles subpictures with a non default zoom factor */
     const vlc_fourcc_t *subpicture_chromas; /* List of supported chromas for subpicture rendering. */
 } vout_display_info_t;
 
