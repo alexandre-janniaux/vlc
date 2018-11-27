@@ -527,6 +527,7 @@ libvlc_media_t * libvlc_media_new_as_node( libvlc_instance_t *p_instance,
 void libvlc_media_set_fallback( libvlc_media_t * p_md,
                                 libvlc_media_t * p_fallback )
 {
+    libvlc_media_retain( p_fallback );
     p_md->p_fallback = p_fallback;
 }
 
@@ -567,6 +568,9 @@ void libvlc_media_release( libvlc_media_t *p_md )
 
     if( p_md->i_refcount > 0 )
         return;
+
+    if( p_md->p_fallback )
+        libvlc_media_release( p_md->p_fallback );
 
     uninstall_input_item_observer( p_md );
 
