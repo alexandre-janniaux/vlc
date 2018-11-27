@@ -518,6 +518,19 @@ libvlc_media_t * libvlc_media_new_as_node( libvlc_instance_t *p_instance,
 }
 
 /**************************************************************************
+ * Define another media_item as fallback, which will be used by the media
+ * player as a substitute if the first media item fails during the preparation
+ * of the input or output pipeline.
+ *
+ * Fallbacks can be chained together, and can be used for transcoding.
+ **************************************************************************/
+void libvlc_media_set_fallback( libvlc_media_t * p_md,
+                                libvlc_media_t * p_fallback )
+{
+    p_md->p_fallback = p_fallback;
+}
+
+/**************************************************************************
  * Add an option to the media descriptor,
  * that will be used to determine how the media_player will read the
  * media. This allow to use VLC advanced reading/streaming
