@@ -329,9 +329,22 @@ input_event_changed( vlc_object_t * p_this, char const * psz_cmd,
                 event.type = libvlc_MediaPlayerEndReached;
                 break;
             case ERROR_S:
-                libvlc_state = libvlc_Error;
-                event.type = libvlc_MediaPlayerEncounteredError;
+            {
+                libvlc_media_t *p_md = libvlc_media_player_get_media(p_mi);
+                if (p_md->p_fallback == NULL)
+                {
+                    libvlc_state = libvlc_Error;
+                    event.type = libvlc_MediaPlayerEncounteredError;
+                }
+                else
+                {
+                    /* TODO: should we change the media later ? */
+                    libvlc_media_player_set_media(p_mi, p_md->p_fallback);
+                    libvlc_state = libvlc_Playing;
+                    event.type = libvlc_MediaPlayerEncounteredFallback;
+                }
                 break;
+            }
 
             default:
                 return VLC_SUCCESS;

@@ -101,6 +101,7 @@ enum libvlc_event_e {
     libvlc_MediaPlayerBackward,
     libvlc_MediaPlayerEndReached,
     libvlc_MediaPlayerEncounteredError,
+    libvlc_MediaPlayerEncounteredFallback,
     libvlc_MediaPlayerTimeChanged,
     libvlc_MediaPlayerPositionChanged,
     libvlc_MediaPlayerSeekableChanged,
