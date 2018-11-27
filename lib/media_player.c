@@ -325,25 +325,57 @@ input_event_changed( vlc_object_t * p_this, char const * psz_cmd,
                 event.type = libvlc_MediaPlayerPaused;
                 break;
             case END_S:
+                printf("END!!\n");
                 libvlc_state = libvlc_Ended;
                 event.type = libvlc_MediaPlayerEndReached;
                 break;
             case ERROR_S:
             {
-                libvlc_media_t *p_md = libvlc_media_player_get_media(p_mi);
-                if (p_md->p_fallback == NULL)
+                /* We need to prevent the media from being destroyed */
+                printf("LOCKING\n");
+                lock(p_mi);
+                libvlc_media_t *p_md = p_mi->p_md;
+                if (p_md)
+                    libvlc_media_retain(p_md);
+                unlock(p_mi);
+                printf("UNLOCKED\n");
+
+                if (!p_md || !p_md->p_fallback)
                 {
+                    printf("No fallback\n");
                     libvlc_state = libvlc_Error;
                     event.type = libvlc_MediaPlayerEncounteredError;
+                    break;
                 }
-                else
-                {
-                    /* TODO: should we change the media later ? */
-                    libvlc_media_player_set_media(p_mi, p_md->p_fallback);
-                    libvlc_state = libvlc_Playing;
-                    event.type = libvlc_MediaPlayerEncounteredFallback;
-                }
-                break;
+
+                printf("FALLBACK\n");
+
+                /* retain the fallback as libvlc_media_player_set_media can
+                 * release p_md before we set p_fallback */
+                libvlc_media_t *p_fallback = p_md->p_fallback;
+                libvlc_media_retain( p_fallback );
+
+                /* notify the fallback before switch to the fallback
+                 * media, so that the user can catch this switch */
+                event.type = libvlc_MediaPlayerEncounteredFallback;
+                libvlc_media_set_state(p_md, libvlc_Error);
+
+                libvlc_event_send( &p_mi->event_manager, &event );
+
+                lock_input( p_mi );
+                /* restart the input thread */
+                release_input_thread( p_mi );
+                libvlc_media_release( p_md );
+                unlock_input( p_mi );
+
+                p_mi->p_md = p_fallback;
+                p_mi->state = libvlc_Playing;
+
+                libvlc_media_player_play( p_mi );
+
+                printf("THEEND\n");
+
+                return VLC_SUCCESS;
             }
 
             default:
@@ -355,6 +387,7 @@ input_event_changed( vlc_object_t * p_this, char const * psz_cmd,
     }
     else if( newval.i_int == INPUT_EVENT_DEAD )
     {
+        printf("DEAD\n");
         libvlc_state_t libvlc_state = libvlc_Ended;
         event.type = libvlc_MediaPlayerStopped;
 

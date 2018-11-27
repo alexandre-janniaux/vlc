@@ -546,6 +546,7 @@ static void *Run( void *data )
         End( p_input );
     }
 
+    printf(stderr, "input_SendEventDead\n");
     input_SendEventDead( p_input );
     return NULL;
 }
@@ -1448,6 +1449,7 @@ error:
     input_priv(p_input)->p_es_out = NULL;
     input_priv(p_input)->p_sout = NULL;
 
+    printf("Input init failed \n");
     return VLC_EGENERIC;
 }
 
