@@ -433,6 +433,11 @@ LIBVLC_API libvlc_media_t *libvlc_media_new_fd(
                                    libvlc_instance_t *p_instance,
                                    int fd );
 
+
+/* TODO doc */
+void libvlc_media_set_fallback( libvlc_media_t * p_md,
+                                libvlc_media_t * p_fallback );
+
 /**
  * Create a media with custom callbacks to read the data from.
  *

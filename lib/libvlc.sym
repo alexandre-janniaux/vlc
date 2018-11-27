@@ -191,6 +191,7 @@ libvlc_media_slaves_add
 libvlc_media_slaves_clear
 libvlc_media_slaves_get
 libvlc_media_slaves_release
+libvlc_media_set_fallback
 libvlc_media_set_meta
 libvlc_media_set_state
 libvlc_media_set_user_data
