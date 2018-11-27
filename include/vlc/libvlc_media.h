@@ -435,7 +435,7 @@ LIBVLC_API libvlc_media_t *libvlc_media_new_fd(
 
 
 /* TODO doc */
-void libvlc_media_set_fallback( libvlc_media_t * p_md,
+LIBVLC_API void libvlc_media_set_fallback( libvlc_media_t * p_md,
                                 libvlc_media_t * p_fallback );
 
 /**
