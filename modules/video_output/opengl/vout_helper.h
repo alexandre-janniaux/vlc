@@ -108,4 +108,8 @@ int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,
                                 picture_t *picture, subpicture_t *subpicture);
 int vout_display_opengl_Display(vout_display_opengl_t *vgl,
                                 const video_format_t *source);
+
+void vout_display_opengl_UpdateHMD(vout_display_opengl_t *vgl,
+                                   vlc_hmd_device_t *device);
+
 #endif
