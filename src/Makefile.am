@@ -53,6 +53,7 @@ pluginsinclude_HEADERS = \
 	../include/vlc_fs.h \
 	../include/vlc_gcrypt.h \
 	../include/vlc_opengl.h \
+	../include/vlc_hmd.h
 	../include/vlc_http.h \
 	../include/vlc_httpd.h \
 	../include/vlc_image.h \
@@ -391,7 +392,9 @@ libvlccore_la_SOURCES = \
 	misc/subpicture.c \
 	misc/subpicture.h \
 	misc/medialibrary.c \
-	misc/viewpoint.c
+	misc/viewpoint.c \
+	misc/hmd.c
+>>>>>>> HMD: export and include API in the core
 libvlccore_la_LIBADD = $(LIBS_libvlccore) \
 	../compat/libcompat.la \
 	$(LTLIBINTL) $(LTLIBICONV) \
