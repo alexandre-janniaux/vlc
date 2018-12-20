@@ -951,3 +951,8 @@ vlc_video_context_GetType
 vlc_video_context_GetPrivate
 vlc_video_context_Hold
 vlc_video_context_HoldDevice
+vlc_hmd_FindDevice
+vlc_hmd_MapDevice
+vlc_hmd_UnmapDevice
+vlc_hmd_ReadEvents
+vlc_hmd_ReadViewpoint

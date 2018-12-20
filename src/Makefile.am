@@ -54,6 +54,7 @@ pluginsinclude_HEADERS = \
 	../include/vlc_fs.h \
 	../include/vlc_gcrypt.h \
 	../include/vlc_opengl.h \
+	../include/vlc_hmd.h
 	../include/vlc_http.h \
 	../include/vlc_httpd.h \
 	../include/vlc_image.h \
@@ -389,7 +390,8 @@ libvlccore_la_SOURCES = \
 	misc/subpicture.c \
 	misc/subpicture.h \
 	misc/medialibrary.c \
-	misc/viewpoint.c
+	misc/viewpoint.c \
+	misc/hmd.c
 libvlccore_la_LIBADD = $(LIBS_libvlccore) \
 	../compat/libcompat.la \
 	$(LTLIBINTL) $(LTLIBICONV) \
@@ -598,7 +600,7 @@ test_mrl_helpers_SOURCES = test/mrl_helpers.c
 test_arrays_SOURCES = test/arrays.c
 test_vector_SOURCES = test/vector.c
 test_shared_data_ptr_SOURCES = test/shared_data_ptr.cpp
-test_extensions_SOURCES = test/extensions.c 
+test_extensions_SOURCES = test/extensions.c
 test_playlist_SOURCES = playlist/test.c \
 	playlist/content.c \
 	playlist/control.c \
