@@ -2,7 +2,6 @@
 
 OPENHMD_VERSION := 80d51bea575a5bf71bb3a0b9683b80ac3146596a
 OPENHMD_GITURL = https://github.com/OpenHMD/OpenHMD.git
-OPENHMD_BRANCH = master
 
 OPENHMD_DRIVERS = rift,vive,deepoon,psvr,nolo,external
 
