@@ -93,12 +93,12 @@ static int Control(vout_display_t *vd, int query, va_list ap)
         vout_display_place_t place;
 
         /* Reverse vertical alignment as the GL tex are Y inverted */
-        if (c.align.vertical == VOUT_DISPLAY_ALIGN_TOP)
-            c.align.vertical = VOUT_DISPLAY_ALIGN_BOTTOM;
-        else if (c.align.vertical == VOUT_DISPLAY_ALIGN_BOTTOM)
-            c.align.vertical = VOUT_DISPLAY_ALIGN_TOP;
+        if (c.align.vertical == VLC_VIDEO_ALIGN_TOP)
+            c.align.vertical = VLC_VIDEO_ALIGN_BOTTOM;
+        else if (c.align.vertical == VLC_VIDEO_ALIGN_BOTTOM)
+            c.align.vertical = VLC_VIDEO_ALIGN_TOP;
 
-        vout_display_PlacePicture (&place, src, &c, false);
+        vout_display_PlacePicture (&place, src, &c);
         vlc_gl_Resize (sys->gl, place.width, place.height);
         if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
             return VLC_EGENERIC;
@@ -114,7 +114,7 @@ static int Control(vout_display_t *vd, int query, va_list ap)
         const vout_display_cfg_t *cfg = vd->cfg;
         vout_display_place_t place;
 
-        vout_display_PlacePicture (&place, &vd->source, cfg, false);
+        vout_display_PlacePicture (&place, &vd->source, cfg);
         if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
             return VLC_EGENERIC;
         vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
