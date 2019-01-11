@@ -152,6 +152,7 @@ static int Open (vlc_object_t *obj)
     vd->sys = sys;
     vd->info.has_pictures_invalid = false;
     vd->info.subpicture_chromas = spu_chromas;
+    vd->info.can_scale_spu = true;
     vd->pool = Pool;
     vd->prepare = PictureRender;
     vd->display = PictureDisplay;
