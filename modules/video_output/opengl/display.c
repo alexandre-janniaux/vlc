@@ -145,6 +145,7 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
 
     vd->sys = sys;
     vd->info.subpicture_chromas = spu_chromas;
+    vd->info.can_scale_spu = true;
     vd->pool = Pool;
     vd->prepare = PictureRender;
     vd->display = PictureDisplay;
