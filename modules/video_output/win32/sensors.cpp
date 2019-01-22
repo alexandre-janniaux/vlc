@@ -123,12 +123,14 @@ public:
             PropVariantClear(&pvRot);
         }
 
-        vlc_viewpoint_t vp = {
+        // TODO: use current_pos directly?
+        vlc_viewpoint_t vp;
+        vlc_viewpoint_init(&vp);
+        vlc_viewpoint_from_euler(&vp,
             old_pos.yaw   - current_pos.yaw,
             old_pos.pitch - current_pos.pitch,
-            old_pos.roll  - current_pos.roll,
-            0.0f
-        };
+            old_pos.roll  - current_pos.roll);
+
         vout_display_SendEventViewpointMoved(vd, &vp);
         return S_OK;
     }
