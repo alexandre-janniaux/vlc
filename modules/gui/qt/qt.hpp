@@ -67,6 +67,7 @@ class PlaylistControlerModel;
 }
 }
 class PlayerControler;
+class VideoRendererGL;
 struct intf_sys_t
 {
     vlc_thread_t thread;
@@ -81,6 +82,8 @@ struct intf_sys_t
     bool b_isDialogProvider; /* Qt mode or Skins mode */
     vlc_playlist_t *p_playlist;  /* playlist */
     vlc_player_t *p_player; /* player */
+
+    VideoRendererGL* p_renderer;
 
     vlc::playlist::PlaylistControlerModel* p_mainPlaylistControler;
     PlayerControler* p_mainPlayerControler;

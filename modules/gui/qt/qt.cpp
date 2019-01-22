@@ -61,6 +61,7 @@ extern "C" char **environ;
 
 #include <QVector>
 #include "components/playlist/playlist_item.hpp"
+#include "components/videorenderergl.hpp"
 
 #include <vlc_plugin.h>
 #include <vlc_vout_window.h>
@@ -508,6 +509,7 @@ static inline void qRegisterMetaTypes()
     // register all types used by signal/slots
     qRegisterMetaType<size_t>("size_t");
     qRegisterMetaType<ssize_t>("ssize_t");
+    qRegisterMetaType<vlc_tick_t>("vlc_tick_t");
 }
 
 static void *Thread( void *obj )
@@ -548,8 +550,12 @@ static void *Thread( void *obj )
     QApplication::setAttribute( Qt::AA_UseHighDpiPixmaps );
 #endif
 
+    QQuickWindow::setDefaultAlphaBuffer(true);
+
     /* Start the QApplication here */
     QVLCApp app( argc, argv );
+
+    app.setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 
     /* Set application direction to locale direction,
      * necessary for  RTL locales */
@@ -641,6 +647,12 @@ static void *Thread( void *obj )
 
             var_SetAddress( p_sys->p_player, "qt4-iface", p_intf );
             var_SetString( p_sys->p_player, "window", "qt,any" );
+
+            if (p_sys->voutWindowType == VOUT_WINDOW_TYPE_XID)
+            {
+                p_sys->p_renderer = p_mi->getVideoRendererGL();
+                p_sys->p_renderer->registerVideoCallbacks(p_sys->p_player);
+            }
         }
     }
 
@@ -764,5 +776,7 @@ static int WindowOpen( vout_window_t *p_wnd )
 
     MainInterface *p_mi = p_intf->p_sys->p_mi;
 
+    p_mi->getVideoRendererGL()->setVoutWindow(p_wnd);
     return p_mi->getVideo( p_wnd ) ? VLC_SUCCESS : VLC_EGENERIC;
+
 }
