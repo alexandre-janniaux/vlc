@@ -254,8 +254,14 @@ void matroska_segment_c::ParseTrackEntry( const KaxTrackEntry *m )
         unsigned int chroma_sit_horizontal;
       } track_video_info;
 
+      struct {
+          float yaw;
+          float pitch;
+          float roll;
+      } pose;
+
     } metadata_payload = {
-      this, p_track, &sys.demuxer, bSupported, 3, { }
+      this, p_track, &sys.demuxer, bSupported, 3, { }, { }
     };
 
     MKV_SWITCH_CREATE( EbmlTypeDispatcher, MetaDataHandlers, MetaDataCapture )
@@ -570,17 +576,17 @@ void matroska_segment_c::ParseTrackEntry( const KaxTrackEntry *m )
         E_CASE( KaxVideoProjectionPoseYaw, pose )
         {
             ONLY_FMT(VIDEO);
-            vars.tk->fmt.video.pose.yaw = static_cast<float>( pose );
+            vars.pose.yaw = static_cast<float>( pose );
         }
         E_CASE( KaxVideoProjectionPosePitch, pose )
         {
             ONLY_FMT(VIDEO);
-            vars.tk->fmt.video.pose.pitch = static_cast<float>( pose );
+            vars.pose.pitch = static_cast<float>( pose );
         }
         E_CASE( KaxVideoProjectionPoseRoll, pose )
         {
             ONLY_FMT(VIDEO);
-            vars.tk->fmt.video.pose.roll = static_cast<float>( pose );
+            vars.pose.roll = static_cast<float>( pose );
         }
 #endif
         E_CASE( KaxVideoFlagInterlaced, fint ) // UNUSED
@@ -1008,6 +1014,11 @@ void matroska_segment_c::ParseTrackEntry( const KaxTrackEntry *m )
             debug( vars, "Unknown (%s)", typeid(element).name() );
         }
     };
+
+    vlc_viewpoint_from_euler( &p_track->fmt.video.pose,
+                              metadata_payload.pose.yaw,
+                              metadata_payload.pose.pitch,
+                              metadata_payload.pose.roll);
 
     MetaDataHandlers::Dispatcher().iterate ( m->begin(), m->end(), &metadata_payload );
 
@@ -1644,6 +1655,8 @@ bool matroska_segment_c::TrackInit( mkv_track_t * p_tk )
     } captures = {
         this, p_tk, &p_tk->fmt, &sys.demuxer
     };
+
+    float yaw = 0.f, pitch = 0.f, roll = 0.f;
 
     MKV_SWITCH_CREATE( StringDispatcher, TrackCodecHandlers, HandlerPayload )
     {
@@ -2286,6 +2299,8 @@ bool matroska_segment_c::TrackInit( mkv_track_t * p_tk )
             vars.p_tk->fmt.i_codec = VLC_CODEC_UNKNOWN;
         }
     };
+
+    vlc_viewpoint_from_euler( &p_tk->fmt.video.pose, yaw, pitch, roll );
 
     try {
         TrackCodecHandlers::Dispatcher().send( p_tk->codec.c_str(), &captures );
