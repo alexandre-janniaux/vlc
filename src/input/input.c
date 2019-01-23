@@ -1693,30 +1693,34 @@ static void ControlNav( input_thread_t *p_input, int i_type )
         return; /* The demux handled the navigation control */
 
     /* Handle Up/Down/Left/Right if the demux can't navigate */
-    vlc_viewpoint_t vp = {0};
+    bool viewpoint_updated = 1;
+    float yaw = 0.f, pitch = 0.f, roll = 0.f;
+    vlc_viewpoint_to_euler(&priv->viewpoint, &yaw, &pitch, &roll);
+
     int vol_direction = 0;
     int seek_direction = 0;
     switch( i_type )
     {
         case INPUT_CONTROL_NAV_UP:
             vol_direction = 1;
-            vp.pitch = -1.f;
+            pitch += -1.f;
             break;
         case INPUT_CONTROL_NAV_DOWN:
             vol_direction = -1;
-            vp.pitch = 1.f;
+            pitch += 1.f;
             break;
         case INPUT_CONTROL_NAV_LEFT:
             seek_direction = -1;
-            vp.yaw = -1.f;
+            yaw += -1.f;
             break;
         case INPUT_CONTROL_NAV_RIGHT:
             seek_direction = 1;
-            vp.yaw = 1.f;
+            yaw += 1.f;
             break;
         case INPUT_CONTROL_NAV_ACTIVATE:
         case INPUT_CONTROL_NAV_POPUP:
         case INPUT_CONTROL_NAV_MENU:
+            viewpoint_updated = false;
             return;
         default:
             vlc_assert_unreachable();
@@ -1736,13 +1740,10 @@ static void ControlNav( input_thread_t *p_input, int i_type )
     }
     free( pp_vout );
 
-    if( b_viewpoint_ch )
+    if( b_viewpoint_ch && viewpoint_updated )
     {
         priv->viewpoint_changed = true;
-        priv->viewpoint.yaw   += vp.yaw;
-        priv->viewpoint.pitch += vp.pitch;
-        priv->viewpoint.roll  += vp.roll;
-        priv->viewpoint.fov   += vp.fov;
+        vlc_viewpoint_from_euler( &priv->viewpoint, yaw, pitch, roll );
         ViewpointApply( p_input );
         return;
     }
