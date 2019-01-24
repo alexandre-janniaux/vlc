@@ -2197,6 +2197,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     {
         vlc_hmd_UnmapDevice(vgl->hmd);
         vgl->hmd = NULL;
+        vgl->close_hmd = false;
     }
 
     if (vgl->hmd)
@@ -2352,6 +2353,11 @@ void vout_display_opengl_UpdateHMD(vout_display_opengl_t *vgl,
         vgl->hmd = vlc_hmd_MapDevice(device, &vout_hmd_cbs, vgl);
     }
     else
+    {
         msg_Info(vgl->gl, "Disabling HMD mode");
+        vgl->close_hmd = true;
         vlc_mutex_unlock(&vgl->hmd_lock);
     }
+
+    vlc_mutex_unlock(&vgl->hmd_lock);
+}
