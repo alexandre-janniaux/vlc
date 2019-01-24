@@ -2348,7 +2348,7 @@ void vout_display_opengl_UpdateHMD(vout_display_opengl_t *vgl,
     if (device)
     {
         msg_Info(vgl->gl, "Enabling HMD mode");
-        vgl->hmd = vlc_hmd_MapDevice(device, &vout_hmd_cbs, NULL);
+        vgl->hmd = vlc_hmd_MapDevice(device, &vout_hmd_cbs, vgl);
     }
     else
         msg_Info(vgl->gl, "Disabling HMD mode");
