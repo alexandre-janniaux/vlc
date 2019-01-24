@@ -271,10 +271,32 @@ int libvlc_video_update_viewpoint( libvlc_media_player_t *p_mi,
                               p_viewpoint->f_pitch,
                               p_viewpoint->f_roll);
 
+    // TODO
+    ///* Save the viewpoint in case the input is not created yet */
+    //if( !b_absolute )
+    //{
+    //    float yaw, pitch, roll;
+    //    vlc_viewpoint_to_euler(&p_mi->viewpoint, &yaw, &pitch, &roll);
+    //    yaw   += p_viewpoint->f_yaw;
+    //    pitch += p_viewpoint->f_pitch;
+    //    roll  += p_viewpoint->f_roll;
+    //    vlc_viewpoint_from_euler(&p_mi->viewpoint, yaw, pitch, roll);
+    //    p_mi->viewpoint.fov += p_viewpoint->f_field_of_view;
+    //}
+    //else
+    //{
+    //    vlc_viewpoint_from_euler( &p_mi->viewpoint,
+    //                              p_viewpoint->f_yaw,
+    //                              p_viewpoint->f_pitch,
+    //                              p_viewpoint->f_roll);
+    //    p_mi->viewpoint.fov = p_viewpoint->f_field_of_view;
+    //}
+
+    //vlc_viewpoint_clip( &p_mi->viewpoint );
+
     enum vlc_player_whence whence = b_absolute ? VLC_PLAYER_WHENCE_ABSOLUTE
                                                : VLC_PLAYER_WHENCE_RELATIVE;
     vlc_player_UpdateViewpoint(p_mi->player, &update, whence);
-
     /* may not fail anymore, keep int not to break the API */
     return 0;
 }
