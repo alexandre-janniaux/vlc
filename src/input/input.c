@@ -2081,10 +2081,16 @@ static bool Control( input_thread_t *p_input,
             else
             {
                 priv->viewpoint_changed = true;
-                priv->viewpoint.yaw   += param.viewpoint.yaw;
-                priv->viewpoint.pitch += param.viewpoint.pitch;
-                priv->viewpoint.roll  += param.viewpoint.roll;
-                priv->viewpoint.fov   += param.viewpoint.fov;
+                float previous[3], update[3];
+                vlc_viewpoint_to_euler(&priv->viewpoint, &previous[0],
+                                       &previous[1], &previous[2]);
+                vlc_viewpoint_to_euler(&param.viewpoint, &update[0],
+                                       &update[1], &update[2]);
+                vlc_viewpoint_from_euler(&priv->viewpoint,
+                                         previous[0] + update[0],
+                                         previous[1] + update[1],
+                                         previous[2] + update[2]);
+                priv->viewpoint.fov += param.viewpoint.fov;
             }
 
             ViewpointApply( p_input );
