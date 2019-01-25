@@ -555,7 +555,7 @@ static void *Thread( void *obj )
     /* Start the QApplication here */
     QVLCApp app( argc, argv );
 
-    app.setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+    //app.setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 
     /* Set application direction to locale direction,
      * necessary for  RTL locales */
@@ -776,7 +776,6 @@ static int WindowOpen( vout_window_t *p_wnd )
 
     MainInterface *p_mi = p_intf->p_sys->p_mi;
 
-    p_mi->getVideoRendererGL()->setVoutWindow(p_wnd);
     return p_mi->getVideo( p_wnd ) ? VLC_SUCCESS : VLC_EGENERIC;
 
 }

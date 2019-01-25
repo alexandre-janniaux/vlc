@@ -143,7 +143,6 @@ protected:
     QString              input_name;
     QVBoxLayout         *mainLayout;
 
-    VideoWidget         *videoWidget;
     VideoRendererGL     *m_videoRendererGL = nullptr;
 
     QQuickWidget        *mediacenterView;
@@ -154,7 +153,6 @@ protected:
     QLabel              *cryptedLabel;
 
     /* Status and flags */
-    QWidget             *stackCentralOldWidget;
     QPoint              lastWinPosition;
     QSize               lastWinSize;  /// To restore the same window size when leaving fullscreen
     QScreen             *lastWinScreen;
@@ -195,11 +193,6 @@ public slots:
     void toggleInterfaceFullScreen();
     void setInterfaceAlwaysOnTop( bool );
 
-    /* Manage the Video Functions from the vout threads */
-    void getVideoSlot( struct vout_window_t *,
-                       unsigned i_width, unsigned i_height, bool );
-    void releaseVideoSlot( void );
-
     void emitBoss();
     void emitRaise();
 
@@ -207,24 +200,25 @@ public slots:
     void toolBarConfUpdated();
 
 protected slots:
-    void debug();
     void setVLCWindowsTitle( const QString& title = "" );
     void handleSystrayClick( QSystemTrayIcon::ActivationReason );
     void updateSystrayTooltipName( const QString& );
     void updateSystrayTooltipStatus( PlayerControler::PlayingState );
 
     void handleKeyPress( QKeyEvent * );
-
     void showBuffering( float );
 
-    void setVideoSize( unsigned int, unsigned int );
-    void videoSizeChanged( int, int );
+    /* Manage the Video Functions from the vout threads */
+    void getVideoSlot( struct vout_window_t *,
+                       unsigned i_width, unsigned i_height, bool );
+    void releaseVideoSlot( void );
+
+    void setVideoSize(unsigned int w, unsigned int h);
     virtual void setVideoFullScreen( bool );
     void setVideoOnTop( bool );
     void setBoss();
     void setRaise();
-    void voutReleaseMouseEvents();
-
+    void setFullScreen( bool );
     void onInputChanged( bool );
 
 signals:

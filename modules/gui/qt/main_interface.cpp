@@ -119,8 +119,6 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf ),
     videoActive( ATOMIC_FLAG_INIT )
 {
     /* Variables initialisation */
-    videoWidget          = NULL;
-    stackCentralOldWidget= NULL;
     lastWinScreen        = NULL;
     sysTray              = NULL;
     cryptedLabel         = NULL;
@@ -202,34 +200,19 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf ),
 
     /* VideoWidget connects for asynchronous calls */
     b_videoFullScreen = false;
-    connect( this, SIGNAL(askGetVideo(struct vout_window_t*, unsigned, unsigned, bool)),
-             this, SLOT(getVideoSlot(struct vout_window_t*, unsigned, unsigned, bool)),
-             Qt::BlockingQueuedConnection );
-    connect( this, SIGNAL(askReleaseVideo( void )),
-             this, SLOT(releaseVideoSlot( void )),
-             Qt::BlockingQueuedConnection );
-    connect( this, &MainInterface::askVideoOnTop, this, &MainInterface::setVideoOnTop );
-
-    if( videoWidget )
-    {
-        if( b_autoresize )
-        {
-            connect( videoWidget, &VideoWidget::sizeChanged, this, &MainInterface::videoSizeChanged );
-        }
-        connect( this, &MainInterface::askVideoToResize, this, &MainInterface::setVideoSize );
-
-    }
+    connect( this, &MainInterface::askGetVideo, this, &MainInterface::getVideoSlot, Qt::BlockingQueuedConnection );
+    connect( this, &MainInterface::askReleaseVideo, this, &MainInterface::releaseVideoSlot, Qt::BlockingQueuedConnection );
+    connect( this, &MainInterface::askVideoToResize, this, &MainInterface::setVideoSize, Qt::BlockingQueuedConnection );
 
     connect( THEDP, &DialogsProvider::toolBarConfUpdated, this, &MainInterface::toolBarConfUpdated );
     installEventFilter( this );
 
     connect( this, &MainInterface::askToQuit, THEDP, &DialogsProvider::quit );
-
     connect( this, &MainInterface::askBoss, this, &MainInterface::setBoss );
     connect( this, &MainInterface::askRaise, this, &MainInterface::setRaise );
 
+    connect( this, &MainInterface::askVideoSetFullScreen, this, &MainInterface::setVideoFullScreen);
 
-    connect( THEDP, &DialogsProvider::releaseMouseEvents, this, &MainInterface::voutReleaseMouseEvents ) ;
     /** END of CONNECTS**/
 
 
@@ -255,9 +238,6 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf ),
 
 MainInterface::~MainInterface()
 {
-    if( videoWidget )
-        releaseVideoSlot();
-
     RendererManager::killInstance();
 
     /* Save states */
@@ -362,21 +342,14 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
     qmlRegisterType<QmlEventFilter>( "org.videolan.vlc", 0, 1, "EventFilter" );
 
 
-    QWidget* mainWidget = new QWidget(this);
-
-    QStackedLayout *stackedLayout = new QStackedLayout;
-    stackedLayout->setStackingMode(QStackedLayout::StackAll);
-    stackedLayout->setContentsMargins(0,0,0,0);
-    mainWidget->setLayout(stackedLayout);
-    setCentralWidget( mainWidget );
-
-    NavigationHistory* navigation_history = new NavigationHistory(this);
-    MCMediaLib *medialib = new MCMediaLib(p_intf,  this);
-    QmlMainContext* mainCtx = new QmlMainContext(p_intf, this);
-
-    mediacenterView = new QQuickWidget();
+    mediacenterView = new QQuickWidget(this);
     mediacenterView->setAttribute(Qt::WA_NoBackground);
     mediacenterView->setStyleSheet("background:transparent");
+
+    NavigationHistory* navigation_history = new NavigationHistory(mediacenterView);
+    MCMediaLib *medialib = new MCMediaLib(p_intf, mediacenterView);
+    QmlMainContext* mainCtx = new QmlMainContext(p_intf, this, mediacenterView);
+
 
     QQmlContext *rootCtx = mediacenterView->rootContext();
     rootCtx->setContextProperty( "medialib", medialib );
@@ -389,17 +362,7 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
     mediacenterView->setSource( QUrl ( QStringLiteral("qrc:/qml/MainInterface.qml") ) );
     mediacenterView->setResizeMode( QQuickWidget::SizeRootObjectToView );
 
-    mediacenterWrapper = new QWidget(this);
-    QHBoxLayout  *front_wrapper_layout = new QHBoxLayout(mediacenterWrapper);
-    mediacenterWrapper->setAttribute(Qt::WA_NoBackground);
-    mediacenterWrapper->setStyleSheet("background:transparent");
-    mediacenterWrapper->setAttribute(Qt::WA_NativeWindow);
-    front_wrapper_layout->addWidget(mediacenterView);
-    front_wrapper_layout->setContentsMargins(0,0,0,0);
-
-    videoWidget = new VideoWidget( p_intf, this );
-    stackedLayout->addWidget(videoWidget);
-    stackedLayout->addWidget(mediacenterWrapper);
+    setCentralWidget( mediacenterView );
 
     if ( b_interfaceOnTop )
         setWindowFlags( windowFlags() | Qt::WindowStaysOnTopHint );
@@ -423,14 +386,6 @@ inline void MainInterface::initSystray()
 
     if( b_systrayAvailable && b_systrayWanted )
         createSystray();
-}
-
-/**********************************************************************
- * Handling of sizing of the components
- **********************************************************************/
-
-void MainInterface::debug()
-{
 }
 
 
@@ -463,60 +418,8 @@ bool MainInterface::getVideo( struct vout_window_t *p_wnd )
     p_wnd->ops = &ops;
     p_wnd->info.has_double_click = true;
     p_wnd->sys = this;
+
     return true;
-}
-
-void MainInterface::getVideoSlot( struct vout_window_t *p_wnd,
-                                  unsigned i_width, unsigned i_height,
-                                  bool fullscreen )
-{
-    /* Hidden or minimized, activate */
-    if( isHidden() || isMinimized() )
-        toggleUpdateSystrayMenu();
-
-    /* Request the videoWidget */
-    if ( !videoWidget )
-    {
-        videoWidget = new VideoWidget( p_intf, this );
-    }
-
-    videoWidget->request( p_wnd );
-    if( true ) /* The videoWidget is available */
-    {
-        /* Ask videoWidget to resize correctly, if we are in normal mode */
-        if( b_autoresize ) {
-#if HAS_QT56
-            qreal factor = videoWidget->devicePixelRatioF();
-
-            i_width = qRound( (qreal) i_width / factor );
-            i_height = qRound( (qreal) i_height / factor );
-#endif
-
-            videoWidget->setSize( i_width, i_height );
-        }
-    }
-}
-
-/* Function that is CONNECTED to the previous emit */
-void MainInterface::releaseVideoSlot( void )
-{
-    /* This function is called when the embedded video window is destroyed,
-     * or in the rare case that the embedded window is still here but the
-     * Qt interface exits. */
-    assert( videoWidget );
-    videoWidget->release();
-    setVideoOnTop( false );
-}
-
-// The provided size is in physical pixels, coming from the core.
-void MainInterface::setVideoSize( unsigned int w, unsigned int h )
-{
-    videoWidget->setSize( videoWidget->width(), videoWidget->height() );
-}
-
-void MainInterface::videoSizeChanged( int w, int h )
-{
-    //FIXME
 }
 
 void MainInterface::setVideoFullScreen( bool fs )
@@ -547,11 +450,11 @@ void MainInterface::setVideoFullScreen( bool fs )
             }
         }
 
-        setInterfaceFullScreen( true );
+        setFullScreen( true );
     }
     else
     {
-        setInterfaceFullScreen( b_interfaceFullScreen );
+        setFullScreen( b_interfaceFullScreen );
 #ifdef QT5_HAS_WAYLAND
         if( lastWinScreen != NULL && !b_hasWayland )
             windowHandle()->setScreen(lastWinScreen);
@@ -571,7 +474,6 @@ void MainInterface::setVideoFullScreen( bool fs )
         }
 
     }
-    videoWidget->sync();
 }
 
 
@@ -622,8 +524,8 @@ int MainInterface::enableVideo( vout_window_t *p_wnd,
     msg_Dbg( p_wnd, "requesting video window..." );
     /* This is a blocking call signal. Results are stored directly in the
      * vout_window_t and boolean pointers. Beware of deadlocks! */
-    //emit p_mi->askGetVideo( p_wnd, cfg->width, cfg->height,
-    //                        cfg->is_fullscreen );
+    emit p_mi->askGetVideo( p_wnd, cfg->width, cfg->height,
+                            cfg->is_fullscreen );
     return VLC_SUCCESS;
 }
 
@@ -632,7 +534,7 @@ void MainInterface::disableVideo( vout_window_t *p_wnd )
     MainInterface *p_mi = (MainInterface *)p_wnd->sys;
 
     msg_Dbg( p_wnd, "releasing video..." );
-    //emit p_mi->askReleaseVideo();
+    emit p_mi->askReleaseVideo();
 }
 
 void MainInterface::resizeVideo( vout_window_t *p_wnd,
@@ -646,6 +548,7 @@ void MainInterface::resizeVideo( vout_window_t *p_wnd,
 void MainInterface::requestVideoWindowed( struct vout_window_t *wnd )
 {
    MainInterface *p_mi = (MainInterface *)wnd->sys;
+   msg_Warn( wnd, "requestVideoWindowed..." );
 
    emit p_mi->askVideoSetFullScreen( false );
 }
@@ -653,6 +556,7 @@ void MainInterface::requestVideoWindowed( struct vout_window_t *wnd )
 void MainInterface::requestVideoFullScreen( vout_window_t *wnd, const char * )
 {
     MainInterface *p_mi = (MainInterface *)wnd->sys;
+    msg_Warn( wnd, "requestVideoFullScreen..." );
 
     emit p_mi->askVideoSetFullScreen( true );
 }
@@ -717,6 +621,51 @@ void MainInterface::showBuffering( float f_cache )
 {
     QString amount = QString("Buffering: %1%").arg( (int)(100*f_cache) );
     statusBar()->showMessage( amount, 1000 );
+}
+
+void MainInterface::getVideoSlot(vout_window_t* window, unsigned i_width, unsigned i_height, bool fullscreen)
+{
+    m_videoRendererGL->setVoutWindow(window);
+    setVideoFullScreen(fullscreen);
+}
+
+
+void MainInterface::releaseVideoSlot( void )
+{
+    m_videoRendererGL->setVoutWindow(nullptr);
+    setVideoOnTop( false );
+    setVideoFullScreen( false );
+}
+
+void MainInterface::setVideoSize(unsigned int w, unsigned int h)
+{
+    if (!isFullScreen() && !isMaximized() )
+    {
+        /* Resize video widget to video size, or keep it at the same
+         * size. Call setSize() either way so that vout_window_ReportSize
+         * will always get called.
+         * If the video size is too large for the screen, resize it
+         * to the screen size.
+         */
+        if (b_autoresize)
+        {
+            QRect screen = QApplication::desktop()->availableGeometry();
+            float factor = devicePixelRatioF();
+            if( (float)h / factor > screen.height() )
+            {
+                w = screen.width();
+                h = screen.height();
+            }
+            else
+            {
+                // Convert the size in logical pixels
+                w = qRound( (float)w / factor );
+                h = qRound( (float)h / factor );
+                msg_Dbg( p_intf, "Logical video size: %ux%u", w, h );
+            }
+            resize(w, h);
+        }
+    }
 }
 
 /*****************************************************************************
@@ -1125,19 +1074,24 @@ void MainInterface::toolBarConfUpdated()
     QApplication::postEvent( this, new QEvent( MainInterface::ToolbarsNeedRebuild ) );
 }
 
-void MainInterface::setInterfaceFullScreen( bool fs )
+void MainInterface::setFullScreen( bool fs )
 {
     if( fs )
         setWindowState( windowState() | Qt::WindowFullScreen );
     else
         setWindowState( windowState() & ~Qt::WindowFullScreen );
+}
+
+void MainInterface::setInterfaceFullScreen( bool fs )
+{
     b_interfaceFullScreen = fs;
+    setFullScreen(fs);
     emit interfaceFullScreenChanged( fs );
 }
 
 void MainInterface::toggleInterfaceFullScreen()
 {
-    setInterfaceFullScreen( b_interfaceFullScreen );
+    setInterfaceFullScreen( !b_interfaceFullScreen );
     emit fullscreenInterfaceToggled( b_interfaceFullScreen );
 }
 
@@ -1166,29 +1120,6 @@ void MainInterface::setRaise()
 {
     activateWindow();
     raise();
-}
-
-void MainInterface::voutReleaseMouseEvents()
-{
-    if (videoWidget)
-    {
-        QPoint pos = QCursor::pos();
-        QPoint localpos = videoWidget->mapFromGlobal(pos);
-        int buttons = QApplication::mouseButtons();
-        int i_button = 1;
-        while (buttons != 0)
-        {
-            if ( (buttons & 1) != 0 )
-            {
-                QMouseEvent new_e( QEvent::MouseButtonRelease, localpos,
-                                   (Qt::MouseButton)i_button, (Qt::MouseButton)i_button, Qt::NoModifier );
-                QApplication::sendEvent(videoWidget, &new_e);
-            }
-            buttons >>= 1;
-            i_button <<= 1;
-        }
-
-    }
 }
 
 /*****************************************************************************
