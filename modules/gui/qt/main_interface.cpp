@@ -57,6 +57,7 @@
 #include "components/dialogmodel.hpp"
 
 #include "components/video_renderer/videorenderergl.hpp"
+#include "components/video_renderer/videorendererwayland.hpp"
 
 #include "components/qml_main_context.hpp"
 
@@ -169,7 +170,16 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf ),
 #endif
 
     //fixme use a factory
-    m_videoRenderer = new VideoRendererGL(this, this);
+    if( b_hasWayland )
+    {
+        m_videoRenderer = new VideoRendererWayland(this, this);
+        setAttribute(Qt::WA_TranslucentBackground);
+    }
+    else
+    {
+        m_videoRenderer = new VideoRendererGL(this, this);
+        setAttribute(Qt::WA_TranslucentBackground, false);
+    }
 
     /**************************
      *  UI and Widgets design
@@ -345,8 +355,7 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
 
 
     mediacenterView = new QQuickWidget(this);
-    mediacenterView->setAttribute(Qt::WA_NoBackground);
-    mediacenterView->setStyleSheet("background:transparent");
+    mediacenterView->setClearColor(Qt::transparent);
 
     NavigationHistory* navigation_history = new NavigationHistory(mediacenterView);
     MCMediaLib *medialib = new MCMediaLib(p_intf, mediacenterView);
