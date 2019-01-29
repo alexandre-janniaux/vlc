@@ -14,7 +14,7 @@ public:
     VideoRenderer(QObject* parent = nullptr);
     virtual ~VideoRenderer() {}
 
-    void setVoutWindow(vout_window_t* window);
+    virtual void setVoutWindow(vout_window_t* window);
     virtual VideoSurfaceProvider* getVideoSurfaceProvider() = 0;
     virtual void registerVideoCallbacks( vlc_player_t* player ) = 0;
 
