@@ -61,7 +61,6 @@ extern "C" char **environ;
 
 #include <QVector>
 #include "components/playlist/playlist_item.hpp"
-#include "components/videorenderergl.hpp"
 
 #include <vlc_plugin.h>
 #include <vlc_vout_window.h>
@@ -649,10 +648,7 @@ static void *Thread( void *obj )
             var_SetString( p_sys->p_player, "window", "qt,any" );
 
             if (p_sys->voutWindowType == VOUT_WINDOW_TYPE_XID)
-            {
-                p_sys->p_renderer = p_mi->getVideoRendererGL();
-                p_sys->p_renderer->registerVideoCallbacks(p_sys->p_player);
-            }
+                p_mi->registerVideoCallbacks(p_sys->p_player);
         }
     }
 

@@ -83,8 +83,6 @@ struct intf_sys_t
     vlc_playlist_t *p_playlist;  /* playlist */
     vlc_player_t *p_player; /* player */
 
-    VideoRendererGL* p_renderer;
-
     vlc::playlist::PlaylistControlerModel* p_mainPlaylistControler;
     PlayerControler* p_mainPlayerControler;
 #ifdef _WIN32
