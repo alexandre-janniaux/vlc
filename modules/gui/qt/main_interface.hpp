@@ -28,6 +28,7 @@
 
 #include "util/qvlcframe.hpp"
 #include "components/player_controler.hpp"
+#include "components/video_renderer/videorenderer.hpp"
 
 #include <QSystemTrayIcon>
 #include <QStackedWidget>
@@ -87,7 +88,8 @@ private:
 
 public:
     QQuickWindow* getRootQuickWindow();
-    VideoRendererGL* getVideoRendererGL() const;
+    VideoSurfaceProvider* getVideoSurfaceProvider() const;
+    void registerVideoCallbacks(vlc_player_t* player);
 
     /* Getters */
     QSystemTrayIcon *getSysTray() { return sysTray; }
@@ -143,7 +145,7 @@ protected:
     QString              input_name;
     QVBoxLayout         *mainLayout;
 
-    VideoRendererGL     *m_videoRendererGL = nullptr;
+    VideoRenderer       *m_videoRenderer = nullptr;
 
     QQuickWidget        *mediacenterView;
     QWidget             *mediacenterWrapper;

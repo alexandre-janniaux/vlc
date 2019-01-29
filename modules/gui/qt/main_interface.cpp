@@ -56,7 +56,7 @@
 #include "components/aboutmodel.hpp"
 #include "components/dialogmodel.hpp"
 
-#include "components/videorenderergl.hpp"
+#include "components/video_renderer/videorenderergl.hpp"
 
 #include "components/qml_main_context.hpp"
 
@@ -167,6 +167,9 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf ),
     b_hasWayland = QGuiApplication::platformName()
         .startsWith(QLatin1String("wayland"), Qt::CaseInsensitive);
 #endif
+
+    //fixme use a factory
+    m_videoRenderer = new VideoRendererGL(this, this);
 
     /**************************
      *  UI and Widgets design
@@ -302,8 +305,7 @@ void MainInterface::createMainWidget( QSettings *creationSettings )
     qRegisterMetaType<VLCTick>();
     qmlRegisterUncreatableType<VLCTick>("org.videolan.vlc", 0, 1, "VLCTick", "");
 
-    qmlRegisterType<VideoSurfaceGL>("org.videolan.vlc", 0, 1, "VideoSurface");
-    m_videoRendererGL = new VideoRendererGL(this, this);
+    qmlRegisterType<VideoSurface>("org.videolan.vlc", 0, 1, "VideoSurface");
 
     qRegisterMetaType<MLParentId>();
     qmlRegisterType<MLAlbumModel>( "org.videolan.medialib", 0, 1, "MLAlbumModel" );
@@ -588,9 +590,14 @@ QQuickWindow*MainInterface::getRootQuickWindow()
     return rootObject->window();
 }
 
-VideoRendererGL*MainInterface::getVideoRendererGL() const
+VideoSurfaceProvider* MainInterface::getVideoSurfaceProvider() const
 {
-    return m_videoRendererGL;
+    return m_videoRenderer->getVideoSurfaceProvider();
+}
+
+void MainInterface::registerVideoCallbacks(vlc_player_t* player)
+{
+    m_videoRenderer->registerVideoCallbacks(player);
 }
 
 const Qt::Key MainInterface::kc[10] =
@@ -625,14 +632,14 @@ void MainInterface::showBuffering( float f_cache )
 
 void MainInterface::getVideoSlot(vout_window_t* window, unsigned i_width, unsigned i_height, bool fullscreen)
 {
-    m_videoRendererGL->setVoutWindow(window);
+    m_videoRenderer->setVoutWindow(window);
     setVideoFullScreen(fullscreen);
 }
 
 
 void MainInterface::releaseVideoSlot( void )
 {
-    m_videoRendererGL->setVoutWindow(nullptr);
+    m_videoRenderer->setVoutWindow(nullptr);
     setVideoOnTop( false );
     setVideoFullScreen( false );
 }
