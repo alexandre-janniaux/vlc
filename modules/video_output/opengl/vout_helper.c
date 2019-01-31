@@ -166,12 +166,23 @@ struct vout_display_opengl_t {
     float f_fovy; /* to avoid recalculating them when needed.      */
     float f_z;    /* Position of the camera on the shpere radius vector */
     float f_sar;
+
+    /* Side by side */
+    bool b_sideBySide;
+    bool b_lastSideBySide;
 };
 
 static const vlc_fourcc_t gl_subpicture_chromas[] = {
     VLC_CODEC_RGBA,
     0
 };
+
+typedef enum
+{
+    UNDEFINED_EYE,
+    LEFT_EYE,
+    RIGHT_EYE
+} side_by_side_eye;
 
 static const GLfloat identity[] = {
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -210,12 +221,14 @@ static void getProjectionMatrix(float sar, float fovy, GLfloat matrix[static 16]
      memcpy(matrix, m, sizeof(m));
 }
 
+
 static void getViewpointMatrixes(vout_display_opengl_t *vgl,
                                  video_projection_mode_t projection_mode,
                                  struct prgm *prgm)
 {
     if (projection_mode == PROJECTION_MODE_EQUIRECTANGULAR
-        || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD)
+        || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD
+        || vgl->b_sideBySide)
     {
         getProjectionMatrix(vgl->f_sar, vgl->f_fovy, prgm->var.ProjectionMatrix);
         getZoomMatrix(vgl->f_z, prgm->var.ZoomMatrix);
@@ -1588,7 +1601,8 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     if (source->i_x_offset != vgl->last_source.i_x_offset
      || source->i_y_offset != vgl->last_source.i_y_offset
      || source->i_visible_width != vgl->last_source.i_visible_width
-     || source->i_visible_height != vgl->last_source.i_visible_height)
+     || source->i_visible_height != vgl->last_source.i_visible_height
+     || vgl->b_lastSideBySide != vgl->b_sideBySide)
     {
         float left[PICTURE_PLANE_MAX];
         float top[PICTURE_PLANE_MAX];
@@ -1628,6 +1642,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         vgl->last_source.i_y_offset = source->i_y_offset;
         vgl->last_source.i_visible_width = source->i_visible_width;
         vgl->last_source.i_visible_height = source->i_visible_height;
+        vgl->b_lastSideBySide = vgl->b_sideBySide;
     }
     DrawWithShaders(vgl, vgl->prgm);
 
