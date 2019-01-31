@@ -2042,14 +2042,18 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
             0, 1,
         };
 
+        const float leftCenter[] = { vgl->i_displayWidth / 4,
+                                     vgl->i_displayHeight / 2 };
+        const float rightCenter[] = { 3 * vgl->i_displayWidth / 4,
+                                      vgl->i_displayHeight / 2 };
+        const float defaultDistorsionCoefs[] = { 0, 0, 0, 1 };
         const float defaultAberrationCoefs[] = { 1.f, 1.f, 1.f };
 
-        vgl->vt.Uniform1f(vgl->vt.GetUniformLocation(program, "WarpScale"),
-                          vgl->hmd_cfg.warp_scale * vgl->hmd_cfg.warp_adj);
+        vgl->vt.Uniform1f(vgl->vt.GetUniformLocation(program, "WarpScale"), rightCenter[0]);
         vgl->vt.Uniform4fv(vgl->vt.GetUniformLocation(program, "HmdWarpParam"),
-                           1, vgl->hmd_cfg.distorsion_coefs);
+                           1, defaultDistorsionCoefs);
         vgl->vt.Uniform3fv(vgl->vt.GetUniformLocation(program, "aberr"),
-                           1, vgl->hmd_cfg.aberr_scale);
+                           1, defaultAberrationCoefs);
 
         vgl->vt.BindBuffer(GL_ELEMENT_ARRAY_BUFFER, vgl->index_buffer_object_stereo);
         vgl->vt.BufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -2061,7 +2065,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
         // Left eye
         vgl->vt.Uniform2fv(vgl->vt.GetUniformLocation(program, "LensCenter"),
-                           1, vgl->hmd_cfg.left.lens_center);
+                           1, leftCenter);
 
         vgl->vt.BindTexture(GL_TEXTURE_2D, vgl->leftColorTex);
         vgl->vt.BindBuffer(GL_ARRAY_BUFFER, vgl->vertex_buffer_object_stereo);
@@ -2073,7 +2077,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
         // Right eye
         vgl->vt.Uniform2fv(vgl->vt.GetUniformLocation(program, "LensCenter"),
-                           1, vgl->hmd_cfg.right.lens_center);
+                           1, rightCenter);
 
         vgl->vt.BindTexture(GL_TEXTURE_2D, vgl->rightColorTex);
         vgl->vt.BindBuffer(GL_ARRAY_BUFFER, vgl->vertex_buffer_object_stereo);
