@@ -1977,6 +1977,9 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         // Draw scene into framebuffers.
         vgl->vt.UseProgram(vgl->prgm->id);
 
+        GLint previousFramebuffer = -1;
+        vgl->vt.GetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFramebuffer);
+
         // Left eye
         vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, vgl->leftFBO);
         vgl->vt.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1988,7 +1991,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         drawScene(vgl, source, RIGHT_EYE);
 
         // Exit framebuffer.
-        vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, 0);
+        vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
 
         vgl->vt.ActiveTexture(GL_TEXTURE0);
 
