@@ -683,6 +683,119 @@ ResizeFormatToGLMaxTexSize(video_format_t *fmt, unsigned int max_tex_size)
     }
 }
 
+#define GLSL_VERSION "120" // Temporary hack.
+
+static void BuildStereoVertexShader(vout_display_opengl_t *vgl,
+                                    GLuint *shader)
+{
+    const char *fragmentShader =
+        "#version " GLSL_VERSION "\n"
+        //PRECISION // Temporary hack
+        "attribute vec4 MultiTexCoord0;"
+        "attribute vec3 VertexPosition;"
+        "varying vec2 TexCoord0;"
+        ""
+
+        "void main(void)"
+        "{"
+        "   TexCoord0 = MultiTexCoord0.st;"
+        "   gl_Position = vec4(VertexPosition, 1.0);"
+        "}";
+
+    *shader = vgl->vt.CreateShader(GL_VERTEX_SHADER);
+    vgl->vt.ShaderSource(*shader, 1, &fragmentShader, NULL);
+    vgl->vt.CompileShader(*shader);
+}
+
+
+static void BuildStereoFragmentShader(vout_display_opengl_t *vgl,
+                                      GLuint *shader)
+{
+    // Fragment shader from OpenHMD.
+    const char *fragmentShader =
+        "#version " GLSL_VERSION "\n"
+        "\n"
+        "//per eye texture to warp for lens distortion\n"
+        "uniform sampler2D warpTexture;\n"
+        "\n"
+        "//Position of lens center in m (usually eye_w/2, eye_h/2)\n"
+        "uniform vec2 LensCenter;\n"
+        "//Scale from texture co-ords to m (usually eye_w, eye_h)\n"
+        "uniform vec2 ViewportScale;\n"
+        "//Distortion overall scale in m (usually ~eye_w/2)\n"
+        "uniform float WarpScale;\n"
+        "//Distoriton coefficients (PanoTools model) [a,b,c,d]\n"
+        "uniform vec4 HmdWarpParam;\n"
+        "\n"
+        "//chromatic distortion post scaling\n"
+        "uniform vec3 aberr;\n"
+        "\n"
+        "varying vec2 TexCoord0;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+            "//output_loc is the fragment location on screen from [0,1]x[0,1]\n"
+            "vec2 output_loc = vec2(TexCoord0.s, TexCoord0.t);\n"
+            "//Compute fragment location in lens-centered co-ordinates at world scale\n"
+            "vec2 r = output_loc * ViewportScale - LensCenter;\n"
+            "//scale for distortion model\n"
+            "//distortion model has r=1 being the largest circle inscribed (e.g. eye_w/2)\n"
+            "r /= WarpScale;\n"
+        "\n"
+            "//|r|**2\n"
+            "float r_mag = length(r);\n"
+            "//offset for which fragment is sourced\n"
+            "vec2 r_displaced = r * (HmdWarpParam.w + HmdWarpParam.z * r_mag +\n"
+                "HmdWarpParam.y * r_mag * r_mag +\n"
+                "HmdWarpParam.x * r_mag * r_mag * r_mag);\n"
+            "//back to world scale\n"
+            "r_displaced *= WarpScale;\n"
+            "//back to viewport co-ord\n"
+            "vec2 tc_r = (LensCenter + aberr.r * r_displaced) / ViewportScale;\n"
+            "vec2 tc_g = (LensCenter + aberr.g * r_displaced) / ViewportScale;\n"
+            "vec2 tc_b = (LensCenter + aberr.b * r_displaced) / ViewportScale;\n"
+        "\n"
+            "float red = texture2D(warpTexture, tc_r).r;\n"
+            "float green = texture2D(warpTexture, tc_g).g;\n"
+            "float blue = texture2D(warpTexture, tc_b).b;\n"
+            "//Black edges off the texture\n"
+            "gl_FragColor = ((tc_g.x < 0.0) || (tc_g.x > 1.0) || (tc_g.y < 0.0) || (tc_g.y > 1.0)) ? vec4(0.0, 0.0, 0.0, 1.0) : vec4(red, green, blue, 1.0);\n"
+        "}";
+
+    *shader = vgl->vt.CreateShader(GL_FRAGMENT_SHADER);
+    vgl->vt.ShaderSource(*shader, 1, &fragmentShader, NULL);
+    vgl->vt.CompileShader(*shader);
+}
+
+
+static int opengl_init_stereo_program(vout_display_opengl_t *vgl)
+{
+    GLuint stereo_vertex_shader;
+    GLuint stereo_fragment_shader;
+    BuildStereoVertexShader(vgl, &stereo_vertex_shader);
+    BuildStereoFragmentShader(vgl, &stereo_fragment_shader);
+
+    GLuint shaders[] = {stereo_vertex_shader, stereo_fragment_shader};
+
+    if (CheckShaderMessages(vgl->gl, &vgl->vt, shaders) != VLC_SUCCESS)
+        return VLC_EGENERIC;
+
+    /* Stereo fragment shaders */
+    vgl->stereo_prgm->id = vgl->vt.CreateProgram();
+    vgl->vt.AttachShader(vgl->stereo_prgm->id, stereo_fragment_shader);
+    vgl->vt.AttachShader(vgl->stereo_prgm->id, stereo_vertex_shader);
+    vgl->vt.LinkProgram(vgl->stereo_prgm->id);
+
+    if (CheckProgramMessages(vgl->gl, &vgl->vt, vgl->stereo_prgm) != VLC_SUCCESS)
+        return VLC_EGENERIC;
+
+    vgl->vt.UseProgram(vgl->stereo_prgm->id);
+    vgl->vt.Uniform1i(vgl->vt.GetUniformLocation(vgl->stereo_prgm->id, "warpTexture"), 0);
+
+    return VLC_SUCCESS;
+}
+
+
 static void CreateFBO(vout_display_opengl_t *vgl,
                       GLuint* fbo, GLuint* color_tex, GLuint* depth_tex)
 {
