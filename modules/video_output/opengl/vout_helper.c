@@ -170,6 +170,14 @@ struct vout_display_opengl_t {
     /* Side by side */
     bool b_sideBySide;
     bool b_lastSideBySide;
+
+    /* FBO */
+    GLuint leftColorTex, leftDepthTex, leftFBO;
+    GLuint rightColorTex, rightDepthTex, rightFBO;
+
+    GLuint vertex_buffer_object_stereo;
+    GLuint index_buffer_object_stereo;
+    GLuint texture_buffer_object_stereo;
 };
 
 static const vlc_fourcc_t gl_subpicture_chromas[] = {
@@ -670,6 +678,77 @@ ResizeFormatToGLMaxTexSize(video_format_t *fmt, unsigned int max_tex_size)
     }
 }
 
+static void CreateFBO(vout_display_opengl_t *vgl,
+                      GLuint* fbo, GLuint* color_tex, GLuint* depth_tex)
+{
+    vgl->vt.GenTextures(1, color_tex);
+#ifdef USE_OPENGL_ES2
+    vgl->vt.GenRenderbuffers(1, depth_tex);
+#else
+    vgl->vt.GenTextures(1, depth_tex);
+#endif
+    vgl->vt.GenFramebuffers(1, fbo);
+}
+
+
+static void DeleteFBO(vout_display_opengl_t *vgl,
+                      GLuint fbo, GLuint color_tex, GLuint depth_tex)
+{
+    vgl->vt.DeleteTextures(1, &color_tex);
+#ifdef USE_OPENGL_ES2
+    vgl->vt.DeleteRenderbuffers(1, &depth_tex);
+#else
+    vgl->vt.DeleteTextures(1, &depth_tex);
+#endif
+    vgl->vt.DeleteFramebuffers(1, &fbo);
+}
+
+
+static void UpdateFBOSize(vout_display_opengl_t *vgl,
+                          GLuint fbo, GLuint color_tex, GLuint depth_tex)
+{
+#ifdef USE_OPENGL_ES2
+    vgl->vt.BindTexture(GL_TEXTURE_2D, color_tex);
+    vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    vgl->vt.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vgl->i_displayWidth, vgl->i_displayHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+    vgl->vt.BindRenderbuffer(GL_RENDERBUFFER, depth_tex);
+    vgl->vt.RenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, vgl->i_displayWidth, vgl->i_displayHeight);
+#else
+    vgl->vt.BindTexture(GL_TEXTURE_2D, color_tex);
+    vgl->vt.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vgl->i_displayWidth, vgl->i_displayHeight, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
+    vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    vgl->vt.BindTexture(GL_TEXTURE_2D, depth_tex);
+    vgl->vt.TexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, vgl->i_displayWidth, vgl->i_displayHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+    vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+#endif
+
+    vgl->vt.BindTexture(GL_TEXTURE_2D, 0);
+
+    vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, fbo);
+    vgl->vt.FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_tex, 0);
+#ifdef USE_OPENGL_ES2
+    vgl->vt.FramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_tex);
+#else
+    vgl->vt.FramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_tex, 0);
+#endif
+
+    GLenum status = vgl->vt.CheckFramebufferStatus(GL_FRAMEBUFFER);
+
+    if(status != GL_FRAMEBUFFER_COMPLETE){
+        msg_Err(vgl->gl, "Failed to create fbo %x %d %d\n", status, vgl->i_displayWidth, vgl->i_displayHeight);
+    }
+    vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+
 vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
                                                const vlc_fourcc_t **subpicture_chromas,
                                                vlc_gl_t *gl,
@@ -908,6 +987,11 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     vgl->vt.GenBuffers(1, &vgl->index_buffer_object);
     vgl->vt.GenBuffers(vgl->prgm->tc->tex_count, vgl->texture_buffer_object);
 
+    vgl->vt.GenBuffers(1, &vgl->vertex_buffer_object_stereo);
+    vgl->vt.GenBuffers(1, &vgl->index_buffer_object_stereo);
+    vgl->vt.GenBuffers(1, &vgl->texture_buffer_object_stereo);
+
+
     /* Initial number of allocated buffer objects for subpictures, will grow dynamically. */
     int subpicture_buffer_object_count = 8;
     vgl->subpicture_buffer_object = vlc_alloc(subpicture_buffer_object_count, sizeof(GLuint));
@@ -935,6 +1019,9 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
         *subpicture_chromas = gl_subpicture_chromas;
     }
 
+    CreateFBO(vgl, &vgl->leftFBO, &vgl->leftColorTex, &vgl->leftDepthTex);
+    CreateFBO(vgl, &vgl->rightFBO, &vgl->rightColorTex, &vgl->rightDepthTex);
+
     GL_ASSERT_NOERROR();
     return vgl;
 }
@@ -949,6 +1036,9 @@ void vout_display_opengl_Delete(vout_display_opengl_t *vgl)
 
     const size_t main_tex_count = vgl->prgm->tc->tex_count;
     const bool main_del_texs = !vgl->prgm->tc->handle_texs_gen;
+
+    DeleteFBO(vgl, vgl->leftFBO, vgl->leftColorTex, vgl->leftDepthTex);
+    DeleteFBO(vgl, vgl->rightFBO, vgl->rightColorTex, vgl->rightDepthTex);
 
     if (vgl->pool)
         picture_pool_Release(vgl->pool);
