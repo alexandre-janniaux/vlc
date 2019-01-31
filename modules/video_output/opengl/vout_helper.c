@@ -241,10 +241,11 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
                                  struct prgm *prgm)
 {
     if (projection_mode == PROJECTION_MODE_EQUIRECTANGULAR
-        || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD
-        || vgl->b_sideBySide)
+        || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD)
     {
         getProjectionMatrix(vgl->f_sar, vgl->f_fovy, prgm->var.ProjectionMatrix);
+        // TODO: is f_sar correct ?
+        //getProjectionMatrix(vgl->f_sar, FIELD_OF_VIEW_DEGREES_DEFAULT / 180.f * M_PI, prgm->var.ProjectionMatrix);
         getZoomMatrix(vgl->f_z, prgm->var.ZoomMatrix);
 
         /* vgl->vp has been reversed and is a world transform */
@@ -2103,4 +2104,3 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
     return VLC_SUCCESS;
 }
-
