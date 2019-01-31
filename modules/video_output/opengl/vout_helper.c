@@ -878,6 +878,7 @@ static void UpdateFBOSize(vout_display_opengl_t *vgl,
 
     GLenum status = vgl->vt.CheckFramebufferStatus(GL_FRAMEBUFFER);
 
+    assert(status == GL_FRAMEBUFFER_COMPLETE);
     if(status != GL_FRAMEBUFFER_COMPLETE){
         msg_Err(vgl->gl, "Failed to create fbo %x %d %d\n", status, vgl->i_displayWidth, vgl->i_displayHeight);
     }
