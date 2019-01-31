@@ -1739,7 +1739,8 @@ static int SetupCoords(vout_display_opengl_t *vgl,
     return VLC_SUCCESS;
 }
 
-static void DrawWithShaders(vout_display_opengl_t *vgl, struct prgm *prgm)
+static void DrawWithShaders(vout_display_opengl_t *vgl, struct prgm *prgm,
+                            side_by_side_eye eye)
 {
     opengl_tex_converter_t *tc = prgm->tc;
     tc->pf_prepare_shader(tc, vgl->tex_width, vgl->tex_height, 1.0f);
@@ -1823,8 +1824,7 @@ static void TextureCropForStereo(vout_display_opengl_t *vgl,
     }
 }
 
-int vout_display_opengl_Display(vout_display_opengl_t *vgl,
-                                const video_format_t *source)
+static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, side_by_side_eye eye)
 {
     GL_ASSERT_NOERROR();
 
@@ -1870,8 +1870,10 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
             bottom[j] = (source->i_y_offset + source->i_visible_height) * scale_h;
         }
 
-        TextureCropForStereo(vgl, left, top, right, bottom);
-        int ret = SetupCoords(vgl, left, top, right, bottom);
+        if (!vgl->b_sideBySide)
+            TextureCropForStereo(vgl, left, top, right, bottom);
+        int ret = SetupCoords(vgl, left, top, right, bottom,
+                              (float)source->i_visible_width / source->i_visible_height);
         if (ret != VLC_SUCCESS)
             return ret;
 
@@ -1881,7 +1883,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         vgl->last_source.i_visible_height = source->i_visible_height;
         vgl->b_lastSideBySide = vgl->b_sideBySide;
     }
-    DrawWithShaders(vgl, vgl->prgm);
+    DrawWithShaders(vgl, vgl->prgm, eye);
 
     /* Draw the subpictures */
     // Change the program for overlays
@@ -1950,11 +1952,123 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         vgl->vt.UniformMatrix4fv(prgm->uloc.ViewMatrix, 1, GL_FALSE,
                                  prgm->var.ViewMatrix);
         vgl->vt.UniformMatrix4fv(prgm->uloc.ZoomMatrix, 1, GL_FALSE,
-                                 prgm->var.ZoomMatrix);
+                                  prgm->var.ZoomMatrix);
 
         vgl->vt.DrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
+
     vgl->vt.Disable(GL_BLEND);
+
+    return VLC_SUCCESS;
+}
+
+
+int vout_display_opengl_Display(vout_display_opengl_t *vgl,
+                                const video_format_t *source)
+{
+    GL_ASSERT_NOERROR();
+
+    /* Why drawing here and not in Render()? Because this way, the
+       OpenGL providers can call vout_display_opengl_Display to force redraw.
+       Currently, the OS X provider uses it to get a smooth window resizing */
+    vgl->vt.Clear(GL_COLOR_BUFFER_BIT);
+
+    if (vgl->b_sideBySide) {
+        // Draw scene into framebuffers.
+        vgl->vt.UseProgram(vgl->prgm->id);
+
+        // Left eye
+        vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, vgl->leftFBO);
+        vgl->vt.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        drawScene(vgl, source, LEFT_EYE);
+
+        // Right eye
+        vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, vgl->rightFBO);
+        vgl->vt.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        drawScene(vgl, source, RIGHT_EYE);
+
+        // Exit framebuffer.
+        vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        vgl->vt.ActiveTexture(GL_TEXTURE0);
+
+        GLuint program = vgl->stereo_prgm->id;
+        vgl->vt.UseProgram(program);
+
+        // Draw eyes.
+        GLfloat vertexCoordLeft[] = {
+            -1, -1, 0,
+            0, -1, 0,
+            0, 1, 0,
+            -1, 1, 0,
+        };
+
+        GLfloat vertexCoordRight[] = {
+            0, -1, 0,
+            1, -1, 0,
+            1,  1, 0,
+            0,  1, 0,
+        };
+
+        GLushort indices[] = {
+            0, 1, 2,
+            0, 2, 3,
+        };
+
+        GLfloat textureCoord[] = {
+            0, 0,
+            1, 0,
+            1, 1,
+            0, 1,
+        };
+
+        const float leftCenter[] = { vgl->i_displayWidth / 4,
+                                     vgl->i_displayHeight / 2 };
+        const float rightCenter[] = { 3 * vgl->i_displayWidth / 4,
+                                      vgl->i_displayHeight / 2 };
+        const float defaultDistorsionCoefs[] = { 0, 0, 0, 1 };
+        const float defaultAberrationCoefs[] = { 1.f, 1.f, 1.f };
+
+        vgl->vt.Uniform1f(vgl->vt.GetUniformLocation(program, "WarpScale"), rightCenter[0]);
+        vgl->vt.Uniform4fv(vgl->vt.GetUniformLocation(program, "HmdWarpParam"),
+                           1, defaultDistorsionCoefs);
+        vgl->vt.Uniform3fv(vgl->vt.GetUniformLocation(program, "aberr"),
+                           1, defaultAberrationCoefs);
+
+        vgl->vt.BindBuffer(GL_ELEMENT_ARRAY_BUFFER, vgl->index_buffer_object_stereo);
+        vgl->vt.BufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        vgl->vt.BindBuffer(GL_ARRAY_BUFFER, vgl->texture_buffer_object_stereo);
+        vgl->vt.BufferData(GL_ARRAY_BUFFER, sizeof(textureCoord), textureCoord, GL_STATIC_DRAW);
+        vgl->vt.EnableVertexAttribArray(vgl->vt.GetAttribLocation(program, "MultiTexCoord0"));
+        vgl->vt.VertexAttribPointer(vgl->vt.GetAttribLocation(program, "MultiTexCoord0"), 2, GL_FLOAT, 0, 0, 0);
+
+        // Left eye
+        vgl->vt.Uniform2fv(vgl->vt.GetUniformLocation(program, "LensCenter"),
+                           1, leftCenter);
+
+        vgl->vt.BindTexture(GL_TEXTURE_2D, vgl->leftColorTex);
+        vgl->vt.BindBuffer(GL_ARRAY_BUFFER, vgl->vertex_buffer_object_stereo);
+        vgl->vt.BufferData(GL_ARRAY_BUFFER, sizeof(vertexCoordLeft), vertexCoordLeft, GL_STATIC_DRAW);
+        vgl->vt.EnableVertexAttribArray(vgl->vt.GetAttribLocation(program, "VertexPosition"));
+        vgl->vt.VertexAttribPointer(vgl->vt.GetAttribLocation(program, "VertexPosition"), 3, GL_FLOAT, 0, 0, 0);
+
+        vgl->vt.DrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
+
+        // Right eye
+        vgl->vt.Uniform2fv(vgl->vt.GetUniformLocation(program, "LensCenter"),
+                           1, rightCenter);
+
+        vgl->vt.BindTexture(GL_TEXTURE_2D, vgl->rightColorTex);
+        vgl->vt.BindBuffer(GL_ARRAY_BUFFER, vgl->vertex_buffer_object_stereo);
+        vgl->vt.BufferData(GL_ARRAY_BUFFER, sizeof(vertexCoordRight), vertexCoordRight, GL_STATIC_DRAW);
+        vgl->vt.EnableVertexAttribArray(vgl->vt.GetAttribLocation(program, "VertexPosition"));
+        vgl->vt.VertexAttribPointer(vgl->vt.GetAttribLocation(program, "VertexPosition"), 3, GL_FLOAT, 0, 0, 0);
+
+        vgl->vt.DrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
+    }
+    else
+        drawScene(vgl, source, UNDEFINED_EYE);
 
     /* Display */
     vlc_gl_Swap(vgl->gl);
