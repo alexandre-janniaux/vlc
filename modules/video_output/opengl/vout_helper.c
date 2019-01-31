@@ -39,6 +39,7 @@
 #include <vlc_modules.h>
 #include <vlc_vout.h>
 #include <vlc_viewpoint.h>
+#include <vlc_vout_display.h>
 
 #include "vout_helper.h"
 #include "internal.h"
