@@ -1143,7 +1143,22 @@ void vout_display_opengl_SetWindowAspectRatio(vout_display_opengl_t *vgl,
 void vout_display_opengl_Viewport(vout_display_opengl_t *vgl, int x, int y,
                                   unsigned width, unsigned height)
 {
-    vgl->vt.Viewport(x, y, width, height);
+    vgl->i_displayWidth = width;
+    vgl->i_displayHeight = height;
+    vgl->displayPlace = (const vout_display_place_t){
+        .x = x, .y = y,
+        .width = width,
+        .height = height };
+
+    if (vgl->b_sideBySide)
+    {
+        vgl->vt.Viewport(0, 0, width, height);
+
+        UpdateFBOSize(vgl, vgl->leftFBO, vgl->leftColorTex, vgl->leftDepthTex);
+        UpdateFBOSize(vgl, vgl->rightFBO, vgl->rightColorTex, vgl->rightDepthTex);
+    }
+    else
+        vgl->vt.Viewport(x, y, width, height);
 }
 
 bool vout_display_opengl_HasPool(const vout_display_opengl_t *vgl)
