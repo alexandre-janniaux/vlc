@@ -846,13 +846,13 @@ static void UpdateFBOSize(vout_display_opengl_t *vgl,
 #ifdef USE_OPENGL_ES2
     vgl->vt.BindTexture(GL_TEXTURE_2D, color_tex);
     vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    vgl->vt.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vgl->i_displayWidth, vgl->i_displayHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    vgl->vt.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vgl->i_displayWidth/2, vgl->i_displayHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
     vgl->vt.BindRenderbuffer(GL_RENDERBUFFER, depth_tex);
     vgl->vt.RenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, vgl->i_displayWidth, vgl->i_displayHeight);
 #else
     vgl->vt.BindTexture(GL_TEXTURE_2D, color_tex);
-    vgl->vt.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vgl->i_displayWidth, vgl->i_displayHeight, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
+    vgl->vt.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, vgl->i_displayWidth/2, vgl->i_displayHeight, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
     vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     vgl->vt.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1998,6 +1998,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         GLint previousFramebuffer = -1;
         vgl->vt.GetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFramebuffer);
 
+        vgl->vt.Viewport(0, 0, vgl->i_displayWidth/2, vgl->i_displayHeight);
         // Left eye
         vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, vgl->leftFBO);
         vgl->vt.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -2009,6 +2010,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         drawScene(vgl, source, RIGHT_EYE);
 
         // Exit framebuffer.
+        vgl->vt.Viewport(0, 0, vgl->i_displayWidth, vgl->i_displayHeight);
         vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
 
         vgl->vt.ActiveTexture(GL_TEXTURE0);
