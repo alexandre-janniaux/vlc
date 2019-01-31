@@ -1093,6 +1093,14 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
         }
     }
 
+    ret = opengl_init_stereo_program(vgl);
+    if (ret != VLC_SUCCESS)
+    {
+        msg_Warn(gl, "could not init the stereo shader");
+        vout_display_opengl_Delete(vgl);
+        return NULL;
+    }
+
     /* */
     vgl->vt.Disable(GL_BLEND);
     vgl->vt.Disable(GL_DEPTH_TEST);
