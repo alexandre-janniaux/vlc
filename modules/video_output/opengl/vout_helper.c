@@ -420,6 +420,60 @@ DelTextures(const opengl_tex_converter_t *tc, GLuint *textures)
     memset(textures, 0, tc->tex_count * sizeof(GLuint));
 }
 
+static int CheckShaderMessages(const vlc_gl_t *gl, const opengl_vtable_t *vt,
+                               GLuint* shaders)
+{
+    for (unsigned i = 0; i < 2; i++) {
+        int infoLength;
+        vt->GetShaderiv(shaders[i], GL_INFO_LOG_LENGTH, &infoLength);
+        if (infoLength <= 1)
+            continue;
+
+        char *infolog = malloc(infoLength);
+        if (infolog != NULL)
+        {
+            int charsWritten;
+            vt->GetShaderInfoLog(shaders[i], infoLength, &charsWritten,
+                                      infolog);
+            msg_Err(gl, "shader %u: %s", i, infolog);
+            free(infolog);
+        }
+    }
+
+    return VLC_SUCCESS;
+}
+
+static int CheckProgramMessages(const vlc_gl_t *gl, const opengl_vtable_t *vt,
+                                struct prgm *prgm)
+{
+    int infoLength = 0;
+    vt->GetProgramiv(prgm->id, GL_INFO_LOG_LENGTH, &infoLength);
+    if (infoLength > 1)
+    {
+        char *infolog = malloc(infoLength);
+        if (infolog != NULL)
+        {
+            int charsWritten;
+            vt->GetProgramInfoLog(prgm->id, infoLength, &charsWritten,
+                                       infolog);
+            msg_Err(gl, "shader program: %s", infolog);
+            free(infolog);
+        }
+
+        /* If there is some message, better to check linking is ok */
+        GLint link_status = GL_TRUE;
+        vt->GetProgramiv(prgm->id, GL_LINK_STATUS, &link_status);
+        if (link_status == GL_FALSE)
+        {
+            msg_Err(gl, "Unable to use program");
+            return VLC_EGENERIC;
+        }
+    }
+
+    return VLC_SUCCESS;
+}
+
+
 static int
 opengl_link_program(struct prgm *prgm)
 {
@@ -428,23 +482,8 @@ opengl_link_program(struct prgm *prgm)
     GLuint vertex_shader = BuildVertexShader(tc, tc->tex_count);
     GLuint shaders[] = { tc->fshader, vertex_shader };
 
-    /* Check shaders messages */
-    for (unsigned i = 0; i < 2; i++) {
-        int infoLength;
-        tc->vt->GetShaderiv(shaders[i], GL_INFO_LOG_LENGTH, &infoLength);
-        if (infoLength <= 1)
-            continue;
-
-        char *infolog = malloc(infoLength);
-        if (infolog != NULL)
-        {
-            int charsWritten;
-            tc->vt->GetShaderInfoLog(shaders[i], infoLength, &charsWritten,
-                                      infolog);
-            msg_Err(tc->gl, "shader %u: %s", i, infolog);
-            free(infolog);
-        }
-    }
+    if (CheckShaderMessages(tc->gl, tc->vt, shaders) != VLC_SUCCESS)
+        goto error;
 
     prgm->id = tc->vt->CreateProgram();
     tc->vt->AttachShader(prgm->id, tc->fshader);
@@ -454,30 +493,8 @@ opengl_link_program(struct prgm *prgm)
     tc->vt->DeleteShader(vertex_shader);
     tc->vt->DeleteShader(tc->fshader);
 
-    /* Check program messages */
-    int infoLength = 0;
-    tc->vt->GetProgramiv(prgm->id, GL_INFO_LOG_LENGTH, &infoLength);
-    if (infoLength > 1)
-    {
-        char *infolog = malloc(infoLength);
-        if (infolog != NULL)
-        {
-            int charsWritten;
-            tc->vt->GetProgramInfoLog(prgm->id, infoLength, &charsWritten,
-                                       infolog);
-            msg_Err(tc->gl, "shader program: %s", infolog);
-            free(infolog);
-        }
-
-        /* If there is some message, better to check linking is ok */
-        GLint link_status = GL_TRUE;
-        tc->vt->GetProgramiv(prgm->id, GL_LINK_STATUS, &link_status);
-        if (link_status == GL_FALSE)
-        {
-            msg_Err(tc->gl, "Unable to use program");
-            goto error;
-        }
-    }
+    if (CheckProgramMessages(tc->gl, tc->vt, prgm) != VLC_SUCCESS)
+        goto error;
 
     /* Fetch UniformLocations and AttribLocations */
 #define GET_LOC(type, x, str) do { \
