@@ -736,11 +736,14 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     GET_PROC_ADDR(UniformMatrix3fv);
     GET_PROC_ADDR(UniformMatrix2fv);
     GET_PROC_ADDR(Uniform4fv);
+    GET_PROC_ADDR(Uniform3fv);
+    GET_PROC_ADDR(Uniform2fv);
     GET_PROC_ADDR(Uniform4f);
     GET_PROC_ADDR(Uniform3f);
     GET_PROC_ADDR(Uniform2f);
     GET_PROC_ADDR(Uniform1f);
     GET_PROC_ADDR(Uniform1i);
+
 
     GET_PROC_ADDR(CreateProgram);
     GET_PROC_ADDR(LinkProgram);
@@ -753,6 +756,17 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     GET_PROC_ADDR(BindBuffer);
     GET_PROC_ADDR(BufferData);
     GET_PROC_ADDR(DeleteBuffers);
+
+    GET_PROC_ADDR(BindFramebuffer);
+    GET_PROC_ADDR(GenFramebuffers);
+    GET_PROC_ADDR(DeleteFramebuffers);
+    GET_PROC_ADDR(CheckFramebufferStatus);
+    GET_PROC_ADDR(FramebufferTexture2D);
+    GET_PROC_ADDR(GenRenderbuffers);
+    GET_PROC_ADDR(DeleteRenderbuffers);
+    GET_PROC_ADDR(BindRenderbuffer);
+    GET_PROC_ADDR(RenderbufferStorage);
+    GET_PROC_ADDR(FramebufferRenderbuffer);
 
     GET_PROC_ADDR_OPTIONAL(GetFramebufferAttachmentParameteriv);
 
