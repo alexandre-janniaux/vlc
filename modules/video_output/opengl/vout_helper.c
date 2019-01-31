@@ -172,6 +172,10 @@ struct vout_display_opengl_t {
     bool b_sideBySide;
     bool b_lastSideBySide;
 
+    unsigned i_displayWidth;
+    unsigned i_displayHeight;
+    vout_display_place_t displayPlace;
+
     /* FBO */
     GLuint leftColorTex, leftDepthTex, leftFBO;
     GLuint rightColorTex, rightDepthTex, rightFBO;
