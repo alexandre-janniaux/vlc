@@ -1619,7 +1619,8 @@ static int BuildRectangle(unsigned nbPlanes,
                           GLfloat **vertexCoord, GLfloat **textureCoord, unsigned *nbVertices,
                           GLushort **indices, unsigned *nbIndices,
                           const float *left, const float *top,
-                          const float *right, const float *bottom)
+                          const float *right, const float *bottom,
+                          float aspectRatio)
 {
     *nbVertices = 4;
     *nbIndices = 6;
@@ -1641,11 +1642,11 @@ static int BuildRectangle(unsigned nbPlanes,
         return VLC_ENOMEM;
     }
 
-    static const GLfloat coord[] = {
-       -1.0,    1.0,    -1.0f,
-       -1.0,    -1.0,   -1.0f,
-       1.0,     1.0,    -1.0f,
-       1.0,     -1.0,   -1.0f
+    const GLfloat coord[] = {
+       -1.0,     1.0 / aspectRatio,   -1.0f,
+       -1.0,    -1.0 / aspectRatio,   -1.0f,
+       1.0,      1.0 / aspectRatio,   -1.0f,
+       1.0,     -1.0 / aspectRatio,   -1.0f
     };
 
     memcpy(*vertexCoord, coord, *nbVertices * 3 * sizeof(GLfloat));
@@ -1675,7 +1676,8 @@ static int BuildRectangle(unsigned nbPlanes,
 
 static int SetupCoords(vout_display_opengl_t *vgl,
                        const float *left, const float *top,
-                       const float *right, const float *bottom)
+                       const float *right, const float *bottom,
+                       float f_ar)
 {
     GLfloat *vertexCoord, *textureCoord;
     GLushort *indices;
@@ -1688,7 +1690,8 @@ static int SetupCoords(vout_display_opengl_t *vgl,
         i_ret = BuildRectangle(vgl->prgm->tc->tex_count,
                                &vertexCoord, &textureCoord, &nbVertices,
                                &indices, &nbIndices,
-                               left, top, right, bottom);
+                               left, top, right, bottom,
+                               vgl->b_sideBySide ? f_ar : 1.f);
         break;
     case PROJECTION_MODE_EQUIRECTANGULAR:
         i_ret = BuildSphere(vgl->prgm->tc->tex_count,
