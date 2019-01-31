@@ -897,6 +897,7 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
         return NULL;
 
     vgl->gl = gl;
+    vgl->b_sideBySide = true;
 
 #if defined(USE_OPENGL_ES2) || defined(HAVE_GL_CORE_SYMBOLS)
 #define GET_PROC_ADDR_CORE(name) vgl->vt.name = gl##name
