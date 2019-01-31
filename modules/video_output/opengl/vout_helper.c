@@ -2050,6 +2050,8 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         const float defaultDistorsionCoefs[] = { 0, 0, 0, 1 };
         const float defaultAberrationCoefs[] = { 1.f, 1.f, 1.f };
 
+        const float viewportScale[] = { vgl->i_displayWidth / 2, vgl->i_displayHeight };
+        vgl->vt.Uniform2fv(vgl->vt.GetUniformLocation(program, "ViewportScale"), 1, viewportScale);
         vgl->vt.Uniform1f(vgl->vt.GetUniformLocation(program, "WarpScale"), rightCenter[0]);
         vgl->vt.Uniform4fv(vgl->vt.GetUniformLocation(program, "HmdWarpParam"),
                            1, defaultDistorsionCoefs);
