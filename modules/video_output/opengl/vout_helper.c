@@ -136,9 +136,10 @@ struct vout_display_opengl_t {
     picture_pool_t *pool;
 
     /* One YUV program and one RGBA program (for subpics) */
-    struct prgm prgms[2];
+    struct prgm prgms[3];
     struct prgm *prgm; /* Main program */
     struct prgm *sub_prgm; /* Subpicture program */
+    struct prgm *stereo_prgm; /* Stereo program */
 
     unsigned nb_indices;
     GLuint vertex_buffer_object;
@@ -1033,6 +1034,7 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
 
     vgl->prgm = &vgl->prgms[0];
     vgl->sub_prgm = &vgl->prgms[1];
+    vgl->stereo_prgm = &vgl->prgms[2];
 
     GL_ASSERT_NOERROR();
     int ret;
@@ -1165,6 +1167,7 @@ void vout_display_opengl_Delete(vout_display_opengl_t *vgl)
 
     DeleteFBO(vgl, vgl->leftFBO, vgl->leftColorTex, vgl->leftDepthTex);
     DeleteFBO(vgl, vgl->rightFBO, vgl->rightColorTex, vgl->rightDepthTex);
+    vgl->vt.DeleteProgram(vgl->stereo_prgm->id);
 
     if (vgl->pool)
         picture_pool_Release(vgl->pool);
