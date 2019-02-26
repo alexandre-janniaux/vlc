@@ -1204,15 +1204,23 @@ int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,
             glr->bottom = -2.0 * (r->i_y + r->fmt.i_visible_height) / subpicture->i_original_picture_height;
 
             if (r->zoom_h.num != 0 && r->zoom_h.den != 0)
+            {
+                glr->left *= (float) r->zoom_h.num / r->zoom_h.den;
                 glr->right *= (float) r->zoom_h.num / r->zoom_h.den;
+            }
 
             if (r->zoom_v.num != 0 && r->zoom_v.den != 0)
+            {
                 glr->bottom *= (float) r->zoom_v.num / r->zoom_v.den;
-
+                glr->top *= (float) r->zoom_v.num / r->zoom_v.den;
+            }
             glr->left -= 1.f;
             glr->right -= 1.f;
             glr->top += 1.f;
             glr->bottom += 1.f;
+
+            msg_Err(vgl->gl, "LEFT: %f, RIGHT: %f, TOP: %f, BOTTOM: %f",
+                    glr->left, glr->right, glr->top, glr->bottom);
 
             glr->texture = 0;
             /* Try to recycle the textures allocated by the previous
