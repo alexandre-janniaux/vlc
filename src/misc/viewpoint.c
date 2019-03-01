@@ -69,3 +69,19 @@ void vlc_viewpoint_to_4x4( const vlc_viewpoint_t *vp, float *m )
                 for (int l=0; l<4; ++l)
                     m[4*i+l] += y_rot[i][j] * x_rot[j][k] * z_rot[k][l];
 }
+
+void vlc_viewpoint_from_euler(vlc_viewpoint_t *vp,
+                              float yaw, float pitch, float roll)
+{
+    vp->yaw   = yaw;
+    vp->pitch = pitch;
+    vp->roll  = roll;
+}
+
+void vlc_viewpoint_to_euler(const vlc_viewpoint_t *vp,
+                            float *yaw, float *pitch, float *roll)
+{
+    *yaw   = vp->yaw;
+    *pitch = vp->pitch;
+    *roll  = vp->roll;
+}
