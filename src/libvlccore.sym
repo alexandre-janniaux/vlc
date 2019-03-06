@@ -958,3 +958,5 @@ vlc_hmd_ReadEvents
 vlc_hmd_ReadViewpoint
 vlc_hmd_device_Release
 vlc_hmd_driver_Release
+vlc_viewpoint_from_euler
+vlc_viewpoint_to_euler
