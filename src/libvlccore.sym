@@ -954,3 +954,5 @@ vlc_video_context_GetType
 vlc_video_context_GetPrivate
 vlc_video_context_Hold
 vlc_video_context_HoldDevice
+vlc_viewpoint_from_euler
+vlc_viewpoint_to_euler
