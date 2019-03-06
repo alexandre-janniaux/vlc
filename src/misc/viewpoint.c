@@ -26,6 +26,60 @@
 
 #include <vlc_viewpoint.h>
 
+/* Quaternion to/from Euler conversion.
+ * Original code from:
+ * http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToEuler/ */
+static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float *q)
+{
+    float sqx = q[0] * q[0];
+    float sqy = q[1] * q[1];
+    float sqz = q[2] * q[2];
+    float sqw = q[3] * q[3];
+
+    // if the quaternion is normalised, unit is one
+    // otherwise it is correction factor
+    float unit = sqx + sqy + sqz + sqw;
+    float test = q[0] * q[1] + q[2] * q[3];
+
+    if (test > 0.499 * unit)
+    {
+        // singularity at north pole
+        *yaw = 2 * atan2(q[0], q[3]);
+        *roll = M_PI / 2;
+        *pitch = 0;
+    }
+    else if (test < -0.499 * unit)
+    {
+        // singularity at south pole
+        *yaw = -2 * atan2(q[0], q[3]);
+        *roll = -M_PI / 2;
+        *pitch = 0;
+    }
+    else
+    {
+        *yaw   = atan2(2 * q[1] * q[3] - 2 * q[0] * q[2],
+                       sqx - sqy - sqz + sqw);
+        *roll  = asin(2 * test / unit);
+        *pitch = atan2(2 * q[0] * q[3] - 2 * q[1] * q[2],
+                       -sqx + sqy - sqz + sqw);
+    }
+}
+
+static void EulerToQuaternion(float *q, float yaw, float pitch, float roll)
+{
+    float c_yaw     = cos(yaw / 2.f);
+    float c_pitch   = cos(pitch / 2.f);
+    float c_roll    = cos(roll / 2.f);
+    float s_yaw     = sin(yaw / 2.f);
+    float s_pitch   = sin(pitch / 2.f);
+    float s_roll    = sin(roll / 2.f);
+
+    q[0] = c_yaw * c_pitch * c_roll + s_yaw * s_pitch * s_roll;
+    q[1] = c_yaw * c_pitch * s_roll - s_yaw * s_pitch * c_roll;
+    q[2] = s_yaw * c_pitch * s_roll + c_yaw * s_pitch * c_roll;
+    q[3] = s_yaw * c_pitch * c_roll - c_yaw * s_pitch * s_roll;
+}
+
 void vlc_viewpoint_to_4x4( const vlc_viewpoint_t *vp, float *m )
 {
     float yaw   = vp->yaw   * (float)M_PI / 180.f + (float)M_PI_2;
