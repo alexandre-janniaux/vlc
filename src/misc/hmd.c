@@ -1,7 +1,9 @@
 /*****************************************************************************
- * hmd.c
+ * hmd.c: head mounted headset API implementation
  *****************************************************************************
- * Copyright (C) 2018 VLC authors and VideoLabs
+ * Copyright (C) 2019 VLC authors, VideoLabs and VideoLAN
+ *
+ * Authors: Alexandre Janniaux <ajanni@videolabs.io>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
