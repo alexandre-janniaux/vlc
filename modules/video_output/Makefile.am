@@ -512,3 +512,7 @@ endif
 libopenhmd_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
 EXTRA_LTLIBRARIES += libopenhmd_plugin.la
 vout_LTLIBRARIES += $(LTLIBopenhmd)
+
+libidviuhmd_plugin_la_SOURCES = video_output/hmd/idviu.c
+EXTRA_LTLIBRARIES += libidviuhmd_plugin.la
+vout_LTLIBRARIES += $(LTLIBidviuhmd)
