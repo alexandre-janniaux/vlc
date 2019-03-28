@@ -296,6 +296,12 @@ static inline int net_GetPeerAddress( int fd, char *address, int *port )
 
 VLC_API char *vlc_getProxyUrl(const char *);
 
+#if defined(__ANDROID__) && defined(__aarch64__)
+struct msghdr;
+ssize_t vlc_sendmsg(int fd, const struct msghdr *msg, int flags);
+#define sendmsg(a, b, c) vlc_sendmsg(a,b,c)
+#endif
+
 # ifdef __cplusplus
 }
 # endif
