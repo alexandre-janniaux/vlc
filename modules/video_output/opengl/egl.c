@@ -327,8 +327,7 @@ static int Open(vlc_gl_t *gl, const struct gl_api *api,
     if (*ext)
         msg_Dbg(obj, " extensions: %s", ext);
 
-    if (major != 1 || minor < api->min_minor
-     || !CheckAPI(sys->display, api->name))
+    if (major != 1 || minor < api->min_minor)
     {
         msg_Err(obj, "cannot select %s API", api->name);
         goto error;
