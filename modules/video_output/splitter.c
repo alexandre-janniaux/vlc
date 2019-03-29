@@ -97,9 +97,22 @@ static int vlc_vidsplit_Control(vout_display_t *vd, int query, va_list args)
     vout_display_sys_t *sys = vd->sys;
     const vout_display_cfg_t *cfg = va_arg(args, const vout_display_cfg_t *);
 
+    vout_display_cfg_t display_cfg = *cfg;
+
     for (int i = 0; i < sys->splitter.i_output; i++) {
         struct vlc_vidsplit_part *part = &sys->parts[i];
-        vout_display_Control(part->display, query, cfg);
+
+        if (query == VOUT_DISPLAY_CHANGE_VIEWPOINT)
+        {
+            if (i == 0)
+                display_cfg.viewpoint.yaw = cfg->viewpoint.yaw - 40;
+            else
+                display_cfg.viewpoint.yaw = cfg->viewpoint.yaw + 40;
+
+            printf("i: %d - yaw: %f, pitch: %f, roll: %f\n", i, display_cfg.viewpoint.yaw, display_cfg.viewpoint.pitch, display_cfg.viewpoint.roll);
+        }
+
+        vout_display_Control(part->display, query, &display_cfg);
     }
 
     return VLC_SUCCESS;
