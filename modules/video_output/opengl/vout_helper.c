@@ -100,6 +100,7 @@ struct prgm
     struct {
         GLfloat OrientationMatrix[16];
         GLfloat ProjectionMatrix[16];
+        GLfloat ModelViewMatrix[16];
         GLfloat ZoomMatrix[16];
         GLfloat ViewMatrix[16];
     } var;
@@ -107,6 +108,7 @@ struct prgm
     struct { /* UniformLocation */
         GLint OrientationMatrix;
         GLint ProjectionMatrix;
+        GLint ModelViewMatrix;
         GLint ViewMatrix;
         GLint ZoomMatrix;
     } uloc;
@@ -210,6 +212,23 @@ static void getProjectionMatrix(float sar, float fovy, GLfloat matrix[static 16]
      memcpy(matrix, m, sizeof(m));
 }
 
+static void getModelViewMatrix(float yaw_offset, GLfloat matrix[static 16]) {
+    float st, ct;
+
+    sincosf(yaw_offset * M_PI / 180, &st, &ct);
+    printf("yaw_offset: %f\n", yaw_offset);
+
+    const GLfloat m[] = {
+    /*  x    y    z    w */
+        ct,  0.f, -st, 0.f,
+        0.f, 1.f, 0.f, 0.f,
+        st,  0.f, ct,  0.f,
+        0.f, 0.f, 0.f, 1.f
+    };
+
+    memcpy(matrix, m, sizeof(m));
+}
+
 static void getViewpointMatrixes(vout_display_opengl_t *vgl,
                                  video_projection_mode_t projection_mode,
                                  struct prgm *prgm)
@@ -219,6 +238,7 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
     {
         getProjectionMatrix(vgl->f_sar, vgl->f_fovy, prgm->var.ProjectionMatrix);
         getZoomMatrix(vgl->f_z, prgm->var.ZoomMatrix);
+        getModelViewMatrix(vgl->vp.offset_yaw, prgm->var.ModelViewMatrix);
 
         /* vgl->vp has been reversed and is a world transform */
         vlc_viewpoint_to_4x4(&vgl->vp, prgm->var.ViewMatrix);
@@ -227,7 +247,7 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
     {
         memcpy(prgm->var.ProjectionMatrix, identity, sizeof(identity));
         memcpy(prgm->var.ZoomMatrix, identity, sizeof(identity));
-        memcpy(prgm->var.ViewMatrix, identity, sizeof(identity));
+        memcpy(prgm->var.ModelViewMatrix, identity, sizeof(identity));
     }
 
 }
@@ -317,12 +337,13 @@ static GLuint BuildVertexShader(const opengl_tex_converter_t *tc,
         "attribute vec3 VertexPosition;\n"
         "uniform mat4 OrientationMatrix;\n"
         "uniform mat4 ProjectionMatrix;\n"
+        "uniform mat4 ModelViewMatrix;\n"
         "uniform mat4 ZoomMatrix;\n"
         "uniform mat4 ViewMatrix;\n"
         "void main() {\n"
         " TexCoord0 = vec4(OrientationMatrix * MultiTexCoord0).st;\n"
         "%s%s"
-        " gl_Position = ProjectionMatrix * ZoomMatrix * ViewMatrix\n"
+        " gl_Position = ProjectionMatrix * ZoomMatrix * ModelViewMatrix * ViewMatrix\n"
         "               * vec4(VertexPosition, 1.0);\n"
         "}";
 
@@ -465,6 +486,7 @@ opengl_link_program(struct prgm *prgm)
 #define GET_ALOC(x, str) GET_LOC(Attrib, prgm->aloc.x, str)
     GET_ULOC(OrientationMatrix, "OrientationMatrix");
     GET_ULOC(ProjectionMatrix, "ProjectionMatrix");
+    GET_ULOC(ModelViewMatrix, "ModelViewMatrix");
     GET_ULOC(ViewMatrix, "ViewMatrix");
     GET_ULOC(ZoomMatrix, "ZoomMatrix");
 
@@ -1520,6 +1542,8 @@ static void DrawWithShaders(vout_display_opengl_t *vgl, struct prgm *prgm)
                              prgm->var.OrientationMatrix);
     vgl->vt.UniformMatrix4fv(prgm->uloc.ProjectionMatrix, 1, GL_FALSE,
                              prgm->var.ProjectionMatrix);
+    vgl->vt.UniformMatrix4fv(prgm->uloc.ModelViewMatrix, 1, GL_FALSE,
+                             prgm->var.ModelViewMatrix);
     vgl->vt.UniformMatrix4fv(prgm->uloc.ViewMatrix, 1, GL_FALSE,
                              prgm->var.ViewMatrix);
     vgl->vt.UniformMatrix4fv(prgm->uloc.ZoomMatrix, 1, GL_FALSE,
@@ -1699,6 +1723,8 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
                                  prgm->var.OrientationMatrix);
         vgl->vt.UniformMatrix4fv(prgm->uloc.ProjectionMatrix, 1, GL_FALSE,
                                  prgm->var.ProjectionMatrix);
+        vgl->vt.UniformMatrix4fv(prgm->uloc.ModelViewMatrix, 1, GL_FALSE,
+                                 prgm->var.ModelViewMatrix);
         vgl->vt.UniformMatrix4fv(prgm->uloc.ViewMatrix, 1, GL_FALSE,
                                  prgm->var.ViewMatrix);
         vgl->vt.UniformMatrix4fv(prgm->uloc.ZoomMatrix, 1, GL_FALSE,
