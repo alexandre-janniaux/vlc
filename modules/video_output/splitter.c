@@ -94,17 +94,15 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
 
 static int vlc_vidsplit_Control(vout_display_t *vd, int query, va_list args)
 {
-    (void) vd; (void) args;
+    vout_display_sys_t *sys = vd->sys;
+    const vout_display_cfg_t *cfg = va_arg(args, const vout_display_cfg_t *);
 
-    switch (query) {
-        case VOUT_DISPLAY_CHANGE_DISPLAY_SIZE:
-        case VOUT_DISPLAY_CHANGE_DISPLAY_FILLED:
-        case VOUT_DISPLAY_CHANGE_ZOOM:
-        case VOUT_DISPLAY_CHANGE_SOURCE_ASPECT:
-        case VOUT_DISPLAY_CHANGE_SOURCE_CROP:
-            return VLC_SUCCESS;
+    for (int i = 0; i < sys->splitter.i_output; i++) {
+        struct vlc_vidsplit_part *part = &sys->parts[i];
+        vout_display_Control(part->display, query, cfg);
     }
-    return VLC_EGENERIC;
+
+    return VLC_SUCCESS;
 }
 
 static void vlc_vidsplit_Close(vout_display_t *vd)
@@ -279,6 +277,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
             .align = { 0, 0 } /* TODO */,
             .is_display_filled = true,
             .zoom = { 1, 1 },
+            .viewpoint = {0, 0, 0, FIELD_OF_VIEW_DEGREES_DEFAULT}
         };
         const char *modname = output->psz_module;
         struct vlc_vidsplit_part *part = &sys->parts[i];
