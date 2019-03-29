@@ -105,11 +105,9 @@ static int vlc_vidsplit_Control(vout_display_t *vd, int query, va_list args)
         if (query == VOUT_DISPLAY_CHANGE_VIEWPOINT)
         {
             if (i == 0)
-                display_cfg.viewpoint.yaw = cfg->viewpoint.yaw - 40;
+                display_cfg.viewpoint.offset_yaw = -cfg->viewpoint.fov / 2;
             else
-                display_cfg.viewpoint.yaw = cfg->viewpoint.yaw + 40;
-
-            printf("i: %d - yaw: %f, pitch: %f, roll: %f\n", i, display_cfg.viewpoint.yaw, display_cfg.viewpoint.pitch, display_cfg.viewpoint.roll);
+                display_cfg.viewpoint.offset_yaw = cfg->viewpoint.fov / 2;
         }
 
         vout_display_Control(part->display, query, &display_cfg);
