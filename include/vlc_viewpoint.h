@@ -42,6 +42,7 @@ struct vlc_viewpoint_t {
     float pitch; /* pitch in degrees */
     float roll;  /* roll in degrees */
     float fov;   /* field of view in degrees */
+    float offset_yaw;
 };
 
 static inline void vlc_viewpoint_init( vlc_viewpoint_t *p_vp )
@@ -76,6 +77,7 @@ static inline void vlc_viewpoint_reverse( vlc_viewpoint_t *dst,
     dst->roll  = -src->roll;
 
     dst->fov   = src->fov;
+    dst->offset_yaw   = src->offset_yaw;
 }
 
 /**
