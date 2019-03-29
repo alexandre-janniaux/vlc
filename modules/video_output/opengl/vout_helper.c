@@ -216,7 +216,6 @@ static void getModelViewMatrix(float yaw_offset, GLfloat matrix[static 16]) {
     float st, ct;
 
     sincosf(yaw_offset * M_PI / 180, &st, &ct);
-    printf("yaw_offset: %f\n", yaw_offset);
 
     const GLfloat m[] = {
     /*  x    y    z    w */
@@ -238,7 +237,7 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
     {
         getProjectionMatrix(vgl->f_sar, vgl->f_fovy, prgm->var.ProjectionMatrix);
         getZoomMatrix(vgl->f_z, prgm->var.ZoomMatrix);
-        getModelViewMatrix(vgl->vp.offset_yaw, prgm->var.ModelViewMatrix);
+        getModelViewMatrix(vgl->vp.yaw_offset, prgm->var.ModelViewMatrix);
 
         /* vgl->vp has been reversed and is a world transform */
         vlc_viewpoint_to_4x4(&vgl->vp, prgm->var.ViewMatrix);
