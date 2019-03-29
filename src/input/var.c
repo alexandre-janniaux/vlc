@@ -781,6 +781,8 @@ void input_ConfigVarInit ( input_thread_t *p_input )
         var_Create( p_input, "programs", VLC_VAR_STRING | VLC_VAR_DOINHERIT );
         var_Create( p_input, "program", VLC_VAR_INTEGER | VLC_VAR_DOINHERIT );
         var_Create( p_input, "rate", VLC_VAR_FLOAT | VLC_VAR_DOINHERIT );
+
+        var_Create( p_input, "force-equirectangular", VLC_VAR_BOOL | VLC_VAR_DOINHERIT );
     }
 
     /* */

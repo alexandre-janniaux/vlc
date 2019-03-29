@@ -1691,6 +1691,11 @@ static es_out_id_t *EsOutAddSlaveLocked( es_out_t *out, const es_format_t *fmt,
         free( es );
         return NULL;
     }
+
+    bool b_forceEquirectangular = var_GetBool( p_input, "force-equirectangular" );
+    if (b_forceEquirectangular)
+        es->fmt.video.projection_mode = PROJECTION_MODE_EQUIRECTANGULAR;
+
     if( es->fmt.i_id < 0 )
         es->fmt.i_id = p_sys->i_id;
     if( !es->fmt.i_original_fourcc )
