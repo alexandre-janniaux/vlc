@@ -296,7 +296,10 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
             .align = { 0, 0 } /* TODO */,
             .is_display_filled = true,
             .zoom = { 1, 1 },
-            .viewpoint = {0, 0, 0, FIELD_OF_VIEW_DEGREES_DEFAULT}
+            .viewpoint = {0, 0, 0, FIELD_OF_VIEW_DEGREES_DEFAULT,
+                          i == 0 ?
+                            -FIELD_OF_VIEW_DEGREES_DEFAULT / 2
+                            : FIELD_OF_VIEW_DEGREES_DEFAULT / 2}
         };
         const char *modname = output->psz_module;
         struct vlc_vidsplit_part *part = &sys->parts[i];
