@@ -63,6 +63,8 @@ static void *Run(void *data)
 {
     intf_thread_t *intf = data;
     intf_sys_t    *sys  = intf->p_sys;
+    //vlc_playlist_t *playlist = vlc_intf_GetMainPlaylist(intf);
+    //vlc_player_t *player = vlc_playlist_GetPlayer(playlist);
 
     playlist_t *playlist = pl_Get(intf);
 
@@ -71,8 +73,13 @@ static void *Run(void *data)
     for (;;) {
         vlc_testcancel();
 
+        //vlc_player_Lock(player);
+        //input_item_t *item = vlc_player_GetCurrentMedia(player);
+        //vlc_player_Unlock(player);
+
         input_thread_t *input = playlist_CurrentInput(playlist);
 
+        //if (item != NULL)
         if (input != NULL)
         {
 
@@ -90,6 +97,10 @@ static void *Run(void *data)
             {
                 // read error
             }
+
+            //vlc_player_Lock(player);
+            //vlc_player_SetAudioDelay(player, VLC_TICK_FROM_MS(avsync_delay), VLC_PLAYER_WHENCE_ABSOLUTE);
+            //vlc_player_Unlock(player);
 
             var_SetInteger(input, "audio-delay", VLC_TICK_FROM_MS(avsync_delay));
 
