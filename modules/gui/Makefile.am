@@ -23,3 +23,7 @@ gui_LTLIBRARIES += $(LTLIBminimal_macosx)
 include gui/macosx/Makefile.am
 include gui/qt/Makefile.am
 include gui/skins2/Makefile.am
+
+libidviuintf_plugin_la_SOURCES = gui/idviu.c
+libidviuintf_plugin_la_CPPFLAGS = $(AM_CPPFLAGS)
+gui_LTLIBRARIES += libidviuintf_plugin.la
