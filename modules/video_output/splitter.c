@@ -27,6 +27,11 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+
 
 #include <vlc_common.h>
 #include <vlc_modules.h>
@@ -48,6 +53,8 @@ struct vout_display_sys_t {
 
     picture_t **pictures;
     struct vlc_vidsplit_part *parts;
+
+    int sphere_fd;
 };
 
 static void vlc_vidsplit_Prepare(vout_display_t *vd, picture_t *pic,
@@ -80,6 +87,52 @@ static void vlc_vidsplit_Prepare(vout_display_t *vd, picture_t *pic,
 static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
 {
     vout_display_sys_t *sys = vd->sys;
+
+    char buffer[512];
+    char *cursor = buffer;
+
+    lseek(sys->sphere_fd, 0, SEEK_SET);
+    ssize_t size = read(sys->sphere_fd, buffer, sizeof(buffer));
+
+    msg_Info(vd, "read from spheres: %d \n%.*s", (int)size, (int)size, buffer);
+
+    int num_sphere;
+    if (sscanf(cursor, "%d", &num_sphere) == 1 && num_sphere > 0)
+    {
+        cursor = strchr(cursor, '\n') + 1; // TODO: boundary check
+        vlc_mutex_lock(&sys->lock);
+        for (int i_sphere=0; i_sphere<num_sphere; i_sphere++)
+        {
+            int fov, yaw, pitch;
+            msg_Info(vd, "cursor: %s | start with %c", cursor, *cursor);
+            if (sscanf(cursor, "%d %d %d", &fov, &yaw, &pitch) != 3)
+                break;
+            cursor = strchr(cursor, '\n')+1; // TODO: boundary check
+
+            // TODO: set viewpoint
+            if( i_sphere < sys->splitter.i_output )
+            {
+                vout_display_cfg_t display_cfg = {
+                    .viewpoint = {
+                        .yaw_offset = 0.f,
+                        .yaw = yaw / 1000.f,
+                        .pitch = pitch / 1000.f,
+                        .roll = 0.f,
+                        .fov = fov / 1000.f
+                    }
+                };
+                msg_Info(vd, "Updating viewpoint for display %d: fov=%f yaw=%f, pitch=%f", i_sphere, fov/1000.f, yaw/1000.f, pitch/1000.f);
+                vout_display_Control(sys->parts[i_sphere].display,
+                                     VOUT_DISPLAY_CHANGE_VIEWPOINT,
+                                     &display_cfg);
+            }
+        }
+        vlc_mutex_unlock(&sys->lock);
+    }
+    else
+    {
+        msg_Warn(vd, "not updating viewpoint, spheres: %d", num_sphere);
+    }
 
     for (int i = 0; i < sys->splitter.i_output; i++) {
         struct vlc_vidsplit_part *part = &sys->parts[i];
@@ -147,6 +200,8 @@ static void vlc_vidsplit_Close(vout_display_t *vd)
     video_format_Clean(&sys->splitter.fmt);
     vlc_mutex_destroy(&sys->lock);
     vlc_object_delete(&sys->splitter);
+
+    close( sys->sphere_fd );
 }
 
 static void vlc_vidsplit_window_Resized(vout_window_t *wnd,
@@ -265,6 +320,25 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
     }
     vd->sys = sys;
 
+    char *psz_sphere_device = var_InheritString(obj, "idviu-sphere-device");
+    if (!psz_sphere_device)
+    {
+        msg_Err(obj, "cannot find any idviu device, see --idviu-sphere-device");
+        free(sys);
+        free(name);
+        return VLC_EGENERIC;
+    }
+    sys->sphere_fd = open(psz_sphere_device, O_RDONLY);
+    if (sys->sphere_fd < 0)
+    {
+        msg_Err(obj, "cannot open device %s", psz_sphere_device);
+        free(psz_sphere_device);
+        free(sys);
+        return VLC_EGENERIC;
+    }
+    msg_Info(obj, "using device %s for sphere viewpoint", psz_sphere_device);
+    free(psz_sphere_device);
+
     video_splitter_t *splitter = &sys->splitter;
 
     vlc_mutex_init(&sys->lock);
@@ -352,4 +426,7 @@ vlc_module_begin()
     set_callbacks(vlc_vidsplit_Open, vlc_vidsplit_Close)
     add_module("video-splitter", "video splitter", NULL,
                N_("Video splitter module"), N_("Video splitter module"))
+    add_loadfile( "idviu-sphere-device", "/proc/idviu/spheres",
+                  "Proc device for sphere viewpoints",
+                  "Proc device for sphere viewpoints" );
 vlc_module_end()
