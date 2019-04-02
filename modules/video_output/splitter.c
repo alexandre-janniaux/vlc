@@ -38,6 +38,7 @@
 #include <vlc_plugin.h>
 #include <vlc_vout_display.h>
 #include <vlc_video_splitter.h>
+#include <vlc_vector.h>
 
 struct vlc_vidsplit_part {
     vout_window_t *window;
@@ -101,6 +102,14 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
     {
         cursor = strchr(cursor, '\n') + 1; // TODO: boundary check
         vlc_mutex_lock(&sys->lock);
+
+        struct VLC_VECTOR(struct viewpoint_view) yaw_offsets;
+        vlc_vector_init(&yaw_offsets);
+
+        struct viewpoint_view { float fov, yaw, pitch; };
+
+        float g_yaw = 0.f;
+        float g_pitch = 0.f;
         for (int i_sphere=0; i_sphere<num_sphere; i_sphere++)
         {
             int fov, yaw, pitch;
@@ -108,20 +117,30 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
             if (sscanf(cursor, "%d %d %d", &fov, &yaw, &pitch) != 3)
                 break;
             cursor = strchr(cursor, '\n')+1; // TODO: boundary check
+            g_yaw += yaw;
+            g_pitch += pitch;
+            struct viewpoint_view view = { .fov=fov, .yaw=yaw, .pitch=pitch };
+            vlc_vector_push(&yaw_offsets, view);
+        }
 
+        g_yaw   /= num_sphere;
+        g_pitch /= num_sphere;
+
+        for(int i_sphere=0; i_sphere<num_sphere; i_sphere++)
+        {
             // TODO: set viewpoint
             if( i_sphere < sys->splitter.i_output )
             {
+                struct viewpoint_view* view = &yaw_offsets.data[i_sphere];
                 vout_display_cfg_t display_cfg = {
                     .viewpoint = {
-                        .yaw_offset = 0.f,
-                        .yaw = yaw / 1000.f,
-                        .pitch = pitch / 1000.f,
+                        .yaw_offset = (view->yaw - g_yaw)/ 1000.f,
+                        .yaw = g_yaw / 1000.f,
+                        .pitch = g_pitch / 1000.f,
                         .roll = 0.f,
-                        .fov = fov / 1000.f
+                        .fov = view->fov / 1000.f
                     }
                 };
-                msg_Info(vd, "Updating viewpoint for display %d: fov=%f yaw=%f, pitch=%f", i_sphere, fov/1000.f, yaw/1000.f, pitch/1000.f);
                 vout_display_Control(sys->parts[i_sphere].display,
                                      VOUT_DISPLAY_CHANGE_VIEWPOINT,
                                      &display_cfg);
