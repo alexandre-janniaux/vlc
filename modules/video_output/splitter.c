@@ -147,6 +147,8 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
             }
         }
         vlc_mutex_unlock(&sys->lock);
+
+        vlc_vector_destroy(&yaw_offsets);
     }
     else
     {
