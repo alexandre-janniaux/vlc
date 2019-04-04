@@ -175,6 +175,13 @@ static int vlc_vidsplit_Control(vout_display_t *vd, int query, va_list args)
 
     for (int i = 0; i < sys->splitter.i_output; i++) {
         struct vlc_vidsplit_part *part = &sys->parts[i];
+        vlc_sem_wait(&part->lock);
+
+        if (part->display == NULL)
+        {
+            vlc_sem_post(&part->lock);
+            continue;
+        }
 
         if (query == VOUT_DISPLAY_CHANGE_VIEWPOINT)
         {
@@ -185,6 +192,7 @@ static int vlc_vidsplit_Control(vout_display_t *vd, int query, va_list args)
         }
 
         vout_display_Control(part->display, query, &display_cfg);
+        vlc_sem_post(&part->lock);
     }
 
     return VLC_SUCCESS;
