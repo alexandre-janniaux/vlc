@@ -80,6 +80,8 @@ static void vlc_vidsplit_Prepare(vout_display_t *vd, picture_t *pic,
         struct vlc_vidsplit_part *part = &sys->parts[i];
 
         vlc_sem_wait(&part->lock);
+        if (part->display == NULL)
+            continue;
         sys->pictures[i] = vout_display_Prepare(part->display,
                                                 sys->pictures[i], NULL, date);
     }
@@ -101,7 +103,6 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
     if (sscanf(cursor, "%d", &num_sphere) == 1 && num_sphere > 0)
     {
         cursor = strchr(cursor, '\n') + 1; // TODO: boundary check
-        vlc_mutex_lock(&sys->lock);
 
         struct VLC_VECTOR(struct viewpoint_view) yaw_offsets;
         vlc_vector_init(&yaw_offsets);
@@ -128,8 +129,8 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
 
         for(int i_sphere=0; i_sphere<num_sphere; i_sphere++)
         {
-            // TODO: set viewpoint
-            if( i_sphere < sys->splitter.i_output )
+            struct vlc_vidsplit_part *part = &sys->parts[i_sphere];
+            if( i_sphere < sys->splitter.i_output && part->display)
             {
                 struct viewpoint_view* view = &yaw_offsets.data[i_sphere];
                 vout_display_cfg_t display_cfg = {
@@ -141,12 +142,11 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
                         .fov = view->fov / 1000.f
                     }
                 };
-                vout_display_Control(sys->parts[i_sphere].display,
+                vout_display_Control(part->display,
                                      VOUT_DISPLAY_CHANGE_VIEWPOINT,
                                      &display_cfg);
             }
         }
-        vlc_mutex_unlock(&sys->lock);
 
         vlc_vector_destroy(&yaw_offsets);
     }
@@ -158,8 +158,10 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
     for (int i = 0; i < sys->splitter.i_output; i++) {
         struct vlc_vidsplit_part *part = &sys->parts[i];
 
-        if (sys->pictures[i] != NULL)
+        if (part->display != NULL && sys->pictures[i] != NULL)
+        {
             vout_display_Display(part->display, sys->pictures[i]);
+        }
         vlc_sem_post(&part->lock);
     }
 
