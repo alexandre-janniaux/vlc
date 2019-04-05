@@ -391,7 +391,7 @@ vout_thread_t *input_resource_GetVout(input_resource_t *p_resource,
              * pre-configured on this dummy vout. */
             vlc_object_t *parent = p_resource->i_vout == 0 ?
                 VLC_OBJECT(p_resource->p_vout_dummy) : p_resource->p_parent;
-            cfg_buf.vout = vout = vout_Create(parent);
+            cfg_buf.vout = vout = vout_Create(p_resource->p_parent, NULL);
             if (vout == NULL)
                 goto out;
 

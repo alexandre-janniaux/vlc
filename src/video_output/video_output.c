@@ -1763,7 +1763,8 @@ vout_thread_t *vout_CreateDummy(vlc_object_t *object)
     return vout;
 }
 
-vout_thread_t *vout_Create(vlc_object_t *object)
+vout_thread_t *vout_Create(vlc_object_t *object,
+                           vlc_window_provider_t *window_provider)
 {
     vout_thread_t *vout = vout_CreateCommon(object);
     if (!vout)
