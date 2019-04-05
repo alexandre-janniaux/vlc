@@ -1825,7 +1825,8 @@ vout_thread_t *vout_Create(vlc_object_t *object,
     else
     {
         sys->display_cfg.window =
-            vlc_windowprovider_GetDisplayWindow(window_provider);
+            vlc_window_provider_GetWindow(window_provider,
+                                          VLC_OBJECT(vout));
     }
 
     if (sys->display_cfg.window == NULL) {
