@@ -36,6 +36,7 @@
 #include <vlc_spu.h>
 #include <vlc_aout.h>
 #include <vlc_sout.h>
+#include <vlc_vout_window.h>
 #include "../libvlc.h"
 #include "../stream_output/stream_output.h"
 #include "../audio_output/aout_internal.h"
@@ -75,6 +76,8 @@ struct input_resource_t
 
     bool            b_aout_busy;
     audio_output_t *p_aout;
+
+    vlc_window_provider_t *window_provider;
 };
 
 /* */
@@ -277,7 +280,9 @@ input_resource_t *input_resource_New( vlc_object_t *p_parent )
     if( !p_resource )
         return NULL;
 
-    p_resource->p_vout_dummy = vout_CreateDummy(p_parent);
+    p_resource->window_provider = NULL;
+    // TODO: can't change window provider after this
+    p_resource->p_vout_dummy = vout_CreateDummy(p_parent, NULL);
     if( !p_resource->p_vout_dummy )
     {
         free( p_resource );
@@ -518,4 +523,19 @@ sout_instance_t *input_resource_RequestSout( input_resource_t *p_resource, sout_
 void input_resource_TerminateSout( input_resource_t *p_resource )
 {
     input_resource_RequestSout( p_resource, NULL, NULL );
+}
+
+void input_resource_SetWindowProvider( input_resource_t *p_resource,
+                                       vlc_window_provider_t * provider)
+{
+    vlc_mutex_lock( &p_resource->lock );
+    vlc_window_provider_t *previous_provider = p_resource->window_provider;
+    p_resource->window_provider = provider;
+    vlc_mutex_unlock( &p_resource->lock );
+
+    if (previous_provider != NULL)
+    {
+        // TODO: Do we need to notify the previous window provider that it
+        //       has been removed ?
+    }
 }
