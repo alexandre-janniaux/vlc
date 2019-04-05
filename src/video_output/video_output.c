@@ -1743,7 +1743,8 @@ void vout_Release(vout_thread_t *vout)
     vlc_object_delete(VLC_OBJECT(vout));
 }
 
-static vout_thread_t *vout_CreateCommon(vlc_object_t *object)
+static vout_thread_t *vout_CreateCommon(vlc_object_t *object,
+                                        vlc_window_provider_t *window_provider)
 {
     /* Allocate descriptor */
     vout_thread_t *vout = vlc_custom_create(object,
@@ -1760,9 +1761,10 @@ static vout_thread_t *vout_CreateCommon(vlc_object_t *object)
     return vout;
 }
 
-vout_thread_t *vout_CreateDummy(vlc_object_t *object)
+vout_thread_t *vout_CreateDummy(vlc_object_t *object,
+                                vlc_window_provider_t *window_provider)
 {
-    vout_thread_t *vout = vout_CreateCommon(object);
+    vout_thread_t *vout = vout_CreateCommon(object, window_provider);
     if (!vout)
         return NULL;
 
@@ -1771,9 +1773,10 @@ vout_thread_t *vout_CreateDummy(vlc_object_t *object)
     return vout;
 }
 
-vout_thread_t *vout_Create(vlc_object_t *object)
+vout_thread_t *vout_Create(vlc_object_t *object,
+                           vlc_window_provider_t *window_provider)
 {
-    vout_thread_t *vout = vout_CreateCommon(object);
+    vout_thread_t *vout = vout_CreateCommon(object, window_provider);
     if (!vout)
         return NULL;
     vout_thread_sys_t *sys = vout->p;
