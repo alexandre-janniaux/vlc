@@ -190,7 +190,8 @@ struct vout_thread_sys_t
 /**
  * Creates a video output.
  */
-vout_thread_t *vout_Create(vlc_object_t *obj) VLC_USED;
+vout_thread_t *vout_Create(vlc_object_t *obj,
+                           vlc_window_provider_t *window_provider) VLC_USED;
 
 /**
  * Returns a suitable vout or release the given one.

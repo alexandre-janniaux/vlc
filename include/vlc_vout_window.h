@@ -349,7 +349,7 @@ typedef struct vout_window_t {
      * There is no parent for a top-level window, so parent is null in this
      * case.
      */
-    const vout_window_t *parent;
+    const struct vout_window_t *parent;
 
      /**
       * Window handle type
@@ -425,6 +425,12 @@ struct vlc_window_provider_ops
     vout_window_t* (*get_window)(vlc_window_provider_t *provider,
                                  vlc_object_t *parent);
 };
+
+static inline vout_window_t *
+vlc_window_provider_GetWindow(vlc_window_provider_t *provider, vlc_object_t *parent)
+{
+    return provider->ops->get_window(provider, parent);
+}
 
 /**
  * Creates a new window.
