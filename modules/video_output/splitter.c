@@ -80,7 +80,7 @@ static void vlc_vidsplit_Prepare(vout_display_t *vd, picture_t *pic,
         struct vlc_vidsplit_part *part = &sys->parts[i];
 
         vlc_sem_wait(&part->lock);
-        if (part->display == NULL)
+        if (part->display == NULL || sys->pictures[i] == NULL)
             continue;
         sys->pictures[i] = vout_display_Prepare(part->display,
                                                 sys->pictures[i], NULL, date);
@@ -158,9 +158,15 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
     for (int i = 0; i < sys->splitter.i_output; i++) {
         struct vlc_vidsplit_part *part = &sys->parts[i];
 
-        if (part->display != NULL && sys->pictures[i] != NULL)
+        if (sys->pictures[i] != NULL)
         {
-            vout_display_Display(part->display, sys->pictures[i]);
+            if (part->display != NULL)
+                vout_display_Display(part->display, sys->pictures[i]);
+            else
+            {
+                picture_Release(sys->pictures[i]);
+                sys->pictures[i] = NULL;
+            }
         }
         vlc_sem_post(&part->lock);
     }
