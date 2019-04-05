@@ -386,7 +386,7 @@ vout_thread_t *input_resource_GetVout(input_resource_t *p_resource,
         cfg = &cfg_buf;
 
         if (cfg_buf.vout == NULL) {
-            cfg_buf.vout = vout = vout_Create(p_resource->p_parent);
+            cfg_buf.vout = vout = vout_Create(p_resource->p_parent, NULL);
             if (vout == NULL)
                 goto out;
         } else

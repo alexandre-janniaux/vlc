@@ -1725,7 +1725,8 @@ void vout_Release(vout_thread_t *vout)
     vlc_object_delete(VLC_OBJECT(vout));
 }
 
-vout_thread_t *vout_Create(vlc_object_t *object)
+vout_thread_t *vout_Create(vlc_object_t *object,
+                           vlc_window_provider_t *window_provider)
 {
     /* Allocate descriptor */
     vout_thread_t *vout = vlc_custom_create(object,
