@@ -36,6 +36,7 @@
 #include <vlc_spu.h>
 #include <vlc_aout.h>
 #include <vlc_sout.h>
+#include <vlc_vout_window.h>
 #include "../libvlc.h"
 #include "../stream_output/stream_output.h"
 #include "../audio_output/aout_internal.h"
@@ -75,6 +76,8 @@ struct input_resource_t
 
     bool            b_aout_busy;
     audio_output_t *p_aout;
+
+    vlc_window_provider_t *window_provider;
 };
 
 /* */
@@ -281,6 +284,7 @@ input_resource_t *input_resource_New( vlc_object_t *p_parent )
         free( p_resource );
         return NULL;
     }
+    p_resource->window_provider = NULL;
 
     vlc_atomic_rc_init( &p_resource->rc );
     p_resource->p_parent = p_parent;
@@ -388,7 +392,8 @@ vout_thread_t *input_resource_GetVoutDecoderDevice(input_resource_t *p_resource,
              * pre-configured on this dummy vout. */
             vlc_object_t *parent = p_resource->i_vout == 0 ?
                 VLC_OBJECT(p_resource->p_vout_dummy) : p_resource->p_parent;
-            cfg_buf.vout = vout = vout_Create(p_resource->p_parent, NULL);
+            cfg_buf.vout = vout = vout_Create(p_resource->p_parent,
+                                              p_resource->window_provider);
             if (vout == NULL)
                 goto out;
 
@@ -529,4 +534,19 @@ sout_instance_t *input_resource_RequestSout( input_resource_t *p_resource, sout_
 void input_resource_TerminateSout( input_resource_t *p_resource )
 {
     input_resource_RequestSout( p_resource, NULL, NULL );
+}
+
+void input_resource_SetWindowProvider( input_resource_t *p_resource,
+                                       vlc_window_provider_t * provider)
+{
+    vlc_mutex_lock( &p_resource->lock );
+    vlc_window_provider_t *previous_provider = p_resource->window_provider;
+    p_resource->window_provider = provider;
+    vlc_mutex_unlock( &p_resource->lock );
+
+    if (previous_provider != NULL)
+    {
+        // TODO: Do we need to notify the previous window provider that it
+        //       has been removed ?
+    }
 }

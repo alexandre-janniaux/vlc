@@ -27,6 +27,8 @@
 #include <vlc_mouse.h>
 #include "../video_output/vout_internal.h"
 
+typedef struct vlc_window_provider_t vlc_window_provider_t;
+
 /**
  * This function set the associated input.
  */
@@ -69,5 +71,8 @@ void input_resource_StopFreeVout( input_resource_t * );
  * This function holds the input_resource_t itself
  */
 input_resource_t *input_resource_Hold( input_resource_t * );
+
+void input_resource_SetWindowProvider( input_resource_t *p_resource,
+                                       vlc_window_provider_t * provider);
 
 #endif
