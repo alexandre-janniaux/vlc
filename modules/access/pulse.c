@@ -206,7 +206,10 @@ static int Control(demux_t *demux, int query, va_list ap)
             pa_usec_t us;
 
             if (pa_stream_get_time(sys->stream, &us) < 0)
+            {
+                msg_Err(demux, "cannot call pa_stream_get_time");
                 return VLC_EGENERIC;
+            }
             *(va_arg(ap, vlc_tick_t *)) = us * 10000000LL / CLOCK_FREQ;
             break;
         }
