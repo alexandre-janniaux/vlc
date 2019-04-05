@@ -392,6 +392,28 @@ typedef struct vout_window_t {
     vout_window_owner_t owner;
 } vout_window_t;
 
+
+struct vlc_window_provider_ops;
+typedef struct vlc_window_provider_t
+{
+    const struct vlc_window_provider_ops *ops;
+} vlc_window_provider_t;
+
+struct vlc_window_provider_ops
+{
+    /**
+     * Used to create a window
+     */
+    int (*open_window)(vlc_window_provider_t *provider, vout_window_t *parent);
+};
+
+static inline int
+vlc_window_provider_OpenWindow(vlc_window_provider_t *provider,
+                               vout_window_t *window)
+{
+    return provider->ops->open_window(provider, window);
+}
+
 /**
  * Creates a new window.
  *
