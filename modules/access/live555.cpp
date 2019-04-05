@@ -1530,7 +1530,13 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
                 *va_arg( args, vlc_tick_t * ) = vlc_tick_from_sec(p_sys->f_npt);
                 return VLC_SUCCESS;
             }
-            return VLC_EGENERIC;
+            else
+            {
+                *va_arg( args, vlc_tick_t * ) = vlc_tick_now();
+                return VLC_SUCCESS;
+            }
+            //return VLC_SUCCESS;
+            //return VLC_EGENERIC;
 
         case DEMUX_GET_LENGTH:
             if( p_sys->f_npt_length > 0 )
