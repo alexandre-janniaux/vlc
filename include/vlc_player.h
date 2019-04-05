@@ -141,6 +141,8 @@ vlc_player_New(vlc_object_t *parent, enum vlc_player_lock_type lock_type,
                const struct vlc_player_media_provider *media_provider,
                void *media_provider_data);
 
+typedef struct vlc_window_provider_t vlc_window_provider_t;
+
 /**
  * Delete a player instance
  *
@@ -1995,7 +1997,7 @@ vlc_player_HasTeletextMenu(vlc_player_t *player);
  *
  * @note A successful call will trigger the
  * vlc_player_cbs.on_teletext_enabled_changed event.
- * 
+ *
  * @param player locked player instance
  * @param enabled true to enable
  */
@@ -2523,6 +2525,11 @@ vlc_player_vout_Snapshot(vlc_player_t *player);
  */
 VLC_API void
 vlc_player_osd_Message(vlc_player_t *player, const char *fmt, ...);
+
+/* TODO */
+VLC_API void
+vlc_player_SetWindowProvider(vlc_player_t *player,
+                             vlc_window_provider_t *provider);
 
 /** @} vlc_player__vout */
 
