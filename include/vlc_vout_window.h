@@ -331,9 +331,25 @@ struct vout_window_operations {
  * such as user input (keyboard, mouse) and window resize.
  *
  * Finally, it must support some control requests such as for fullscreen mode.
+ *
+ * Window can be nested if supported. It is expected that nesting requests, ie
+ * vout_window request with a non-null parent, raise errors on implementations
+ * which don't support these requests. Likewise, non-nested request should fail
+ * on implementations that don't support non-null parent.
  */
 typedef struct vout_window_t {
     struct vlc_object_t obj;
+
+    /**
+     * Window parent when supported
+     *
+     * This identifies the parent window when embedding a window inside another
+     * one.
+     *
+     * There is no parent for a top-level window, so parent is null in this
+     * case.
+     */
+    const vout_window_t *parent;
 
      /**
       * Window handle type
