@@ -83,6 +83,8 @@ typedef struct vlc_player_vout_listener_id vlc_player_vout_listener_id;
  */
 typedef struct vlc_player_aout_listener_id vlc_player_aout_listener_id;
 
+typedef struct vlc_window_provider_t vlc_window_provider_t;
+
 /**
  * Player program structure.
  */
@@ -2890,6 +2892,10 @@ vlc_player_vout_RemoveListener(vlc_player_t *player,
  */
 VLC_API bool
 vlc_player_vout_IsFullscreen(vlc_player_t *player);
+
+VLC_API void
+vlc_player_SetWindowProvider(vlc_player_t *player,
+                             vlc_window_provider_t *provider);
 
 /**
  * Enable or disable the player fullscreen state
