@@ -1780,7 +1780,17 @@ vout_thread_t *vout_Create(vlc_object_t *object,
     vlc_mutex_init(&sys->filter.lock);
 
     /* Window */
-    sys->display_cfg.window = vout_display_window_New(vout);
+    if (window_provider == NULL)
+    {
+        /* Using default window providing policy */
+        sys->display_cfg.window = vout_display_window_New(vout);
+    }
+    else
+    {
+        sys->display_cfg.window =
+            vlc_windowprovider_GetDisplayWindow(window_provider);
+    }
+
     if (sys->display_cfg.window == NULL) {
         spu_Destroy(sys->spu);
         vlc_object_delete(vout);
