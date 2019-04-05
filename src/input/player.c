@@ -3357,6 +3357,14 @@ vlc_player_SetVideoSplitter(vlc_player_t *player, const char *splitter)
 }
 
 void
+vlc_player_SetWindowProvider(vlc_player_t *player_,
+                             vlc_window_provider_t *provider)
+{
+    struct vlc_player_priv *player = vlc_player_priv(player_);
+    input_resource_SetWindowProvider(player->resource, provider);
+}
+
+void
 vlc_player_vout_SetFullscreen(vlc_player_t *player, bool enabled)
 {
     vlc_player_vout_SetVar(player, "fullscreen", VLC_VAR_BOOL,
