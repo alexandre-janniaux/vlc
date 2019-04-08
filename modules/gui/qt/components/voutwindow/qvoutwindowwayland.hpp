@@ -21,7 +21,7 @@ public:
     QVoutWindowWayland(MainInterface* p_mi,  QObject *parent = nullptr);
     ~QVoutWindowWayland() override;
 
-    void enableVideo(unsigned int width, unsigned int height, bool fullscreen) override;
+    void enableVideo(const vout_window_cfg_t *cfg) override;
     void disableVideo() override;
 
     VideoSurfaceProvider *getVideoSurfaceProvider() override;
