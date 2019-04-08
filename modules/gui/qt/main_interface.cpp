@@ -599,7 +599,7 @@ int MainInterface::enableVideo( vout_window_t *p_wnd,
     MainInterface *p_mi = (MainInterface *)p_wnd->sys;
 
     msg_Dbg( p_wnd, "requesting video window..." );
-    p_mi->m_videoRenderer->enableVideo(cfg->width, cfg->height, cfg->is_fullscreen);
+    p_mi->m_videoRenderer->enableVideo(cfg);
     /* This is a blocking call signal. Results are stored directly in the
      * vout_window_t and boolean pointers. Beware of deadlocks! */
     emit p_mi->askGetVideo( cfg->is_fullscreen );
