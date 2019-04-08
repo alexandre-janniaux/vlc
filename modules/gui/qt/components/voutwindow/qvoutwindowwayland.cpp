@@ -53,6 +53,8 @@ void QVoutWindowWayland::enableVideo(unsigned width, unsigned height, bool fulls
                                       root_window ));
     m_parentWindow.info.has_double_click = true;
     m_parentWindow.sys = static_cast<void*>(this);
+
+    m_voutWindow->parent = &m_parentWindow;
     m_waylandModule = vlc_module_load(vlc_object_logger(VLC_OBJECT(m_voutWindow)),
                                       "vout window", "wl_subsurface",
                                       true, vout_window_start, m_voutWindow);
