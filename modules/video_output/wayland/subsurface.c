@@ -140,9 +140,19 @@ static int Enable(vout_window_t *wnd, const vout_window_cfg_t *restrict cfg)
     return VLC_SUCCESS;
 }
 
+static void Disable(vout_window_t *wnd)
+{
+    struct wl_display *display = wnd->display.wl;
+
+    wl_surface_attach(wnd->handle.wl, NULL, 0, 0);
+    wl_surface_commit(wnd->handle.wl);
+    wl_display_flush(display);
+}
+
 static void Close(vout_window_t *);
 static const struct vout_window_operations ops = {
     .enable = Enable,
+    .disable = Disable,
     .resize = Resize,
     .destroy = Close,
 };
