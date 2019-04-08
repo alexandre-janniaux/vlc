@@ -18,7 +18,7 @@ bool QVoutWindow::setupVoutWindow(vout_window_t* window)
     return true;
 }
 
-void QVoutWindow::enableVideo(unsigned /*width*/, unsigned /*height*/, bool /*fullscreen*/)
+void QVoutWindow::enableVideo(const vout_window_cfg_t * /* cfg */)
 {
     QMutexLocker lock(&m_voutlock);
     if (m_voutWindow) {
