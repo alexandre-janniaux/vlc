@@ -3600,10 +3600,10 @@ vlc_player_GetV4l2Object(vlc_player_t *player)
 }
 
 void
-vlc_player_SetWindowProvider(vlc_player_t *player_,
+vlc_player_SetWindowProvider(vlc_player_t *player,
                              vlc_window_provider_t *provider)
 {
-    struct vlc_player_priv *player = vlc_player_priv(player_);
+    //struct vlc_player_priv *player = vlc_player_priv(player_);
     input_resource_SetWindowProvider(player->resource, provider);
 }
 
