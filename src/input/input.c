@@ -2795,6 +2795,7 @@ static void SlaveDemux( input_thread_t *p_input )
             in->sub_rate = priv->slave_subs_rate;
         }
 
+        msg_Err( p_input, "Slave demux from %" PRId64, i_time );
 
         /* Call demux_Demux until we have read enough data */
         if( demux_Control( in->p_demux, DEMUX_SET_NEXT_DEMUX_TIME, i_time ) )
@@ -2810,6 +2811,9 @@ static void SlaveDemux( input_thread_t *p_input )
                     break;
                 }
 
+                msg_Err( p_input, "DEMUXING from %" PRId64 " to %" PRId64,
+                         i_stime, i_time );
+
                 if( i_stime >= i_time )
                 {
                     i_ret = 1;
@@ -2822,6 +2826,7 @@ static void SlaveDemux( input_thread_t *p_input )
         }
         else
         {
+            msg_Err( p_input, "Normal demux, SET_NEXT_DEMUX_TIME succeeded" );
             i_ret = demux_Demux( in->p_demux );
         }
 

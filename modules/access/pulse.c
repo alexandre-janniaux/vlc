@@ -60,6 +60,7 @@ typedef struct
     bool discontinuity; /**< The next block will not follow the last one */
     unsigned framesize; /**< Byte size of a sample */
     vlc_tick_t caching; /**< Caching value */
+    vlc_tick_t init_pts;
 } demux_sys_t;
 
 /* Stream helpers */
@@ -161,7 +162,7 @@ static void stream_read_cb(pa_stream *s, size_t length, void *userdata)
         return;
     }
 
-    vlc_tick_t pts = vlc_tick_now();
+    vlc_tick_t pts = vlc_tick_now() - sys->init_pts;
     pa_usec_t latency;
     int negative;
 
@@ -214,7 +215,9 @@ static int Control(demux_t *demux, int query, va_list ap)
             break;
         }
 
-        //case DEMUX_SET_NEXT_DEMUX_TIME: TODO
+        //case DEMUX_SET_NEXT_DEMUX_TIME:
+
+        //    break;
         //case DEMUX_GET_META TODO
 
         case DEMUX_GET_PTS_DELAY:
@@ -273,6 +276,7 @@ static int Open(vlc_object_t *obj)
     sys->es = NULL;
     sys->discontinuity = false;
     sys->caching = VLC_TICK_FROM_MS( var_InheritInteger(obj, "live-caching") );
+    sys->init_pts = vlc_tick_now();
     demux->p_sys = sys;
 
     /* Stream parameters */
