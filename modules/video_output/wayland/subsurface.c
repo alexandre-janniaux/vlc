@@ -189,12 +189,19 @@ static int Open(vout_window_t *wnd)
     wl_display_roundtrip(display);
     wl_registry_destroy(registry);
 
-    struct wl_surface *surface = wl_compositor_create_surface(sys->compositor);
-    if (surface == NULL)
+    sys->surface.handle = wl_compositor_create_surface(sys->compositor);
+    if (sys->surface.handle == NULL)
+        goto error;
+
+    sys->surface.role = wl_subcompositor_get_subsurface(
+                                sys->subcompositor,
+                                sys->surface.handle,
+                                wnd->parent->handle.wl);
+    if (sys->surface.role == NULL)
         goto error;
 
     wnd->type = VOUT_WINDOW_TYPE_WAYLAND;
-    wnd->handle.wl = surface;
+    wnd->handle.wl = sys->surface.handle;
     wnd->display.wl = display;
     wnd->ops = &ops;
 
