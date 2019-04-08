@@ -15,7 +15,7 @@ public:
     virtual ~QVoutWindow();
 
     virtual bool setupVoutWindow(vout_window_t* window);
-    virtual void enableVideo(unsigned width, unsigned height, bool fullscreen);
+    virtual void enableVideo(const vout_window_cfg_t *cfg);
     virtual void disableVideo();
     virtual void windowClosed();
 

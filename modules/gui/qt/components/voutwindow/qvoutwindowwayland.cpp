@@ -34,10 +34,10 @@ static int vout_window_start(void *func, bool forced, va_list ap)
     return ret;
 }
 
-void QVoutWindowWayland::enableVideo(unsigned width, unsigned height, bool fullscreen)
+void QVoutWindowWayland::enableVideo(const vout_window_cfg_t *cfg)
 {
 
-    QVoutWindow::enableVideo(width, height, fullscreen);
+    QVoutWindow::enableVideo(cfg);
     if ( !m_hasVideo ) //no window out has been set
         return;
 
@@ -63,6 +63,8 @@ void QVoutWindowWayland::enableVideo(unsigned width, unsigned height, bool fulls
         // TODO: how to handle error
     }
 
+    vout_window_Enable(m_voutWindow, cfg);
+
     // TODO: inhibit?
 }
 
@@ -70,6 +72,7 @@ void QVoutWindowWayland::enableVideo(unsigned width, unsigned height, bool fulls
 void QVoutWindowWayland::disableVideo()
 {
     QVoutWindow::disableVideo();
+    vout_window_Disable(m_voutWindow);
 }
 
 VideoSurfaceProvider *QVoutWindowWayland::getVideoSurfaceProvider()
