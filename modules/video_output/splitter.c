@@ -83,9 +83,13 @@ static void* vlc_vidsplit_ThreadDisplay(void *data)
     {
         sem_wait(&sys->prepare_barrier);
 
-        /* we might need to stop the prepare just after the barrier */
+        /* We might need to stop the prepare just after the barrier
+         * and we were not supposed to take the semaphore token */
         if (part->display == NULL)
+        {
+            sem_post(&sys->prepare_barrier);
             break;
+        }
 
         part->picture = vout_display_Prepare(part->display,
                                              part->picture, NULL,
@@ -129,6 +133,18 @@ static void vlc_vidsplit_Prepare(vout_display_t *vd, picture_t *pic,
         part->date = date;
 
         vlc_sem_wait(&part->lock);
+
+
+        /* From here, part is locked until display's end so we can read it */
+        if (part->display == NULL)
+        {
+            part->picture = NULL;
+            if (sys->pictures[i] != NULL)
+            {
+                picture_Release(sys->pictures[i]);
+                sys->pictures[i] = NULL;
+            }
+        }
     }
 
     /* Start prepare on each vout  */
@@ -212,21 +228,17 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
         msg_Warn(vd, "not updating viewpoint, spheres: %d", num_sphere);
     }
 
-    for (int i = 0; i < sys->splitter.i_output; i++) {
-        struct vlc_vidsplit_part *part = &sys->parts[i];
-
-        if (part->display != NULL)
-            vlc_sem_post(&sys->display_barrier);
-        else if (part->picture != NULL) {
-            /* TODO: move to Prepare */
-            picture_Release(part->picture);
-            part->picture = NULL;
-        }
-    }
-
+    /* Ask the output to display the picture */
     for (int i = 0; i < sys->splitter.i_output; i++)
-        vlc_sem_wait(&sys->displayed_barrier);
+        if (sys->parts[i].display != NULL)
+            vlc_sem_post(&sys->display_barrier);
 
+    /* Wait until every output has displayed a picture */
+    for (int i = 0; i < sys->splitter.i_output; i++)
+        if (sys->parts[i].display != NULL)
+            vlc_sem_wait(&sys->displayed_barrier);
+
+    /* Release parts lock, we can't read sys->parts[i] after that */
     for (int i = 0; i < sys->splitter.i_output; i++)
         vlc_sem_post(&sys->parts[i].lock);
 
