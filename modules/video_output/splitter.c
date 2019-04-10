@@ -278,12 +278,16 @@ static void vlc_vidsplit_Close(vout_display_t *vd)
 
     for (int i = 0; i < n; i++) {
         struct vlc_vidsplit_part *part = &sys->parts[i];
+        struct vlc_vidsplit_thread *thread = &sys->threads[i];
         vout_display_t *display;
 
         vlc_sem_wait(&part->lock);
         display = part->display;
         part->display = NULL;
         vlc_sem_post(&part->lock);
+
+        vlc_cancel(thread->thread);
+        vlc_join(thread->thread, NULL);
 
         if (display != NULL)
             vout_display_Delete(display);
