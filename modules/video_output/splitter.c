@@ -146,6 +146,8 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
 {
     vout_display_sys_t *sys = vd->sys;
 
+    vlc_tick_t start = vlc_tick_now();
+
     char buffer[512];
     char *cursor = buffer;
 
@@ -229,6 +231,7 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
         vlc_sem_post(&sys->parts[i].lock);
 
     (void) picture;
+    msg_Err(vd, "Display took %" PRId64, vlc_tick_now() - start);
 }
 
 static int vlc_vidsplit_Control(vout_display_t *vd, int query, va_list args)
