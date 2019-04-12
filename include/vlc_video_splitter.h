@@ -49,6 +49,8 @@ typedef struct
      */
     char *psz_module;
 
+    char *psz_class;
+
 } video_splitter_output_t;
 
 /** Structure describing a video splitter
