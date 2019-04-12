@@ -483,6 +483,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
     vlc_sem_init(&sys->display_barrier, 0);
     vlc_sem_init(&sys->displayed_barrier, 0);
 
+    var_Create(obj, "x11-class-name", VLC_VAR_STRING);
     for (int i = 0; i < splitter->i_output; i++) {
         const video_splitter_output_t *output = &splitter->p_output[i];
         vout_display_cfg_t vdcfg = {
@@ -503,6 +504,18 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         part->display = NULL;
         part->width = 1;
         part->height = 1;
+
+        if (output->psz_class)
+        {
+            var_SetString(obj, "x11-class-name", output->psz_class);
+        }
+        else
+        {
+            char *class_name;
+            asprintf(&class_name, "vlc-clone-%d", i);
+            var_SetString(obj, "x11-class-name", class_name);
+            free(class_name);
+        }
 
         part->window = video_splitter_CreateWindow(obj, &vdcfg, &output->fmt,
                                                    part);
@@ -541,6 +554,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
             /* TODO: Abort and cleanup */
         }
     }
+    var_Destroy(obj, "x11-class-name");
 
     vd->prepare = vlc_vidsplit_Prepare;
     vd->display = vlc_vidsplit_Display;
