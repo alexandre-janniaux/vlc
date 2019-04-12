@@ -224,27 +224,27 @@ static int Open(vlc_gl_t *gl, unsigned width, unsigned height)
     bool is_swap_interval_set = false;
 
     MakeCurrent (gl);
-# ifdef GLX_SGI_swap_control
-    if (!is_swap_interval_set
-     && CheckGLXext (dpy, snum, "GLX_SGI_swap_control"))
-    {
-        PFNGLXSWAPINTERVALSGIPROC SwapIntervalSGI = (PFNGLXSWAPINTERVALSGIPROC)
-            glXGetProcAddressARB ((const GLubyte *)"glXSwapIntervalSGI");
-        assert (SwapIntervalSGI != NULL);
-        is_swap_interval_set = !SwapIntervalSGI (1);
-    }
-# endif
-# ifdef GLX_EXT_swap_control
-    if (!is_swap_interval_set
-     && CheckGLXext (dpy, snum, "GLX_EXT_swap_control"))
-    {
-        PFNGLXSWAPINTERVALEXTPROC SwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)
-            glXGetProcAddress ((const GLubyte *)"glXSwapIntervalEXT");
-        assert (SwapIntervalEXT != NULL);
-        SwapIntervalEXT (dpy, sys->win, 1);
-        is_swap_interval_set = true;
-    }
-# endif
+//# ifdef GLX_SGI_swap_control
+//    if (!is_swap_interval_set
+//     && CheckGLXext (dpy, snum, "GLX_SGI_swap_control"))
+//    {
+//        PFNGLXSWAPINTERVALSGIPROC SwapIntervalSGI = (PFNGLXSWAPINTERVALSGIPROC)
+//            glXGetProcAddressARB ((const GLubyte *)"glXSwapIntervalSGI");
+//        assert (SwapIntervalSGI != NULL);
+//        is_swap_interval_set = !SwapIntervalSGI (1);
+//    }
+//# endif
+//# ifdef GLX_EXT_swap_control
+//    if (!is_swap_interval_set
+//     && CheckGLXext (dpy, snum, "GLX_EXT_swap_control"))
+//    {
+//        PFNGLXSWAPINTERVALEXTPROC SwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)
+//            glXGetProcAddress ((const GLubyte *)"glXSwapIntervalEXT");
+//        assert (SwapIntervalEXT != NULL);
+//        SwapIntervalEXT (dpy, sys->win, 1);
+//        is_swap_interval_set = true;
+//    }
+//# endif
     ReleaseCurrent (gl);
 
     /* XXX: Prevent other gl backends (like EGL) to be opened within the same
