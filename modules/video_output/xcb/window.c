@@ -608,8 +608,24 @@ static int OpenCommon(vout_window_t *wnd, char *display,
                    vlc_pgettext("ASCII", "VLC"));
 
     set_wm_hints(conn, window);
-    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, window, XA_WM_CLASS,
-                        XA_STRING, 8, 8, "vlc\0Vlc");
+
+    char *name = var_InheritString(wnd, "x11-class-name");
+    if (name == NULL)
+    {
+        xcb_change_property(conn, XCB_PROP_MODE_REPLACE, window, XA_WM_CLASS,
+                            XA_STRING, 8, 8, "vlc\0Vlc");
+    }
+    else
+    {
+        int len = strlen(name);
+        char *name_instance = malloc(len*2 + 2);
+        memcpy(name_instance, name, len+1);
+        memcpy(name_instance+len+1, name, len+1);
+        xcb_change_property(conn, XCB_PROP_MODE_REPLACE, window, XA_WM_CLASS,
+                            XA_STRING, 8, len*2 + 2, name);
+        free(name_instance);
+        free(name);
+    }
     set_hostname_prop(conn, window);
 
     /* EWMH */
