@@ -74,6 +74,7 @@ static const char *const ppsz_filter_options[] = {
 };
 
 #define VOUTSEPARATOR ':'
+#define CLASSSEPARATOR '@'
 
 static int Filter( video_splitter_t *, picture_t *pp_dst[], picture_t * );
 
@@ -113,10 +114,25 @@ static int Open( vlc_object_t *p_this )
         for( int i = 0; psz_tmp && *psz_tmp; i++ )
         {
             char *psz_new = strchr( psz_tmp, VOUTSEPARATOR );
+            char *psz_class = strchr( psz_tmp, CLASSSEPARATOR );
             if( psz_new )
+            {
+                msg_Err( p_splitter, "psz_new=%c", *psz_new );
                 *psz_new++ = '\0';
+            }
+
+            bool has_class = false;
+            if( psz_class )
+            {
+                has_class = true;
+                msg_Err( p_splitter, "psz_class=%c", *psz_class );
+                *psz_class++ = '\0';
+            }
 
             p_splitter->p_output[i].psz_module = strdup( psz_tmp );
+
+            if( has_class )
+                p_splitter->p_output[i].psz_class = strdup( psz_class );
 
             psz_tmp = psz_new;
         }
