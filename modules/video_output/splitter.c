@@ -484,6 +484,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
     vlc_sem_init(&sys->displayed_barrier, 0);
 
     var_Create(obj, "x11-class-name", VLC_VAR_STRING);
+    bool is_fullscreen = var_InheritBool(obj, "fullscreen");
     for (int i = 0; i < splitter->i_output; i++) {
         const video_splitter_output_t *output = &splitter->p_output[i];
         vout_display_cfg_t vdcfg = {
@@ -524,6 +525,9 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
             vlc_vidsplit_Close(vd);
             return VLC_EGENERIC;
         }
+
+        if (is_fullscreen)
+            vout_window_SetFullScreen(part->window, NULL);
 
         vdcfg.window = part->window;
         display = vlc_vidsplit_CreateDisplay(obj, &output->fmt, &vdcfg,
