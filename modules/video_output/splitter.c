@@ -162,15 +162,12 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
 {
     vout_display_sys_t *sys = vd->sys;
 
-    vlc_tick_t start = vlc_tick_now();
-
     char buffer[512];
     char *cursor = buffer;
 
     lseek(sys->sphere_fd, 0, SEEK_SET);
     ssize_t size = read(sys->sphere_fd, buffer, sizeof(buffer));
-
-    msg_Info(vd, "read from spheres: %d \n%.*s", (int)size, (int)size, buffer);
+    (void)size;
 
     int num_sphere;
     if (sscanf(cursor, "%d", &num_sphere) == 1 && num_sphere > 0)
@@ -187,7 +184,6 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
         for (int i_sphere=0; i_sphere<num_sphere; i_sphere++)
         {
             int fov, yaw, pitch;
-            msg_Info(vd, "cursor: %s | start with %c", cursor, *cursor);
             if (sscanf(cursor, "%d %d %d", &fov, &yaw, &pitch) != 3)
                 break;
             cursor = strchr(cursor, '\n')+1; // TODO: boundary check
@@ -243,7 +239,6 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
         vlc_sem_post(&sys->parts[i].lock);
 
     (void) picture;
-    msg_Err(vd, "Display took %" PRId64, vlc_tick_now() - start);
 }
 
 static int vlc_vidsplit_Control(vout_display_t *vd, int query, va_list args)
