@@ -247,6 +247,7 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
         memcpy(prgm->var.ProjectionMatrix, identity, sizeof(identity));
         memcpy(prgm->var.ZoomMatrix, identity, sizeof(identity));
         memcpy(prgm->var.ModelViewMatrix, identity, sizeof(identity));
+        memcpy(prgm->var.ViewMatrix, identity, sizeof(identity));
     }
 
 }
