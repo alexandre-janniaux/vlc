@@ -386,9 +386,12 @@ static vout_window_t *video_splitter_CreateWindow(vlc_object_t *obj,
 
     vout_display_GetDefaultDisplaySize(&cfg.width, &cfg.height, source,
                                        vdcfg);
+    cfg.width = 3840;
+    cfg.height = 2160;
 
     vout_window_t *window = vout_window_New(obj, NULL, &owner);
     if (window != NULL) {
+        vout_window_SetSize(window, 3840, 2160);
         if (vout_window_Enable(window, &cfg)) {
             vout_window_Delete(window);
             window = NULL;
