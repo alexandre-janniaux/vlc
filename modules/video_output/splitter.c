@@ -536,6 +536,8 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
             return VLC_EGENERIC;
         }
 
+        vout_display_SetSize(display, 3840, 2160);
+
         vlc_sem_wait(&part->lock);
         part->display = display;
         vout_display_SetSize(display, part->width, part->height);
