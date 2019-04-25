@@ -308,6 +308,9 @@ subpicture_region_t* subpicture_region_Copy( subpicture_region_t *p_region_src )
     if (unlikely(!p_region_dst))
         return NULL;
 
+    p_region_dst->zoom_h   = p_region_src->zoom_h;
+    p_region_dst->zoom_v   = p_region_src->zoom_v;
+
     p_region_dst->i_x      = p_region_src->i_x;
     p_region_dst->i_y      = p_region_src->i_y;
     p_region_dst->i_align  = p_region_src->i_align;
