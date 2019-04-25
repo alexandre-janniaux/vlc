@@ -1184,8 +1184,8 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
             if (scale.w <= 0 || scale.h <= 0)
                 continue;
 
-            const bool do_external_scale = external_scale && region->fmt.i_chroma != VLC_CODEC_TEXT;
-            spu_scale_t virtual_scale = external_scale ? (spu_scale_t){ SCALE_UNIT, SCALE_UNIT } : scale;
+            const bool do_external_scale = external_scale && !subpic->b_subtitle;
+            spu_scale_t virtual_scale = do_external_scale ? (spu_scale_t){ SCALE_UNIT, SCALE_UNIT } : scale;
 
             /* */
             SpuRenderRegion(spu, output_last_ptr, &area,
