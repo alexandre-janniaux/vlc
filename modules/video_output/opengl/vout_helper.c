@@ -1114,11 +1114,20 @@ int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,
                 glr->tex_width  = 1.0;
                 glr->tex_height = 1.0;
             }
+
+            float zoom_h = (r->zoom_h.num == 0 || r->zoom_h.den == 0)
+                         ? 1.f : (float) r->zoom_h.num / r->zoom_h.den;
+            float zoom_v = (r->zoom_v.num == 0 || r->zoom_v.den == 0)
+                         ? 1.f : (float) r->zoom_v.num / r->zoom_v.den;
+
+            zoom_h /= .5f * subpicture->i_original_picture_width;
+            zoom_v /= .5f * subpicture->i_original_picture_height;
+
             glr->alpha  = (float)subpicture->i_alpha * r->i_alpha / 255 / 255;
-            glr->left   =  2.0 * (r->i_x                          ) / subpicture->i_original_picture_width  - 1.0;
-            glr->top    = -2.0 * (r->i_y                          ) / subpicture->i_original_picture_height + 1.0;
-            glr->right  =  2.0 * (r->i_x + r->fmt.i_visible_width ) / subpicture->i_original_picture_width  - 1.0;
-            glr->bottom = -2.0 * (r->i_y + r->fmt.i_visible_height) / subpicture->i_original_picture_height + 1.0;
+            glr->left   = -1.f + zoom_h * r->i_x;
+            glr->top    =  1.f - zoom_v * r->i_y;
+            glr->right  = -1.f + zoom_h * (r->i_x + r->fmt.i_visible_width);
+            glr->bottom =  1.f - zoom_v * (r->i_y + r->fmt.i_visible_height);
 
             glr->texture = 0;
             /* Try to recycle the textures allocated by the previous
