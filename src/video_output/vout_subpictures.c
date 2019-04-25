@@ -810,7 +810,6 @@ static void SpuRenderRegion(spu_t *spu,
     spu_area_t display = spu_area_create(0, 0, fmt->i_visible_width,
                                          fmt->i_visible_height,
                                          spu_scale_unit());
-    //fprintf("
     SpuAreaFitInside(&restrained, &display);
 
     /* Fix the position for the current scale_size */
