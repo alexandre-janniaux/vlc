@@ -136,6 +136,9 @@ struct vout_thread_sys_t
     picture_pool_t  *decoder_pool;
     picture_fifo_t  *decoder_fifo;
     vout_chrono_t   render;           /**< picture render time estimator */
+
+    /* Max SPU rasterization dst format */
+    int64_t max_width, max_height;
 };
 
 /* TODO to move them to vlc_vout.h */
