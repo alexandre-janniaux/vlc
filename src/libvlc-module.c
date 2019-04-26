@@ -333,6 +333,14 @@ static const char *const ppsz_align_descriptions[] =
 #define VIDEO_TITLE_POSITION_LONGTEXT N_( \
     "Place on video where to display the title (default bottom center).")
 
+#define SPU_SURFACE_MAX_WIDTH_TEXT "Maximum rasterization size format for SPU"
+#define SPU_SURFACE_MAX_WIDTH_LONGTEXT \
+    "Define the maximum width for output format before SPU are scaled by video output"
+
+#define SPU_SURFACE_MAX_HEIGHT_TEXT "Maximum rasterization size format for SPU"
+#define SPU_SURFACE_MAX_HEIGHT_LONGTEXT \
+    "Define the maximum height for output format before SPU are scaled by video output"
+
 #define MOUSE_HIDE_TIMEOUT_TEXT N_("Hide cursor and fullscreen " \
                                    "controller after x milliseconds")
 #define MOUSE_HIDE_TIMEOUT_LONGTEXT N_( \
@@ -1592,6 +1600,13 @@ vlc_module_begin ()
                  VIDEO_TITLE_POSITION_LONGTEXT, false )
         change_safe()
         change_integer_list( pi_pos_values, ppsz_pos_descriptions )
+    add_integer( "spu-surface-max-width", -1, SPU_SURFACE_MAX_WIDTH_TEXT,
+                 SPU_SURFACE_MAX_WIDTH_LONGTEXT, false )
+        change_safe()
+    add_integer( "spu-surface-max-height", -1, SPU_SURFACE_MAX_HEIGHT_TEXT,
+                 SPU_SURFACE_MAX_HEIGHT_LONGTEXT, false )
+        change_safe()
+
     // autohide after 1 second
     add_integer( "mouse-hide-timeout", 1000, MOUSE_HIDE_TIMEOUT_TEXT,
                  MOUSE_HIDE_TIMEOUT_LONGTEXT, false )

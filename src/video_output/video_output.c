@@ -156,6 +156,9 @@ static vout_thread_t *VoutCreate(vlc_object_t *object,
     vout->p->title.timeout  = var_InheritInteger(vout, "video-title-timeout");
     vout->p->title.position = var_InheritInteger(vout, "video-title-position");
 
+    vout->p->max_width      = var_InheritInteger(vout, "spu-surface-max-width");
+    vout->p->max_height     = var_InheritInteger(vout, "spu-surface-max-height");
+
     /* Get splitter name if present */
     vout->p->splitter_name = var_InheritString(vout, "video-splitter");
 
@@ -1057,6 +1060,7 @@ static int ThreadDisplayRenderPicture(vout_thread_t *vout, bool is_forced)
     subpicture_t *subpic = spu_Render(vout->p->spu,
                                       subpicture_chromas, &fmt_spu_rot,
                                       &vd->source,
+                                      sys->max_width, sys->max_height,
                                       render_subtitle_date, render_osd_date,
                                       do_snapshot,
                                       vd->info.can_scale_spu);
