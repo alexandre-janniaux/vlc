@@ -1037,6 +1037,10 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
             zoom_v = (vlc_rational_t){ fmt_dst->i_visible_width, max_width };
         }
     }
+    msg_Err(spu, "ZOOMH: %" PRId64 "/%" PRId64 " and ZOOMV: %" PRId64 "/%" PRId64,
+            zoom_h.num, zoom_h.den, zoom_v.num, zoom_v.den);
+    msg_Err(spu, "dst fmt: %d x %d", fmt_dst_cropped.i_visible_width, fmt_dst_cropped.i_visible_height);
+
     /* Count the number of regions and subtitle regions */
     unsigned int subtitle_region_count = 0;
     unsigned int region_count          = 0;
