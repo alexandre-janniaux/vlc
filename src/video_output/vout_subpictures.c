@@ -679,9 +679,11 @@ static void SpuRenderRegion(spu_t *spu,
 
     /* Render text region */
     if (region->fmt.i_chroma == VLC_CODEC_TEXT) {
+        mtime_t now = mdate();
         SpuRenderText(spu, &restore_text, region,
                       chroma_list,
                       render_date - subpic->i_start);
+        fprintf(stderr, "Rasterization took %" PRId64 "\n", mdate() - now);
 
         /* Check if the rendering has failed ... */
         if (region->fmt.i_chroma == VLC_CODEC_TEXT)
@@ -1000,12 +1002,41 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
                                           const vlc_fourcc_t *chroma_list,
                                           const video_format_t *fmt_dst,
                                           const video_format_t *fmt_src,
+                                          int64_t max_width,
+                                          int64_t max_height,
                                           mtime_t render_subtitle_date,
                                           mtime_t render_osd_date,
                                           bool external_scale)
 {
     spu_private_t *sys = spu->p;
 
+    video_format_t fmt_dst_cropped;
+    video_format_Copy(&fmt_dst_cropped, fmt_dst);
+
+    vlc_rational_t zoom_h = { SCALE_UNIT, SCALE_UNIT };
+    vlc_rational_t zoom_v = { SCALE_UNIT, SCALE_UNIT };
+
+    if ((max_width > 0 && fmt_dst->i_visible_width > max_width) ||
+        (max_height > 0 && fmt_dst->i_visible_height > max_height))
+    {
+        int64_t width_cropped = fmt_dst->i_visible_width
+                              * max_height / fmt_dst->i_visible_height;
+        int64_t height_cropped = fmt_dst->i_visible_height
+                              * max_width / fmt_dst->i_visible_width;
+        fmt_dst_cropped.i_visible_width = __MIN(max_width, width_cropped);
+        fmt_dst_cropped.i_visible_height = __MIN(max_width, height_cropped);
+
+        if (fmt_dst_cropped.i_visible_width == width_cropped)
+        {
+            zoom_h =
+            zoom_v = (vlc_rational_t){ fmt_dst->i_visible_height, max_height };
+        }
+        else
+        {
+            zoom_h =
+            zoom_v = (vlc_rational_t){ fmt_dst->i_visible_width, max_width };
+        }
+    }
     /* Count the number of regions and subtitle regions */
     unsigned int subtitle_region_count = 0;
     unsigned int region_count          = 0;
@@ -1028,8 +1059,8 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
     if (!output)
         return NULL;
     output->i_order = pp_subpicture[i_subpicture - 1]->i_order;
-    output->i_original_picture_width  = fmt_dst->i_visible_width;
-    output->i_original_picture_height = fmt_dst->i_visible_height;
+    output->i_original_picture_width  = fmt_dst_cropped.i_visible_width;
+    output->i_original_picture_height = fmt_dst_cropped.i_visible_height;
     subpicture_region_t **output_last_ptr = &output->p_region;
 
     /* Allocate area array for subtitle overlap */
@@ -1084,10 +1115,10 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
             video_format_t region_fmt = region->fmt;
             if (region_fmt.i_sar_num <= 0 || region_fmt.i_sar_den <= 0) {
 
-                const uint64_t i_sar_num = (uint64_t)fmt_dst->i_visible_width  *
-                                           fmt_dst->i_sar_num * subpic->i_original_picture_height;
-                const uint64_t i_sar_den = (uint64_t)fmt_dst->i_visible_height *
-                                           fmt_dst->i_sar_den * subpic->i_original_picture_width;
+                const uint64_t i_sar_num = (uint64_t)fmt_dst_cropped.i_visible_width  *
+                                           fmt_dst_cropped.i_sar_num * subpic->i_original_picture_height;
+                const uint64_t i_sar_den = (uint64_t)fmt_dst_cropped.i_visible_height *
+                                           fmt_dst_cropped.i_sar_den * subpic->i_original_picture_width;
 
                 vlc_ureduce(&region_fmt.i_sar_num, &region_fmt.i_sar_den,
                             i_sar_num, i_sar_den, 65536);
@@ -1097,9 +1128,9 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
              * FIXME The current scaling ensure that the heights match, the width being
              * cropped.
              */
-            spu_scale_t scale = spu_scale_createq((int64_t)fmt_dst->i_visible_height                 * fmt_dst->i_sar_den * region_fmt.i_sar_num,
-                                                  (int64_t)subpic->i_original_picture_height * fmt_dst->i_sar_num * region_fmt.i_sar_den,
-                                                  fmt_dst->i_visible_height,
+            spu_scale_t scale = spu_scale_createq((int64_t)fmt_dst_cropped.i_visible_height * fmt_dst_cropped.i_sar_den * region_fmt.i_sar_num,
+                                                  (int64_t)subpic->i_original_picture_height * fmt_dst_cropped.i_sar_num * region_fmt.i_sar_den,
+                                                  fmt_dst_cropped.i_visible_height,
                                                   subpic->i_original_picture_height);
 
             /* Check scale validity */
@@ -1112,7 +1143,7 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
             /* */
             SpuRenderRegion(spu, output_last_ptr, &area,
                             subpic, region, virtual_scale,
-                            chroma_list, fmt_dst,
+                            chroma_list, &fmt_dst_cropped,
                             subtitle_area, subtitle_area_count,
                             subpic->b_subtitle ? render_subtitle_date : render_osd_date);
             if (*output_last_ptr)
@@ -1121,13 +1152,13 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
                 {
                     if (scale.h != SCALE_UNIT)
                     {
-                        (*output_last_ptr)->zoom_h.num = scale.h;
-                        (*output_last_ptr)->zoom_h.den = SCALE_UNIT;
+                        (*output_last_ptr)->zoom_h.num = scale.h * zoom_h.num;
+                        (*output_last_ptr)->zoom_h.den = SCALE_UNIT * zoom_h.den;
                     }
                     if (scale.w != SCALE_UNIT)
                     {
-                        (*output_last_ptr)->zoom_v.num = scale.w;
-                        (*output_last_ptr)->zoom_v.den = SCALE_UNIT;
+                        (*output_last_ptr)->zoom_v.num = scale.w * zoom_v.num;
+                        (*output_last_ptr)->zoom_v.den = SCALE_UNIT * zoom_v.den;
                     }
                 }
 
@@ -1539,6 +1570,8 @@ subpicture_t *spu_Render(spu_t *spu,
                          const vlc_fourcc_t *chroma_list,
                          const video_format_t *fmt_dst,
                          const video_format_t *fmt_src,
+                         int64_t max_width,
+                         int64_t max_height,
                          mtime_t render_subtitle_date,
                          mtime_t render_osd_date,
                          bool ignore_osd,
@@ -1591,8 +1624,8 @@ subpicture_t *spu_Render(spu_t *spu,
     };
 
     if (!chroma_list || *chroma_list == 0)
-        chroma_list = vlc_fourcc_IsYUV(fmt_dst->i_chroma) ? chroma_list_default_yuv
-                                                          : chroma_list_default_rgb;
+        chroma_list = vlc_fourcc_IsYUV(fmt_dst->i_chroma)
+                    ? chroma_list_default_yuv : chroma_list_default_rgb;
 
     vlc_mutex_lock(&sys->lock);
 
@@ -1625,6 +1658,7 @@ subpicture_t *spu_Render(spu_t *spu,
                                                 chroma_list,
                                                 fmt_dst,
                                                 fmt_src,
+                                                max_width, max_height,
                                                 render_subtitle_date,
                                                 render_osd_date,
                                                 external_scale);
@@ -1731,4 +1765,3 @@ void spu_ChangeMargin(spu_t *spu, int margin)
     sys->margin = margin;
     vlc_mutex_unlock(&sys->lock);
 }
-
