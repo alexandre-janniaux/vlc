@@ -1019,12 +1019,23 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
     if ((max_width > 0 && fmt_dst->i_visible_width > max_width) ||
         (max_height > 0 && fmt_dst->i_visible_height > max_height))
     {
-        int64_t width_cropped = fmt_dst->i_visible_width
-                              * max_height / fmt_dst->i_visible_height;
-        int64_t height_cropped = fmt_dst->i_visible_height
-                              * max_width / fmt_dst->i_visible_width;
-        fmt_dst_cropped.i_visible_width = __MIN(max_width, width_cropped);
-        fmt_dst_cropped.i_visible_height = __MIN(max_width, height_cropped);
+        int64_t width_cropped = (int64_t)fmt_dst->i_visible_width
+                              * max_height / (int64_t)fmt_dst->i_visible_height;
+        int64_t height_cropped = (int64_t)fmt_dst->i_visible_height
+                              * max_width / (int64_t)fmt_dst->i_visible_width;
+        msg_Err(spu, "WIDTH_CROPPED = %" PRId64 ", HEIGHT_CROPPED = %" PRId64,
+                width_cropped, height_cropped);
+        fmt_dst_cropped.i_visible_width = max_width > 0
+                                        ? __MIN(max_width, width_cropped)
+                                        : width_cropped;
+        if (width_cropped <= 0)
+            fmt_dst_cropped.i_visible_width = max_width;
+
+        fmt_dst_cropped.i_visible_height = max_height > 0
+                                         ? __MIN(max_height, height_cropped)
+                                         : height_cropped;
+        if (height_cropped <= 0)
+            fmt_dst_cropped.i_visible_height = max_height;
 
         if (fmt_dst_cropped.i_visible_width == width_cropped)
         {
