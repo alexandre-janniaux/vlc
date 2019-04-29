@@ -1,13 +1,12 @@
 # libplacebo
 
-PLACEBO_VERSION := 1.7.0
-#PLACEBO_ARCHIVE = libplacebo-v$(PLACEBO_VERSION).tar.gz
-#PLACEBO_URL := https://code.videolan.org/videolan/libplacebo/-/archive/v$(PLACEBO_VERSION)/$(PLACEBO_ARCHIVE)
-
 PLACEBO_HASH := a432b7460312170b7df07f596ee3d2c39a22f6d1
+PLACEBO_VERSION := git-$(PLACEBO_HASH)
 PLACEBO_GITURL := https://code.videolan.org/videolan/libplacebo.git
+PLACEBO_BRANCH := hack_branch
+PLACEBO_ARCHIVE := libplacebo-$(PLACEBO_VERSION).tar.xz
 
-DEPS_libplacebo = glslang
+DEPS_libplacebo = glslang $(DEPS_glslang)
 
 ifndef HAVE_WINSTORE
 PKGS += libplacebo
@@ -24,9 +23,12 @@ PLACEBOCONF := -Dglslang=enabled \
 	-Dshaderc=disabled
 
 $(TARBALLS)/$(PLACEBO_ARCHIVE):
-	$(call download_git,$(PLACEBO_URL),,$(PLACEBO_HASH))
+	$(call download_git,$(PLACEBO_GITURL),$(PLACEBO_BRANCH),$(PLACEBO_HASH))
+	echo "DONE"
 
 .sum-libplacebo: $(PLACEBO_ARCHIVE)
+	$(call check_githash,$(PLACEBO_HASH))
+	touch $@
 
 libplacebo: $(PLACEBO_ARCHIVE) .sum-libplacebo
 	$(UNPACK)
