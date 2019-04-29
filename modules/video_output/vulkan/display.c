@@ -603,15 +603,15 @@ vlc_module_begin () set_shortname ("Vulkan")
             change_integer_list(tone_values, tone_text)
     add_float("tone-mapping-param", pl_color_map_default_params.tone_mapping_param,
             TONEMAP_PARAM_TEXT, TONEMAP_PARAM_LONGTEXT, true)
-    add_float("tone-mapping-desat", pl_color_map_default_params.tone_mapping_desaturate,
-            TONEMAP_DESAT_TEXT, TONEMAP_DESAT_LONGTEXT, false)
+    //add_float("tone-mapping-desat", pl_color_map_default_params.tone_mapping_desaturate,
+            //TONEMAP_DESAT_TEXT, TONEMAP_DESAT_LONGTEXT, false)
     add_bool("gamut-warning", false, GAMUT_WARN_TEXT, GAMUT_WARN_LONGTEXT, true)
-    add_integer_with_range("peak-frames", pl_color_map_default_params.peak_detect_frames,
-            0, 255, PEAK_FRAMES_TEXT, PEAK_FRAMES_LONGTEXT, false)
+    //add_integer_with_range("peak-frames", pl_color_map_default_params.peak_detect_frames,
+            //0, 255, PEAK_FRAMES_TEXT, PEAK_FRAMES_LONGTEXT, false)
     add_float_with_range("target-avg", 0.25,
             0.0, 1.0, TARGET_AVG_TEXT, TARGET_AVG_LONGTEXT, false)
-    add_float_with_range("scene-threshold", pl_color_map_default_params.scene_threshold,
-            0., 10., SCENE_THRESHOLD_TEXT, SCENE_THRESHOLD_LONGTEXT, false)
+    //add_float_with_range("scene-threshold", pl_color_map_default_params.scene_threshold,
+            //0., 10., SCENE_THRESHOLD_TEXT, SCENE_THRESHOLD_LONGTEXT, false)
 
     set_section("Dithering", NULL)
     add_integer("dither", -1,
@@ -691,10 +691,10 @@ static void UpdateParams(vout_display_t *vd)
     sys->color_map.intent = var_InheritInteger(vd, "intent");
     sys->color_map.tone_mapping_algo = var_InheritInteger(vd, "tone-mapping");
     sys->color_map.tone_mapping_param = var_InheritFloat(vd, "tone-mapping-param");
-    sys->color_map.tone_mapping_desaturate = var_InheritFloat(vd, "tone-mapping-desat");
+    //sys->color_map.tone_mapping_desaturate = var_InheritFloat(vd, "tone-mapping-desat");
     sys->color_map.gamut_warning = var_InheritBool(vd, "gamut-warning");
-    sys->color_map.peak_detect_frames = var_InheritInteger(vd, "peak-frames");
-    sys->color_map.scene_threshold = var_InheritFloat(vd, "scene-threshold");
+    //sys->color_map.peak_detect_frames = var_InheritInteger(vd, "peak-frames");
+    //sys->color_map.scene_threshold = var_InheritFloat(vd, "scene-threshold");
 
     sys->dither = pl_dither_default_params;
     int method = var_InheritInteger(vd, "dither");
