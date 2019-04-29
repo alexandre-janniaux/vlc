@@ -589,6 +589,7 @@ static void UpdateParams(vout_display_t *vd)
     sys->params.disable_overlay_sampling = var_InheritBool(vd, "overlay-direct");
     sys->params.disable_linear_scaling = var_InheritBool(vd, "disable-linear");
     sys->params.disable_builtin_scalers = var_InheritBool(vd, "force-general");
+    sys->params.enable_luma_ravu_hack_r3 = false;
 
 #if PL_API_VER >= 13
     sys->peak_detect.smoothing_period = var_InheritFloat(vd, "peak-period");
