@@ -145,7 +145,8 @@ EXTRA_LTLIBRARIES += libvk_x11_plugin.la
 vout_LTLIBRARIES += $(LTLIBvk_x11)
 endif
 if HAVE_WIN32_DESKTOP
-vout_LTLIBRARIES += libvk_win32_plugin.la
+EXTRA_LTLIBRARIES += libvk_win32_plugin.la
+vout_LTLIBRARIES += $(LTLIBvk_win32)
 endif
 if HAVE_ANDROID
 vout_LTLIBRARIES += libvk_android_plugin.la
@@ -330,30 +331,30 @@ libdirect3d11_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
 vout_LTLIBRARIES += $(LTLIBdirect3d11)
 EXTRA_LTLIBRARIES += libdirect3d11_plugin.la
 
-libglwin32_plugin_la_SOURCES = $(OPENGL_COMMONSOURCES) \
-	video_output/win32/glwin32.c \
-	video_output/win32/common.c video_output/win32/common.h \
-	video_output/win32/events.c video_output/win32/events.h \
-	video_output/win32/sensors.cpp \
-	video_output/win32/win32touch.c video_output/win32/win32touch.h
-libwgl_plugin_la_SOURCES = video_output/win32/wgl.c $(OPENGL_COMMONSOURCES)
-
-libglwin32_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) \
-	-DMODULE_NAME_IS_glwin32
-
-libglwin32_plugin_la_LIBADD = libchroma_copy.la -lopengl32 -lgdi32 $(LIBCOM) -luuid $(OPENGL_COMMONLIBS)
-libwgl_plugin_la_LIBADD = -lopengl32 -lgdi32 $(OPENGL_COMMONLIBS)
-
-libglwin32_plugin_la_CFLAGS = $(AM_CFLAGS) $(OPENGL_COMMONCFLAGS) -DHAVE_GL_CORE_SYMBOLS
-libwgl_plugin_la_CFLAGS = $(AM_CFLAGS) $(OPENGL_COMMONCFLAGS)
-
-libglwin32_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
-libwgl_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
-
-if HAVE_WIN32_DESKTOP
-vout_LTLIBRARIES += $(LTLIBglwin32) $(LTLIBwgl)
-EXTRA_LTLIBRARIES += libglwin32_plugin.la libwgl_plugin.la
-endif
+#libglwin32_plugin_la_SOURCES = $(OPENGL_COMMONSOURCES) \
+#	video_output/win32/glwin32.c \
+#	video_output/win32/common.c video_output/win32/common.h \
+#	video_output/win32/events.c video_output/win32/events.h \
+#	video_output/win32/sensors.cpp \
+#	video_output/win32/win32touch.c video_output/win32/win32touch.h
+#libwgl_plugin_la_SOURCES = video_output/win32/wgl.c $(OPENGL_COMMONSOURCES)
+#
+#libglwin32_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) \
+#	-DMODULE_NAME_IS_glwin32
+#
+#libglwin32_plugin_la_LIBADD = libchroma_copy.la -lopengl32 -lgdi32 $(LIBCOM) -luuid $(OPENGL_COMMONLIBS)
+#libwgl_plugin_la_LIBADD = -lopengl32 -lgdi32 $(OPENGL_COMMONLIBS)
+#
+#libglwin32_plugin_la_CFLAGS = $(AM_CFLAGS) $(OPENGL_COMMONCFLAGS) -DHAVE_GL_CORE_SYMBOLS
+#libwgl_plugin_la_CFLAGS = $(AM_CFLAGS) $(OPENGL_COMMONCFLAGS)
+#
+#libglwin32_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
+#libwgl_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
+#
+#if HAVE_WIN32_DESKTOP
+#vout_LTLIBRARIES += $(LTLIBglwin32) $(LTLIBwgl)
+#EXTRA_LTLIBRARIES += libglwin32_plugin.la libwgl_plugin.la
+#endif
 
 libwingdi_plugin_la_SOURCES = video_output/win32/wingdi.c \
 	video_output/win32/common.c video_output/win32/common.h \
