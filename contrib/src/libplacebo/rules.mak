@@ -1,8 +1,11 @@
 # libplacebo
 
 PLACEBO_VERSION := 1.7.0
-PLACEBO_ARCHIVE = libplacebo-v$(PLACEBO_VERSION).tar.gz
-PLACEBO_URL := https://code.videolan.org/videolan/libplacebo/-/archive/v$(PLACEBO_VERSION)/$(PLACEBO_ARCHIVE)
+#PLACEBO_ARCHIVE = libplacebo-v$(PLACEBO_VERSION).tar.gz
+#PLACEBO_URL := https://code.videolan.org/videolan/libplacebo/-/archive/v$(PLACEBO_VERSION)/$(PLACEBO_ARCHIVE)
+
+PLACEBO_HASH := a432b7460312170b7df07f596ee3d2c39a22f6d1
+PLACEBO_GITURL := https://code.videolan.org/videolan/libplacebo.git
 
 DEPS_libplacebo = glslang
 
@@ -21,7 +24,7 @@ PLACEBOCONF := -Dglslang=enabled \
 	-Dshaderc=disabled
 
 $(TARBALLS)/$(PLACEBO_ARCHIVE):
-	$(call download_pkg,$(PLACEBO_URL),libplacebo)
+	$(call download_git,$(PLACEBO_URL),,$(PLACEBO_HASH))
 
 .sum-libplacebo: $(PLACEBO_ARCHIVE)
 
