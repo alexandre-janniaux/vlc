@@ -137,20 +137,13 @@ libvk_android_plugin_la_CFLAGS = $(AM_CFLAGS) $(VULKAN_COMMONCFLAGS) \
 			       -DVK_USE_PLATFORM_ANDROID_KHR -DPLATFORM_NAME=Android
 libvk_android_plugin_la_LIBADD = $(VULKAN_COMMONLIBS)
 
-if HAVE_VULKAN
-EXTRA_LTLIBRARIES += libvk_plugin.la
-vout_LTLIBRARIES += $(LTLIBvk)
+vout_LTLIBRARIES += libvk_plugin.la
+vout_LTLIBRARIES += libvk_win32_plugin.la
 if HAVE_XCB
-EXTRA_LTLIBRARIES += libvk_x11_plugin.la
-vout_LTLIBRARIES += $(LTLIBvk_x11)
-endif
-if HAVE_WIN32_DESKTOP
-EXTRA_LTLIBRARIES += libvk_win32_plugin.la
-vout_LTLIBRARIES += $(LTLIBvk_win32)
+vout_LTLIBRARIES += libvk_x11_plugin.la
 endif
 if HAVE_ANDROID
 vout_LTLIBRARIES += libvk_android_plugin.la
-endif
 endif
 
 ### XCB ###
