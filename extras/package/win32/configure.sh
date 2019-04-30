@@ -20,6 +20,7 @@ OPTIONS="
       --enable-sse --enable-mmx
       --enable-libcddb
       --enable-zvbi --disable-telx
+      --enable-vulkan
       --enable-nls"
 
 sh "$(dirname $0)"/../../../configure ${OPTIONS}  "$@"
