@@ -8,7 +8,7 @@ PLACEBO_HASH := d36c9eb9103960fe2f47ca83bb415fd38d27ce30
 PLACEBO_BRANCH := hack_branch
 PLACEBO_GITURL := https://github.com/alexandre-janniaux/libplacebo.git
 
-DEPS_libplacebo = glslang $(DEPS_glslang)
+DEPS_libplacebo = glslang $(DEPS_glslang) vulkanloader $(DEPS_vulkanloader)
 
 ifndef HAVE_WINSTORE
 PKGS += libplacebo
