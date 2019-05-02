@@ -248,6 +248,10 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
         .y1 = sys->place.y + sys->place.height,
     };
 
+    msg_Err(vd, "Target place: pos:%d/%d size: %d/%d",
+            sys->place.x, sys->place.y,
+            sys->place.width, sys->place.height);
+
     // Override the target colorimetry only if the user requests it
     if (sys->target.primaries)
         target.color.primaries = sys->target.primaries;
