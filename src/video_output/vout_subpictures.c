@@ -832,7 +832,7 @@ static void SpuRenderRegion(spu_t *spu,
         }
 
         /* Scale if needed into cache */
-        if (!region->p_private && dst_width > 0 && dst_height > 0) {
+        if (!region->p_private && dst_width > 0 && dst_height > 0 && false) {
             filter_t *scale = sys->scale;
 
             picture_t *picture = region->p_picture;
