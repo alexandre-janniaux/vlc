@@ -59,11 +59,8 @@ struct vout_display_sys_t {
     struct vlc_vidsplit_part *parts;
     struct vlc_vidsplit_thread *threads;
 
-    int sphere_fd;
-    vlc_sem_t prepare_barrier;
-    vlc_sem_t prepared_barrier;
-    vlc_sem_t display_barrier;
-    vlc_sem_t displayed_barrier;
+    vlc_sem_t barrier_wait;
+    vlc_sem_t barrier_done;
 };
 
 static void* vlc_vidsplit_ThreadDisplay(void *data)
@@ -75,13 +72,13 @@ static void* vlc_vidsplit_ThreadDisplay(void *data)
 
     for (;;)
     {
-        sem_wait(&sys->prepare_barrier);
+        sem_wait(&sys->barrier_wait);
 
         /* We might need to stop the prepare just after the barrier
-         * and we were not supposed to take the semaphore token */
+         * and we were not supposed to take the semaphore token. */
         if (part->display == NULL)
         {
-            sem_post(&sys->prepare_barrier);
+            sem_post(&sys->barrier_wait);
             break;
         }
 
@@ -90,14 +87,14 @@ static void* vlc_vidsplit_ThreadDisplay(void *data)
                                              part->date);
 
         /* notify readiness */
-        sem_post(&sys->prepared_barrier);
+        sem_post(&sys->barrier_done);
 
-        sem_wait(&sys->display_barrier);
+        sem_wait(&sys->barrier_wait);
         if (part->picture)
             vout_display_Display(part->display, part->picture);
 
         /* notify that image has been displayed */
-        sem_post(&sys->displayed_barrier);
+        sem_post(&sys->barrier_done);
     }
 
     return NULL;
@@ -144,27 +141,27 @@ static void vlc_vidsplit_Prepare(vout_display_t *vd, picture_t *pic,
     /* Start prepare on each vout  */
     for (int i = 0; i < sys->splitter.i_output; ++i)
         if (sys->parts[i].display != NULL)
-            vlc_sem_post(&sys->prepare_barrier);
+            vlc_sem_post(&sys->barrier_wait);
 
     /* Wait for each vout to have finished */
     for (int i = 0; i < sys->splitter.i_output; ++i)
         if (sys->parts[i].display != NULL)
-            vlc_sem_wait(&sys->prepared_barrier);
+            vlc_sem_wait(&sys->barrier_done);
 }
 
 static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
 {
     vout_display_sys_t *sys = vd->sys;
 
-    /* Ask the output to display the picture */
+    /* Request each output to display the picture. */
     for (int i = 0; i < sys->splitter.i_output; i++)
         if (sys->parts[i].display != NULL)
-            vlc_sem_post(&sys->display_barrier);
+            vlc_sem_post(&sys->barrier_wait);
 
-    /* Wait until every output has displayed a picture */
+    /* Wait until every output has displayed a picture. */
     for (int i = 0; i < sys->splitter.i_output; i++)
         if (sys->parts[i].display != NULL)
-            vlc_sem_wait(&sys->displayed_barrier);
+            vlc_sem_wait(&sys->barrier_done);
 
     /* Release parts lock, we can't read sys->parts[i] after that */
     for (int i = 0; i < sys->splitter.i_output; i++)
@@ -367,10 +364,8 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         return VLC_ENOMEM;
     }
 
-    vlc_sem_init(&sys->prepare_barrier, 0);
-    vlc_sem_init(&sys->prepared_barrier, 0);
-    vlc_sem_init(&sys->display_barrier, 0);
-    vlc_sem_init(&sys->displayed_barrier, 0);
+    vlc_sem_init(&sys->barrier_wait, 0);
+    vlc_sem_init(&sys->barrier_done, 0);
 
     for (int i = 0; i < splitter->i_output; i++) {
         const video_splitter_output_t *output = &splitter->p_output[i];
