@@ -81,6 +81,7 @@ struct video_splitter_t
                                   picture_t *p_src );
     int (*mouse)(video_splitter_t *, int idx,
                  struct vout_window_mouse_event_t *);
+    int (*control)(video_splitter_t *, int query, va_list args);
 
     void *p_sys;
 };
@@ -137,5 +138,19 @@ static inline int video_splitter_Mouse(video_splitter_t *splitter, int index,
         ? splitter->mouse(splitter, index, ev) : VLC_SUCCESS;
 }
 
-#endif /* VLC_VIDEO_SPLITTER_H */
+static inline int video_splitter_Control(video_splitter_t *splitter,
+                                         int query, va_list args)
+{
+    int ret = VLC_SUCCESS;
+    for (int i = 0; i < splitter->i_outputs; i++)
+    {
+        if (vout_display_Control(splitter->p_outputs[i].display,
+                                 i_query, args) != VLC_SUCCESS)
+        {
+            ret = VLC_EGENERIC;
+        }
+    }
+    return ret;
+}
 
+#endif /* VLC_VIDEO_SPLITTER_H */

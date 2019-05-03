@@ -103,6 +103,9 @@ static int vlc_vidsplit_Control(vout_display_t *vd, int query, va_list args)
         case VOUT_DISPLAY_CHANGE_SOURCE_ASPECT:
         case VOUT_DISPLAY_CHANGE_SOURCE_CROP:
             return VLC_SUCCESS;
+
+        case VOUT_DISPLAY_CHANGE_VIEWPOINT:
+            return video_splitter_Control(sys->splitter, query, args);
     }
     return VLC_EGENERIC;
 }
