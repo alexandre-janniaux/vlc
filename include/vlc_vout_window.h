@@ -412,7 +412,7 @@ typedef struct vout_window_t {
 struct vlc_window_provider_ops;
 typedef struct vlc_window_provider_t
 {
-    struct vlc_common_members obj;
+    struct vlc_object_t obj;
     const struct vlc_window_provider_ops *ops;
 
     void *sys;
@@ -424,11 +424,11 @@ struct vlc_window_provider_ops
      * Used to create a window
      */
     vout_window_t* (*get_window)(vlc_window_provider_t *provider,
-                                 vlc_object_t *parent);
+                                 struct vlc_object_t *parent);
 };
 
 static inline vout_window_t *
-vlc_window_provider_GetWindow(vlc_window_provider_t *provider, vlc_object_t *parent)
+vlc_window_provider_GetWindow(vlc_window_provider_t *provider, struct vlc_object_t *parent)
 {
     return provider->ops->get_window(provider, parent);
 }
