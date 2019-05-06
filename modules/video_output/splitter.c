@@ -34,6 +34,8 @@
 #include <vlc_vout_display.h>
 #include <vlc_video_splitter.h>
 
+void vout_UpdateDisplaySourceProperties(vout_display_t *vd, const video_format_t *);
+
 struct vlc_vidsplit_part {
     vout_window_t *window;
     vout_display_t *display;
@@ -72,6 +74,7 @@ static void vlc_vidsplit_Prepare(vout_display_t *vd, picture_t *pic,
         struct vlc_vidsplit_part *part = &sys->parts[i];
 
         vlc_sem_wait(&part->lock);
+        vout_UpdateDisplaySourceProperties(part->display, &sys->pictures[i]->format);
         sys->pictures[i] = vout_display_Prepare(part->display,
                                                 sys->pictures[i], NULL, date);
     }

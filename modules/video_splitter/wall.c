@@ -294,4 +294,3 @@ static int Mouse( video_splitter_t *p_splitter, int i_index,
     vlc_assert_unreachable();
     return VLC_EGENERIC;
 }
-

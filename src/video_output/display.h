@@ -22,4 +22,4 @@
 
 #include "vout_wrapper.h"
 
-void vout_UpdateDisplaySourceProperties(vout_display_t *vd, const video_format_t *);
+VLC_API void vout_UpdateDisplaySourceProperties(vout_display_t *vd, const video_format_t *);

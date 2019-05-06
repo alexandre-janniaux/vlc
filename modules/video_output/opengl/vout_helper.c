@@ -1617,6 +1617,8 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
                - Add a "-1" when computing right and bottom, however the
                last row/column might not be displayed at all.
             */
+            msg_Err(vgl->gl, "Source i_x_offset: %d", source->i_x_offset);
+            msg_Err(vgl->gl, "Source i_visible_width: %d", source->i_visible_width);
             left[j]   = (source->i_x_offset +                       0 ) * scale_w;
             top[j]    = (source->i_y_offset +                       0 ) * scale_h;
             right[j]  = (source->i_x_offset + source->i_visible_width ) * scale_w;
@@ -1715,4 +1717,3 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
     return VLC_SUCCESS;
 }
-
