@@ -141,8 +141,8 @@ static inline int video_splitter_Mouse(video_splitter_t *splitter, int index,
 static inline int video_splitter_Control(video_splitter_t *splitter,
                                          int query, va_list args)
 {
-    return (splitter->viewpoint != NULL)
-        ? splitter->viewpoint(splitter, query, args) : VLC_EGENERIC;
+    return (splitter->control != NULL)
+        ? splitter->control(splitter, query, args) : VLC_EGENERIC;
 }
 
 #endif /* VLC_VIDEO_SPLITTER_H */

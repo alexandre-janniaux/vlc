@@ -95,6 +95,7 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
 static int vlc_vidsplit_Control(vout_display_t *vd, int query, va_list args)
 {
     (void) vd; (void) args;
+    vout_display_sys_t *sys = vd->sys;
 
     switch (query) {
         case VOUT_DISPLAY_CHANGE_DISPLAY_SIZE:
@@ -105,7 +106,7 @@ static int vlc_vidsplit_Control(vout_display_t *vd, int query, va_list args)
             return VLC_SUCCESS;
 
         case VOUT_DISPLAY_CHANGE_VIEWPOINT:
-            return video_splitter_Control(sys->splitter, query, args);
+            return video_splitter_Control(&sys->splitter, query, args);
     }
     return VLC_EGENERIC;
 }
