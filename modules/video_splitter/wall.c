@@ -180,7 +180,7 @@ static int Open( vlc_object_t *p_this )
             p_output->i_left = i_left;
             p_output->i_top = i_top;
 
-            msg_Dbg( p_splitter, "window %dx%d at %d:%d size %dx%d", 
+            msg_Dbg( p_splitter, "window %dx%d at %d:%d size %dx%d",
                      x, y, i_left, i_top, i_width, i_height );
 
             if( p_output->b_active )
@@ -260,12 +260,12 @@ static int Filter( video_splitter_t *p_splitter, picture_t *pp_dst[], picture_t 
             if( !p_output->b_active )
                 continue;
 
-            picture_t *p_dst = pp_dst[x][y] = picture_Clone(p_src);
-            p_dst->i_offset_x = p_output->i_left;
-            p_dst->i_offset_y = p_output->i_top;
+            picture_t *p_dst = pp_dst[p_output->i_output] = picture_Clone(p_src);
+            p_dst->format.i_x_offset = p_output->i_left;
+            p_dst->format.i_y_offset = p_output->i_top;
             // TODO Check size
-            p_dst->i_visible_width  = p_output->i_right - p_output->i_left;
-            p_dst->i_visible_height = p_output->i_bottom - p_output->i_top;
+            p_dst->format.i_visible_width  = p_output->i_width;
+            p_dst->format.i_visible_height = p_output->i_height;
         }
     }
 
