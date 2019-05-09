@@ -1985,7 +1985,7 @@ vlc_player_HasTeletextMenu(vlc_player_t *player);
  *
  * @note A successful call will trigger the
  * vlc_player_cbs.on_teletext_enabled_changed event.
- * 
+ *
  * @param player locked player instance
  * @param enabled true to enable
  */
@@ -2683,7 +2683,7 @@ vlc_player_vout_IsFullscreen(vlc_player_t *player);
 
 VLC_API void
 vlc_player_SetWindowProvider(vlc_player_t *player,
-                             vlc_window_provider_t *provider);
+                             const vlc_window_provider_t *provider);
 
 /**
  * Enable or disable the player fullscreen state

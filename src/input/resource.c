@@ -505,7 +505,7 @@ void input_resource_Terminate( input_resource_t *p_resource )
 }
 
 void input_resource_SetWindowProvider( input_resource_t *p_resource,
-                                       vlc_window_provider_t * provider)
+                                       const vlc_window_provider_t * provider)
 {
     vlc_mutex_lock( &p_resource->lock );
     vlc_window_provider_t *previous_provider = p_resource->window_provider;

@@ -116,7 +116,8 @@ const QEvent::Type MainInterface::ToolbarsNeedRebuild =
         (QEvent::Type)QEvent::registerEventType();
 
 MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf ),
-    videoActive( ATOMIC_FLAG_INIT )
+    videoActive( ATOMIC_FLAG_INIT ),
+    windowProvider( VLC_OBJECT(_p_intf), this )
 {
     /* Variables initialisation */
     lastWinScreen        = NULL;
@@ -176,6 +177,10 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf ),
 
     // TODO: handle Wayland/X11/Win32 windows
     m_videoRenderer.reset(new QVoutWindowDummy(this));
+
+    vlc_playlist_t *playlist = vlc_intf_GetMainPlaylist(_p_intf);
+    vlc_player_t *player = vlc_playlist_GetPlayer(playlist);
+    vlc_player_SetWindowProvider(player, windowProvider.GetProvider());
 
     /**************************
      *  UI and Widgets design
