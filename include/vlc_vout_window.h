@@ -412,7 +412,7 @@ typedef struct vout_window_t {
 struct vlc_window_provider_ops;
 typedef struct vlc_window_provider_t
 {
-    struct vlc_common_members obj;
+    struct vlc_object_t obj;
     const struct vlc_window_provider_ops *ops;
 
     void *sys;

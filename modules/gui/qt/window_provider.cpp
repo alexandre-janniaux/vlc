@@ -20,13 +20,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include "window_provider.hpp"
 
+#include <vlc_common.h>
 #include <vlc_modules.h>
+#include <vlc_vout_window.h>
 
 /* The header is a private header from QPA but will become public when
  * it will stabilize. */
@@ -36,24 +34,37 @@
 
 #include "main_interface.hpp"
 
-
-WaylandWindowProvider::WaylandWindowProvider(MainInterface *intf) :
-    parent_window {}
+namespace
 {
-    QPlatformNativeInterface *platform =
-        QGuiApplication::platformNativeInterface();
 
-    if (intf->platform == "wayland")
+const vlc_window_provider_ops windowProviderOps =
+{
+    WaylandWindowProvider::GetWindow
+};
+
+}
+
+WaylandWindowProvider::WaylandWindowProvider(vlc_object_t *obj, MainInterface *intf) :
+    provider {},
+    parent_window {},
+    window {},
+    intf(intf),
+    obj(obj)
+{
+    provider.sys = this;
+    provider.ops = &windowProviderOps;
+
+    parent_window = static_cast<vout_window_t*>(vlc_object_create(obj, sizeof(*parent_window)));
+    window = static_cast<vout_window_t*>(vlc_object_create(obj, sizeof(*window)));
+
+    assert(parent_window);
+    assert(window);
+
+    parent_window->type = VOUT_WINDOW_TYPE_WAYLAND;
+    parent_window->sys = this;
+
+    if (true)//intf->platform == "wayland")
     {
-        parent_window.type = VOUT_WINDOW_TYPE_WAYLAND;
-        parent_window.sys = this;
-
-        void *display = platform->nativeResourceForWindow("display", NULL);
-        parent_window.display.wl = static_cast<wl_display *>(display);
-
-        void *surface =
-            platform->nativeResourceForWindow("surface", intf->windowHandle());
-        parent_window.handle.wl = static_cast<wl_surface*>(surface);
 
     }
     else
@@ -79,23 +90,44 @@ static int SubwindowActivate(void *func, bool forced, va_list args)
 }
 
 vout_window_t *
-WaylandWindowProvider::GetWindow(vlc_window_provider_t *opaque_provider,
+WaylandWindowProvider::GetWindow(vlc_window_provider_t *provider,
                                  vlc_object_t *parent)
 {
-    WaylandWindowProvider *provider =
-        static_cast<WaylandWindowProvider*>(opaque_provider->sys);
+    printf("WINDOW PROVIDER\n");
+    WaylandWindowProvider *qtprovider =
+        static_cast<WaylandWindowProvider*>(provider->sys);
 
-    if (provider->module)
-        goto end;
+
+    QPlatformNativeInterface *platform =
+        QGuiApplication::platformNativeInterface();
+
+    void *display = platform->nativeResourceForWindow("display", NULL);
+    qtprovider->parent_window->display.wl = static_cast<wl_display *>(display);
+
+    void *surface =
+        platform->nativeResourceForWindow("surface", qtprovider->intf->windowHandle());
+    qtprovider->parent_window->handle.wl = static_cast<wl_surface*>(surface);
+
+    //if (qtprovider->module)
+    //    goto end;
 
     /* TODO: write helper */
-    provider->module = vlc_module_load(vlc_object_logger(parent),
-                                       "vout subwindow", NULL, false,
-                                       SubwindowActivate,
-                                       &provider->window,
-                                       provider->parent_window);
+    qtprovider->module = vlc_module_load(vlc_object_logger(parent),
+                                         "vout subwindow", nullptr, false,
+                                         SubwindowActivate,
+                                         qtprovider->window,
+                                         qtprovider->parent_window);
+
+    if (!qtprovider->module)
+        return nullptr;
 
 end:
-    return &provider->window;
+    return qtprovider->window;
     //emit provider->WindowRequested();
+}
+
+const vlc_window_provider_t *
+WaylandWindowProvider::GetProvider()
+{
+    return &provider;
 }

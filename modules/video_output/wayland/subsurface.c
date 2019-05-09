@@ -1,6 +1,6 @@
 /**
  * @file subsurface_wnd.c
- * @brief 
+ * @brief
  */
 /*****************************************************************************
  * Copyright © 2019 VideoLabs
@@ -157,16 +157,17 @@ static const struct vout_window_operations ops = {
     .destroy = Close,
 };
 
-static int Open(vout_window_t *wnd)
+static int Open(vout_window_t *wnd, vout_window_t *parent)
 {
-    if (wnd->parent == NULL)
+    printf("MODULE FOUND WINDOW\n");
+    if (parent == NULL)
     {
         msg_Err(wnd, "wayland subsurface windows must be embedded into "
                      "another window");
         return VLC_EGENERIC;
     }
 
-    if (wnd->parent->type != VOUT_WINDOW_TYPE_WAYLAND)
+    if (parent->type != VOUT_WINDOW_TYPE_WAYLAND)
     {
         msg_Err(wnd, "cannot embed a wayland subsurface into "
                      "a non-wayland window");
@@ -177,7 +178,7 @@ static int Open(vout_window_t *wnd)
     if (unlikely(sys == NULL))
         return VLC_ENOMEM;
 
-    struct wl_display *display = wnd->parent->display.wl;
+    struct wl_display *display = parent->display.wl;
 
     sys->compositor = NULL;
     sys->surface.handle = NULL;
@@ -206,7 +207,7 @@ static int Open(vout_window_t *wnd)
     sys->surface.role = wl_subcompositor_get_subsurface(
                                 sys->subcompositor,
                                 sys->surface.handle,
-                                wnd->parent->handle.wl);
+                                parent->handle.wl);
     if (sys->surface.role == NULL)
         goto error;
 
@@ -248,7 +249,7 @@ vlc_module_begin()
     set_description(N_("XDG subsurface window"))
     set_category(CAT_VIDEO)
     set_subcategory(SUBCAT_VIDEO_VOUT)
-    set_capability("vout window", 0)
-    set_callbacks(Open, NULL)
+    set_capability("vout subwindow", 10)
+    set_callbacks(Open, Close)
     add_shortcut("wl_subsurface")
 vlc_module_end()

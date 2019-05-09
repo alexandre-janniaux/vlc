@@ -23,10 +23,15 @@
 #ifndef QVLC_WINDOW_PROVIDER_HPP
 #define QVLC_WINDOW_PROVIDER_HPP
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <QtCore/QObject>
 #include <vlc_vout_window.h>
 
 class MainInterface;
+struct vlc_object_t;
 struct module_t;
 
 class WaylandWindowProvider : public QObject
@@ -34,7 +39,7 @@ class WaylandWindowProvider : public QObject
     Q_OBJECT
 
 public:
-    WaylandWindowProvider(MainInterface *intf);
+    WaylandWindowProvider(vlc_object_t *obj, MainInterface *intf);
 
     virtual ~WaylandWindowProvider();
 
@@ -42,9 +47,15 @@ public:
     GetWindow(vlc_window_provider_t *opaque_provider,
               vlc_object_t *parent);
 
+    const vlc_window_provider_t *GetProvider();
+
 private:
-    vout_window_t parent_window;
-    vout_window_t window;
+    vlc_window_provider_t provider;
+    vout_window_t* parent_window;
+    vout_window_t* window;
+
+    MainInterface *intf;
+    vlc_object_t *obj;
 
     module_t *module = nullptr;
 };
