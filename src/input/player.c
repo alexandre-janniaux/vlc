@@ -750,7 +750,7 @@ vlc_player_PrepareNextMedia(vlc_player_t *player)
 {
     vlc_player_assert_locked(player);
 
-    if (!player->media_provider 
+    if (!player->media_provider
      || player->media_stopped_action != VLC_PLAYER_MEDIA_STOPPED_CONTINUE
      || player->next_media_requested)
         return;
@@ -3601,7 +3601,7 @@ vlc_player_GetV4l2Object(vlc_player_t *player)
 
 void
 vlc_player_SetWindowProvider(vlc_player_t *player,
-                             vlc_window_provider_t *provider)
+                             const vlc_window_provider_t *provider)
 {
     //struct vlc_player_priv *player = vlc_player_priv(player_);
     input_resource_SetWindowProvider(player->resource, provider);

@@ -71,6 +71,6 @@ void input_resource_StopFreeVout( input_resource_t * );
 input_resource_t *input_resource_Hold( input_resource_t * );
 
 void input_resource_SetWindowProvider( input_resource_t *p_resource,
-                                       vlc_window_provider_t * provider);
+                                       const vlc_window_provider_t * provider);
 
 #endif
