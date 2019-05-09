@@ -36,6 +36,8 @@ class WaylandWindowProvider : public QObject
 public:
     WaylandWindowProvider(MainInterface *intf);
 
+    virtual ~WaylandWindowProvider();
+
     static vout_window_t *
     GetWindow(vlc_window_provider_t *opaque_provider,
               vlc_object_t *parent);
