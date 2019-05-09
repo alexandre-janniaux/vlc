@@ -64,7 +64,11 @@ WaylandWindowProvider::WaylandWindowProvider(MainInterface *intf) :
 
 static int SubwindowActivate(void *func, bool forced, va_list args)
 {
-    return VLC_EGENERIC;
+    using Activate = int (*)(vout_window_t *window, vout_window_t *parent);
+    Activate activate = reinterpret_cast<Activate>(func);
+    vout_window_t *window = va_arg(args, vout_window_t*);
+    vout_window_t *parent_window = va_arg(args, vout_window_t*);
+    return activate(window, parent_window);
 }
 
 vout_window_t *
