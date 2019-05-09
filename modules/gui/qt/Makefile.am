@@ -53,6 +53,7 @@ libqt_plugin_la_SOURCES = \
 	gui/qt/managers/addons_manager.cpp gui/qt/managers/addons_manager.hpp \
 	gui/qt/managers/renderer_manager.cpp gui/qt/managers/renderer_manager.hpp \
 	gui/qt/recents.cpp gui/qt/recents.hpp \
+	gui/qt/window_provider.cpp gui/qt/window_provider.hpp \
 	gui/qt/adapters/chromaprint.cpp gui/qt/adapters/chromaprint.hpp \
 	gui/qt/adapters/var_common_p.hpp \
 	gui/qt/adapters/variables.cpp gui/qt/adapters/variables.hpp \
@@ -229,6 +230,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	gui/qt/managers/addons_manager.moc.cpp \
 	gui/qt/managers/renderer_manager.moc.cpp \
 	gui/qt/recents.moc.cpp \
+	gui/qt/window_provider.moc.cpp \
 	gui/qt/adapters/chromaprint.moc.cpp \
 	gui/qt/adapters/variables.moc.cpp \
 	gui/qt/adapters/var_choice_model.moc.cpp \
