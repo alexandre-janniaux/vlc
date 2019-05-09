@@ -237,7 +237,7 @@ struct date_t
  * \param num divider (sample rate) numerator
  * \param den divider (sample rate) denominator
  */
-VLC_API void date_Init(date_t *restrict date, uint32_t num, uint32_t den);
+VLC_API void date_Init(date_t * restrict date, uint32_t num, uint32_t den);
 
 /**
  * Changes the rate of a date_t.
@@ -246,7 +246,7 @@ VLC_API void date_Init(date_t *restrict date, uint32_t num, uint32_t den);
  * \param num divider (sample rate) numerator
  * \param den divider (sample rate) denominator
  */
-VLC_API void date_Change(date_t *restrict date, uint32_t num, uint32_t den);
+VLC_API void date_Change(date_t * restrict date, uint32_t num, uint32_t den);
 
 /**
  * Sets the exact timestamp of a date_t.
@@ -254,7 +254,7 @@ VLC_API void date_Change(date_t *restrict date, uint32_t num, uint32_t den);
  * \param date date to set the timestamp into
  * \param value date value
  */
-static inline void date_Set(date_t *restrict date, vlc_tick_t value)
+static inline void date_Set(date_t * restrict date, vlc_tick_t value)
 {
     date->date = value;
     date->i_remainder = 0;
@@ -266,7 +266,7 @@ static inline void date_Set(date_t *restrict date, vlc_tick_t value)
  * \param date date to fetch the timestamp from
  * \return date value
  */
-VLC_USED static inline vlc_tick_t date_Get(const date_t *restrict date)
+VLC_USED static inline vlc_tick_t date_Get(const date_t * restrict date)
 {
     return date->date;
 }
@@ -280,7 +280,7 @@ VLC_USED static inline vlc_tick_t date_Get(const date_t *restrict date)
  * \param count number of samples
  * \return timestamp value after incrementing
  */
-VLC_API vlc_tick_t date_Increment(date_t *restrict date, uint32_t count);
+VLC_API vlc_tick_t date_Increment(date_t * restrict date, uint32_t count);
 
 /**
  * Decrements a date.
@@ -291,7 +291,7 @@ VLC_API vlc_tick_t date_Increment(date_t *restrict date, uint32_t count);
  * \param count number of samples
  * \return date value
  */
-VLC_API vlc_tick_t date_Decrement(date_t *restrict date, uint32_t count);
+VLC_API vlc_tick_t date_Decrement(date_t * restrict date, uint32_t count);
 
 /** @} */
 
