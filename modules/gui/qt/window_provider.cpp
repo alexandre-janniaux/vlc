@@ -62,6 +62,13 @@ WaylandWindowProvider::WaylandWindowProvider(MainInterface *intf) :
     }
 }
 
+WaylandWindowProvider::~WaylandWindowProvider()
+{
+    // TODO:
+    //if (module)
+    //    vlc_module_unload(module, SubwindowDeactivate);
+}
+
 static int SubwindowActivate(void *func, bool forced, va_list args)
 {
     using Activate = int (*)(vout_window_t *window, vout_window_t *parent);
