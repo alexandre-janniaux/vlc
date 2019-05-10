@@ -42,6 +42,23 @@ const vlc_window_provider_ops windowProviderOps =
     WaylandWindowProvider::GetWindow
 };
 
+static void Resized(vout_window_t *wnd, unsigned int width, unsigned int height)
+{
+
+}
+
+const vout_window_callbacks voutWindowCbs =
+{
+    Resized, //Resized,
+    nullptr, //Closed,
+    nullptr, //StateChanged,
+    nullptr, //Windowed,
+    nullptr, //Fullscreened,
+    nullptr, //MouseEvent,
+    nullptr, //KeyboardEvent,
+    nullptr //OutputEvent,
+};
+
 }
 
 WaylandWindowProvider::WaylandWindowProvider(vlc_object_t *obj, MainInterface *intf) :
@@ -56,6 +73,8 @@ WaylandWindowProvider::WaylandWindowProvider(vlc_object_t *obj, MainInterface *i
 
     parent_window = static_cast<vout_window_t*>(vlc_object_create(obj, sizeof(*parent_window)));
     window = static_cast<vout_window_t*>(vlc_object_create(obj, sizeof(*window)));
+    window->owner.sys = this;
+    window->owner.cbs = &voutWindowCbs;
 
     assert(parent_window);
     assert(window);
