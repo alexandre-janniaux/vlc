@@ -79,15 +79,19 @@ WaylandWindowProvider::WaylandWindowProvider(vlc_object_t *obj, MainInterface *i
     assert(parent_window);
     assert(window);
 
-    parent_window->type = VOUT_WINDOW_TYPE_WAYLAND;
     parent_window->sys = this;
 
-    if (true)//intf->platform == "wayland")
-    {
+    QString platformName = QGuiApplication::platformName();
 
+    if (platformName.startsWith(QLatin1String("wayland"), Qt::CaseInsensitive))
+    {
+        msg_Info(obj, "Using wayland window provider for platform %s", platformName.toUtf8().constData());
+        parent_window->type = VOUT_WINDOW_TYPE_WAYLAND;
     }
     else
     {
+        msg_Info(obj, "Using dummy window provider");
+        parent_window->type = VOUT_WINDOW_TYPE_DUMMY;
         // TODO: We don't handle this yet
     }
 }
@@ -137,8 +141,13 @@ WaylandWindowProvider::GetWindow(vlc_window_provider_t *provider,
                                          qtprovider->window,
                                          qtprovider->parent_window);
 
+    /* We might not be able to create a subwindow for the given window type.
+     * In this case, fallback to the vlc core window provider mechanism or
+     * stop vout window creation. */
     if (!qtprovider->module)
+    {
         return nullptr;
+    }
 
 end:
     return qtprovider->window;
