@@ -216,7 +216,7 @@ static int Open(vout_window_t *wnd, vout_window_t *parent)
     wnd->display.wl = display;
     wnd->ops = &ops;
 
-    if (vlc_clone(&sys->thread, Thread, wnd, VLC_THREAD_PRIORITY_LOW))
+    if (vlc_clone(&sys->thread, Thread, wnd, -1))
         goto error;
 
     return VLC_SUCCESS;
