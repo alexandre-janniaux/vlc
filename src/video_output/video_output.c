@@ -1780,16 +1780,18 @@ vout_thread_t *vout_Create(vlc_object_t *object,
     vlc_mutex_init(&sys->filter.lock);
 
     /* Window */
-    if (window_provider == NULL)
-    {
-        /* Using default window providing policy */
-        sys->display_cfg.window = vout_display_window_New(vout);
-    }
-    else
+    if (window_provider != NULL)
     {
         sys->display_cfg.window =
             vlc_window_provider_GetWindow(window_provider,
                                           VLC_OBJECT(vout));
+    }
+
+    if (sys->display_cfg.window == NULL)
+    {
+        /* Using default window providing policy it case we don't have
+         * a window provider or that it failed to create a window. */
+        sys->display_cfg.window = vout_display_window_New(vout);
     }
 
     if (sys->display_cfg.window == NULL) {
