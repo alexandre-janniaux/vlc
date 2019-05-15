@@ -95,4 +95,7 @@ void QVoutWindow::onSurfaceSizeChanged(QSizeF size)
     QMutexLocker lock(&m_voutlock);
     if (m_hasVideo)
         vout_window_ReportSize(m_voutWindow, size.width(), size.height());
+
+    printf("SURFACE SIZE: %u %u\n", (unsigned)size.width(), (unsigned)size.height());
+    emit Resized(size.width(), size.height());
 }

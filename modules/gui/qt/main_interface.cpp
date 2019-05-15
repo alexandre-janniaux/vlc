@@ -182,6 +182,9 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf ),
     vlc_player_t *player = vlc_playlist_GetPlayer(playlist);
     vlc_player_SetWindowProvider(player, windowProvider.GetProvider());
 
+    connect(m_videoRenderer.get(), &QVoutWindow::Resized,
+            &windowProvider, &WaylandWindowProvider::Resize);
+
     /**************************
      *  UI and Widgets design
      **************************/

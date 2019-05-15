@@ -30,6 +30,9 @@ public slots:
     void onKeyPressed(int key, Qt::KeyboardModifiers modifiers);
     void onSurfaceSizeChanged(QSizeF size);
 
+signals:
+    void Resized( unsigned width, unsigned height );
+
 protected:
     QMutex m_voutlock;
     vout_window_t* m_voutWindow = nullptr;

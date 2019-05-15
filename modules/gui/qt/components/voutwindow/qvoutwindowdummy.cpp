@@ -18,9 +18,32 @@
 #include "qvoutwindowdummy.hpp"
 #include <QtQuick/QQuickWindow>
 
-VideoSurfaceProviderDummy::VideoSurfaceProviderDummy(QObject* parent)
+VideoSurfaceProviderDummy::VideoSurfaceProviderDummy(QVoutWindow *renderer, QObject* parent)
     : VideoSurfaceProvider(parent)
 {
+    connect(this, &VideoSurfaceProviderDummy::mouseMoved,
+            renderer, &QVoutWindow::onMouseMoved, Qt::QueuedConnection);
+
+    connect(this, &VideoSurfaceProviderDummy::mousePressed,
+            renderer, &QVoutWindow::onMousePressed, Qt::QueuedConnection);
+
+    connect(this, &VideoSurfaceProviderDummy::mouseDblClicked,
+            renderer, &QVoutWindow::onMouseDoubleClick, Qt::QueuedConnection);
+
+    connect(this, &VideoSurfaceProviderDummy::mouseReleased,
+            renderer, &QVoutWindow::onMouseReleased, Qt::QueuedConnection);
+
+    connect(this, &VideoSurfaceProviderDummy::mouseWheeled,
+            renderer, &QVoutWindow::onMouseWheeled, Qt::QueuedConnection);
+
+    connect(this, &VideoSurfaceProviderDummy::keyPressed,
+            renderer, &QVoutWindow::onKeyPressed, Qt::QueuedConnection);
+
+    connect(this, &VideoSurfaceProviderDummy::surfaceSizeChanged,
+            renderer, &QVoutWindow::onSurfaceSizeChanged);
+
+    //connect(m_renderer, &QVoutWindowWayland::updated,
+    //        this, &VideoSurfaceWayland::update, Qt::QueuedConnection);
 }
 
 QSGNode*VideoSurfaceProviderDummy::updatePaintNode(QQuickItem* item, QSGNode* oldNode, QQuickItem::UpdatePaintNodeData*)
@@ -38,7 +61,7 @@ QSGNode*VideoSurfaceProviderDummy::updatePaintNode(QQuickItem* item, QSGNode* ol
 
 QVoutWindowDummy::QVoutWindowDummy(MainInterface*, QObject* parent)
     : QVoutWindow(parent)
-    , m_surfaceProvider(new VideoSurfaceProviderDummy(this))
+    , m_surfaceProvider(new VideoSurfaceProviderDummy(this, this))
 {
 }
 

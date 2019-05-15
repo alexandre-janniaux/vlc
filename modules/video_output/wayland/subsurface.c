@@ -111,12 +111,15 @@ static void ReportSize(vout_window_t *wnd)
     unsigned height = sys->surface.height;
 
     /* TODO: should we report zero size values ? */
+    msg_Err(wnd, "WAYLAND report size %ux%u", width, height);
     vout_window_ReportSize(wnd, width, height);
 }
 
 static void Resize(vout_window_t *wnd, unsigned width, unsigned height)
 {
     vout_window_sys_t *sys = wnd->sys;
+
+    msg_Err(wnd, "Resizing vout window to %ux%u", width, height);
 
     vlc_mutex_lock(&sys->lock);
     sys->surface.width  = width;
@@ -131,7 +134,6 @@ static int Enable(vout_window_t *wnd, const vout_window_cfg_t *restrict cfg)
     vout_window_sys_t *sys = wnd->sys;
     struct wl_display *display = wnd->display.wl;
 
-    vout_window_SetSize(wnd, cfg->width, cfg->height);
     wl_surface_commit(wnd->handle.wl);
     wl_display_flush(display);
 
@@ -210,6 +212,9 @@ static int Open(vout_window_t *wnd, vout_window_t *parent)
                                 parent->handle.wl);
     if (sys->surface.role == NULL)
         goto error;
+
+    wl_subsurface_set_desync(sys->surface.role);
+    wl_subsurface_place_below(sys->surface.role, parent->handle.wl);
 
     wnd->type = VOUT_WINDOW_TYPE_WAYLAND;
     wnd->handle.wl = sys->surface.handle;
