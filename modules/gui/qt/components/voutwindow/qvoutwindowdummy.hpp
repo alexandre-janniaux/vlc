@@ -26,14 +26,15 @@
 /*
  * Video surface renderer and provider that won't perform anything
  */
-
+class QVoutWindow;
 class VideoSurfaceProviderDummy : public VideoSurfaceProvider
 {
     Q_OBJECT
 public:
 
-    VideoSurfaceProviderDummy(QObject* parent = nullptr);
+    VideoSurfaceProviderDummy(QVoutWindow *renderer, QObject* parent = nullptr);
     QSGNode* updatePaintNode(QQuickItem* item, QSGNode* oldNode, QQuickItem::UpdatePaintNodeData*) override;
+
 };
 
 class QVoutWindowDummy : public QVoutWindow
