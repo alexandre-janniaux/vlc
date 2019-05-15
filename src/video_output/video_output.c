@@ -1832,6 +1832,8 @@ vout_thread_t *vout_Create(vlc_object_t *object,
         sys->display_cfg.window =
             vlc_window_provider_GetWindow(window_provider,
                                           VLC_OBJECT(vout));
+        if (sys->display_cfg.window)
+            vout_display_window_InitOwner(&sys->display_cfg.window->owner, vout);
     }
 
     if (sys->display_cfg.window == NULL)
@@ -1847,6 +1849,7 @@ vout_thread_t *vout_Create(vlc_object_t *object,
         vlc_object_delete(vout);
         return NULL;
     }
+
 
     if (sys->splitter_name != NULL)
         var_Destroy(vout, "window");

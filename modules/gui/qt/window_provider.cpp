@@ -44,7 +44,8 @@ const vlc_window_provider_ops windowProviderOps =
 
 static void Resized(vout_window_t *wnd, unsigned int width, unsigned int height)
 {
-
+    vout_thread_t *vout = (vout_thread_t *)vlc_object_parent(wnd);
+    msg_Err(wnd, "[window provider] resized to %ux%u", width, height);
 }
 
 const vout_window_callbacks voutWindowCbs =
@@ -72,12 +73,8 @@ WaylandWindowProvider::WaylandWindowProvider(vlc_object_t *obj, MainInterface *i
     provider.ops = &windowProviderOps;
 
     parent_window = static_cast<vout_window_t*>(vlc_object_create(obj, sizeof(*parent_window)));
-    window = static_cast<vout_window_t*>(vlc_object_create(obj, sizeof(*window)));
-    window->owner.sys = this;
-    window->owner.cbs = &voutWindowCbs;
 
     assert(parent_window);
-    assert(window);
 
     parent_window->sys = this;
 
@@ -120,6 +117,7 @@ WaylandWindowProvider::GetWindow(vlc_window_provider_t *provider,
     WaylandWindowProvider *qtprovider =
         static_cast<WaylandWindowProvider*>(provider->sys);
 
+    qtprovider->window = static_cast<vout_window_t*>(vlc_object_create(parent, sizeof(*window)));
 
     QPlatformNativeInterface *platform =
         QGuiApplication::platformNativeInterface();
@@ -149,6 +147,8 @@ WaylandWindowProvider::GetWindow(vlc_window_provider_t *provider,
         return nullptr;
     }
 
+    //vout_window_SetSize(qtprovider->window,
+    //                    qtprovider->width, qtprovider->height);
 end:
     return qtprovider->window;
     //emit provider->WindowRequested();
@@ -158,4 +158,15 @@ const vlc_window_provider_t *
 WaylandWindowProvider::GetProvider()
 {
     return &provider;
+}
+
+void
+WaylandWindowProvider::Resize(unsigned width, unsigned height)
+{
+    printf("PROVIDER RESIZE: %ux%u\n", width, height);
+    if (window && module)
+        vout_window_SetSize(window, width, height);
+
+    this->width = width;
+    this->height = height;
 }

@@ -107,7 +107,7 @@ int vout_window_Enable(vout_window_t *window,
             return err;
     }
 
-    vout_window_SetInhibition(window, true);
+    //vout_window_SetInhibition(window, true);
     return VLC_SUCCESS;
 }
 
@@ -348,6 +348,28 @@ static const struct vout_window_callbacks vout_display_window_cbs = {
     .keyboard_event = vout_display_window_KeyboardEvent,
     .output_event = vout_display_window_OutputEvent,
 };
+
+int vout_display_window_InitOwner(vout_window_owner_t *owner,
+                                  vout_thread_t *vout)
+{
+    vout_display_window_t *state = malloc(sizeof (*state));
+    if (state == NULL)
+        return VLC_EGENERIC;
+
+    vlc_mouse_Init(&state->mouse);
+    state->last_left_press = INT64_MIN;
+
+    *owner = (vout_window_owner_t) {
+        .cbs = &vout_display_window_cbs,
+        .sys = state,
+    };
+
+    var_Create(vout, "window-state", VLC_VAR_INTEGER);
+    var_Create(vout, "window-fullscreen", VLC_VAR_BOOL);
+    var_Create(vout, "window-fullscreen-output", VLC_VAR_STRING);
+
+    return VLC_SUCCESS;
+}
 
 /**
  * Creates a video window, initially without any attached display.

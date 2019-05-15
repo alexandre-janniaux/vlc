@@ -49,6 +49,9 @@ public:
 
     const vlc_window_provider_t *GetProvider();
 
+public slots:
+    void Resize(unsigned width, unsigned height);
+
 private:
     vlc_window_provider_t provider;
     vout_window_t* parent_window;
@@ -58,6 +61,8 @@ private:
     vlc_object_t *obj;
 
     module_t *module = nullptr;
+
+    unsigned width, height;
 };
 
 #endif
