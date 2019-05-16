@@ -54,6 +54,30 @@ static void VoutViewpointMoved(void *sys, const vlc_viewpoint_t *vp)
 /*****************************************************************************
  *
  *****************************************************************************/
+
+static inline void
+ScaleVideoOutput(vout_thread_t *vout, video_format_t *fmt)
+{
+    float scale_factor = var_GetFloat(vout, "scale");
+    if (scale_factor == 1.f)
+        return;
+
+    int new_visible_width = roundf(fmt->i_visible_width * scale_factor);
+    int new_visible_height = roundf(fmt->i_visible_height * scale_factor);
+
+    msg_Dbg(vout, "scaling video output from %dx%d to %dx%d (x%.3f)",
+             fmt->i_visible_width, fmt->i_visible_height,
+             new_visible_width, new_visible_height,
+             scale_factor);
+
+    int padding_x = fmt->i_width - fmt->i_visible_width;
+    int padding_y = fmt->i_height - fmt->i_visible_height;
+    fmt->i_visible_width = new_visible_width;
+    fmt->i_visible_height = new_visible_height;
+    fmt->i_width = fmt->i_visible_width + padding_x;
+    fmt->i_height = fmt->i_visible_height + padding_y;
+}
+
 vout_display_t *vout_OpenWrapper(vout_thread_t *vout,
                      const char *splitter_name, const vout_display_cfg_t *cfg,
                      vlc_video_context *vctx)
@@ -73,8 +97,11 @@ vout_display_t *vout_OpenWrapper(vout_thread_t *vout,
     else
         modlist = "splitter,none";
 
-    vd = vout_display_New(VLC_OBJECT(vout), &sys->original, vctx, cfg,
-                          modlist, &owner);
+    video_format_t source;
+    video_format_Copy(&source, &sys->original);
+    ScaleVideoOutput(vout, &source);
+    vd = vout_display_New(VLC_OBJECT(vout), &source, vctx, cfg, modlist,
+                          &owner);
     free(modlistbuf);
 
     if (vd == NULL)
@@ -103,7 +130,7 @@ vout_display_t *vout_OpenWrapper(vout_thread_t *vout,
         sys->private_pool = picture_pool_Reserve(display_pool, private_picture);
     } else {
         sys->private_pool =
-            picture_pool_NewFromFormat(&vd->source,
+            picture_pool_NewFromFormat(&sys->original,
                                        __MAX(VOUT_MAX_PICTURES,
                                              reserved_picture - DISPLAY_PICTURE_COUNT));
     }
@@ -155,4 +182,3 @@ static int Forward(vlc_object_t *object, char const *var,
     return var_Set(vd, var, newval);
 }
 #endif
-

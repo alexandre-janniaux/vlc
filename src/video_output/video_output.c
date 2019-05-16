@@ -152,8 +152,9 @@ static void vout_SizeWindow(vout_thread_t *vout,
                             unsigned *restrict height)
 {
     vout_thread_sys_t *sys = vout->p;
-    unsigned w = original->i_visible_width;
-    unsigned h = original->i_visible_height;
+    float scale = var_GetFloat(vout, "scale");
+    unsigned w = roundf(original->i_visible_width * scale);
+    unsigned h = roundf(original->i_visible_height * scale);
     unsigned sar_num = original->i_sar_num;
     unsigned sar_den = original->i_sar_num;
 
@@ -715,7 +716,8 @@ static picture_t *VoutVideoFilterStaticNewPicture(filter_t *filter)
     vout_thread_t *vout = filter->owner.sys;
 
     vlc_mutex_assert(&vout->p->filter.lock);
-    if (filter_chain_IsEmpty(vout->p->filter.chain_interactive))
+    if (filter_chain_IsEmpty(vout->p->filter.chain_interactive) &&
+        var_GetFloat(vout, "scale") == 1.f)
         // we may be using the last filter of both chains, so we get the picture
         // from the display module pool, just like for the last interactive filter.
         return VoutVideoFilterInteractiveNewPicture(filter);
@@ -791,7 +793,7 @@ static void ThreadChangeFilters(vout_thread_t *vout,
             if (likely(e)) {
                 e->name = name;
                 e->cfg  = cfg;
-                if (!strcmp(e->name, "postproc"))
+                if (!strcmp(e->name, "postproc") || !strcmp(e->name, "ravu"))
                     vlc_array_append_or_abort(&array_static, e);
                 else
                     vlc_array_append_or_abort(&array_interactive, e);
@@ -813,12 +815,21 @@ static void ThreadChangeFilters(vout_thread_t *vout,
     if (!is_locked)
         vlc_mutex_lock(&vout->p->filter.lock);
 
+    es_format_t fmt_origin;
     es_format_t fmt_target;
-    es_format_InitFromVideo(&fmt_target, &vout->p->filter.src_fmt);
-    vlc_video_context *vctx_target  = vout->p->filter.src_vctx;
 
-    const es_format_t *p_fmt_current = &fmt_target;
+    es_format_InitFromVideo(&fmt_target, &vout->p->filter.src_fmt);
+
+    vlc_video_context *vctx_target  = vout->p->filter.src_vctx;
     vlc_video_context *vctx_current = vctx_target;
+
+    es_format_InitFromVideo(&fmt_origin,  &vout->p->filter.src_fmt);
+    if (var_GetFloat(vout, "scale") == 1.f)
+        es_format_InitFromVideo(&fmt_target, &vout->p->filter.src_fmt);
+    else
+        es_format_InitFromVideo(&fmt_target, &vout->p->display->source);
+
+    const es_format_t *p_fmt_current = &fmt_origin;
 
     for (int a = 0; a < 2; a++) {
         vlc_array_t    *array = a == 0 ? &array_static :
@@ -1561,7 +1572,8 @@ static int vout_Start(vout_thread_t *vout, vlc_video_context *vctx, const vout_c
     };
     sys->filter.chain_static = filter_chain_NewVideo(vout, true, &owner);
 
-    owner.video = &interactive_cbs;
+    if (var_GetFloat(vout, "scale") == 1.f)
+        owner.video = &interactive_cbs;
     sys->filter.chain_interactive = filter_chain_NewVideo(vout, true, &owner);
 
     vout_display_cfg_t dcfg;
