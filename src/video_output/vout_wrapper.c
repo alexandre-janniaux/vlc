@@ -90,7 +90,8 @@ vout_display_t *vout_OpenWrapper(vout_thread_t *vout,
     const char *modlist;
     char *modlistbuf = NULL;
 
-    msg_Dbg(vout, "Opening vout display wrapper");
+    msg_Info(vout, "Opening vout display wrapper with cfg %dx%d",
+             cfg->display.width, cfg->display.height);
 
     if (splitter_name == NULL)
         modlist = modlistbuf = var_InheritString(vout, "vout");
