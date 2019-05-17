@@ -19,6 +19,7 @@
  *****************************************************************************/
 
 #include <vlc_viewpoint.h>
+#include <math.h>
 #include "../../libvlc/test.h"
 
 static bool
@@ -35,13 +36,15 @@ reciprocal_euler(float epsilon, float yaw, float pitch, float roll)
     fprintf(stderr, "converted:  yaw=%f, pitch=%f, roll=%f\n", yaw2, pitch2, roll2);
     fprintf(stderr, "==========================================\n");
 
-    float d1 = fabs(yaw   - yaw2);
-    float d2 = fabs(pitch - pitch2);
-    float d3 = fabs(roll  - roll2);
+    float d1 = fmodf(fabs(yaw   - yaw2),   360.f);
+    float d2 = fmodf(fabs(pitch - pitch2), 180.f);
+    float d3 = fmodf(fabs(roll  - roll2),  360.f);
 
-    return (d1 < epsilon || fabs(d1 - 90.f)  < epsilon) &&
-           (d2 < epsilon || fabs(d2 - 180.f)  < epsilon) &&
-           (d3 < epsilon || fabs(d3 - 180.f) < epsilon);
+    /* Check the two borders of the tore, 0.f and 180.f or 360.f
+     * depending on the range of the compared value. */
+    return (d1 < epsilon || fabs(d1 - 360.f) < epsilon) &&
+           (d2 < epsilon || fabs(d2 - 180.f) < epsilon) &&
+           (d3 < epsilon || fabs(d3 - 360.f) < epsilon);
 }
 
 static void
@@ -49,10 +52,28 @@ test_conversion_euler_quaternion()
 {
     const float epsilon = 0.1f;
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  0.f));
+    //assert(reciprocal_euler(epsilon, 90.f, 0.f,  0.f));
+    //assert(reciprocal_euler(epsilon, 0.f,  90.f, 0.f));
+    //assert(reciprocal_euler(epsilon, 0.f,  0.f,  90.f));
+    //assert(reciprocal_euler(epsilon, 90.f, 90.f, 00.f));
+    //assert(reciprocal_euler(epsilon, 90.f,  0.f, 90.f));
+    //assert(reciprocal_euler(epsilon, 0.f,  90.f, 90.f));
+    //assert(reciprocal_euler(epsilon, 90.f, 90.f, 90.f));
     assert(reciprocal_euler(epsilon, 45.f, 0.f,  0.f));
     assert(reciprocal_euler(epsilon, 0.f,  45.f, 0.f));
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  45.f));
     assert(reciprocal_euler(epsilon, 45.f, 45.f, 0.f));
+
+    assert(reciprocal_euler(epsilon, 0.f,  0.f,  10.f));
+    assert(reciprocal_euler(epsilon, 0.f,  0.f,  20.f));
+    assert(reciprocal_euler(epsilon, 0.f,  0.f,  30.f));
+    assert(reciprocal_euler(epsilon, 0.f,  0.f,  40.f));
+    assert(reciprocal_euler(epsilon, 0.f,  0.f,  50.f));
+    assert(reciprocal_euler(epsilon, 0.f,  0.f,  60.f));
+    assert(reciprocal_euler(epsilon, 0.f,  0.f,  70.f));
+    assert(reciprocal_euler(epsilon, 0.f,  0.f,  80.f));
+    assert(reciprocal_euler(epsilon, 0.f,  0.f,  90.f));
+
     assert(reciprocal_euler(epsilon, 0.f,  45.f, 45.f));
     assert(reciprocal_euler(epsilon, 45.f, 45.f, 45.f));
 }
