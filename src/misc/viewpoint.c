@@ -39,103 +39,91 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
     // if the quaternion is normalised, unit is one
     // otherwise it is correction factor
     float unit = sqx + sqy + sqz + sqw;
-    float test = q[0] * q[1] + q[2] * q[3];
+    float test = q[1] * q[3] - q[0] * q[2];
 
     if (test > 0.499 * unit)
     {
         // singularity at north pole
-        *yaw = 2 * atan2(q[0], q[3]);
-        *roll = M_PI / 2;
-        *pitch = 0;
+        *yaw = -2 * atan2(q[0], q[3]);
+        *pitch = M_PI / 2;
+        *roll = 0;
     }
     else if (test < -0.499 * unit)
     {
         // singularity at south pole
-        *yaw = -2 * atan2(q[0], q[3]);
-        *roll = -M_PI / 2;
-        *pitch = 0;
+        *yaw = 2 * atan2(q[0], q[3]);
+        *pitch = -M_PI / 2;
+        *roll = 0;
     }
     else
     {
-        *yaw   = atan2(2 * q[1] * q[3] - 2 * q[0] * q[2],
-                       sqx - sqy - sqz + sqw);
-        *roll  = asin(2 * test / unit);
-        *pitch = atan2(2 * q[0] * q[3] - 2 * q[1] * q[2],
-                       -sqx + sqy - sqz + sqw);
+        *yaw   = atan2(2 * (q[2] * q[3] + q[0] * q[1]),
+                       1 - 2 * (q[1]*q[1] + q[2]*q[2]));
+        *pitch = asin(2 * test / unit);
+        *roll  = atan2(2 * (q[0] * q[3] + q[1] * q[2]),
+                       1 - 2 * (q[0]*q[0] + q[1]*q[1]));
     }
 }
 
 static void EulerToQuaternion(float *q, float yaw, float pitch, float roll)
 {
-    float c_yaw     = cos(yaw / 2.f);
-    float c_pitch   = cos(pitch / 2.f);
-    float c_roll    = cos(roll / 2.f);
-    float s_yaw     = sin(yaw / 2.f);
-    float s_pitch   = sin(pitch / 2.f);
-    float s_roll    = sin(roll / 2.f);
+    const float c_yaw   = cos(yaw / 2.f);
+    const float s_yaw   = sin(yaw / 2.f);
+    const float c_pitch = cos(pitch / 2.f);
+    const float s_pitch = sin(pitch / 2.f);
+    const float c_roll  = cos(roll / 2.f);
+    const float s_roll  = sin(roll / 2.f);
 
-    q[0] = c_yaw * c_pitch * c_roll + s_yaw * s_pitch * s_roll;
-    q[1] = c_yaw * c_pitch * s_roll - s_yaw * s_pitch * c_roll;
-    q[2] = s_yaw * c_pitch * s_roll + c_yaw * s_pitch * c_roll;
-    q[3] = s_yaw * c_pitch * c_roll - c_yaw * s_pitch * s_roll;
+    q[0] = c_yaw * c_pitch * s_roll - s_yaw * s_pitch * c_roll;
+    q[1] = c_yaw * s_pitch * c_roll + s_yaw * c_pitch * s_roll;
+    q[2] = s_yaw * c_pitch * c_roll - c_yaw * s_pitch * s_roll;
+    q[3] = c_yaw * c_pitch * c_roll + s_yaw * s_pitch * s_roll;
 }
 
 void vlc_viewpoint_to_4x4( const vlc_viewpoint_t *vp, float *m )
 {
-    float yaw   = vp->yaw   * (float)M_PI / 180.f + (float)M_PI_2;
-    float pitch = vp->pitch * (float)M_PI / 180.f;
-    float roll  = vp->roll  * (float)M_PI / 180.f;
+    /* The quaternion must be normalized */
+    const float *q = vp->quat;
 
-    float s, c;
+    /* The quaternion is the opposite rotation of the view.
+     * We need to inverse the matrix at the same time. */
+    m[0] = 1 - 2 * (q[1]*q[1] + q[2]*q[2]);
+    m[4] = 2 * (q[0]*q[1] + q[2]*q[3]);
+    m[8] = 2 * (q[0]*q[2] - q[1]*q[3]);
+    m[3] = 0;
 
-    s = sinf(pitch);
-    c = cosf(pitch);
-    const float x_rot[4][4] = {
-        { 1.f,    0.f,    0.f,    0.f },
-        { 0.f,    c,      -s,      0.f },
-        { 0.f,    s,      c,      0.f },
-        { 0.f,    0.f,    0.f,    1.f } };
+    m[1] = 2 * (q[0]*q[1] - q[2]*q[3]);
+    m[5] = 1 - 2 * (q[0]*q[0] + q[2]*q[2]);
+    m[9] = 2 * (q[1]*q[2] + q[0]*q[3]);
+    m[7] = 0;
 
-    s = sinf(yaw);
-    c = cosf(yaw);
-    const float y_rot[4][4] = {
-        { c,      0.f,    s,     0.f },
-        { 0.f,    1.f,    0.f,    0.f },
-        { -s,      0.f,    c,      0.f },
-        { 0.f,    0.f,    0.f,    1.f } };
+    m[2] = 2 * (q[0]*q[2] + q[1]*q[3]);
+    m[6] = 2 * (q[1]*q[2] - q[0]*q[3]);
+    m[10] = 1 - 2*(q[0]*q[0] + q[1]*q[1]);
+    m[11] = 0;
 
-    s = sinf(roll);
-    c = cosf(roll);
-    const float z_rot[4][4] = {
-        { c,      s,      0.f,    0.f },
-        { -s,     c,      0.f,    0.f },
-        { 0.f,    0.f,    1.f,    0.f },
-        { 0.f,    0.f,    0.f,    1.f } };
-
-    /**
-     * Column-major matrix multiplication mathematically equal to
-     * z_rot * x_rot * y_rot
-     */
-    memset(m, 0, 16 * sizeof(float));
-    for (int i=0; i<4; ++i)
-        for (int j=0; j<4; ++j)
-            for (int k=0; k<4; ++k)
-                for (int l=0; l<4; ++l)
-                    m[4*i+l] += y_rot[i][j] * x_rot[j][k] * z_rot[k][l];
+    m[12] = m[13] = m[14] = 0;
+    m[15] = 1;
 }
 
 void vlc_viewpoint_from_euler(vlc_viewpoint_t *vp,
                               float yaw, float pitch, float roll)
 {
-    vp->yaw   = yaw;
-    vp->pitch = pitch;
-    vp->roll  = roll;
+    /* convert angles from degrees into radians */
+    yaw   *=  -(float)M_PI / 180.f;
+    pitch *=  -(float)M_PI / 180.f;
+    roll  *=   (float)M_PI / 180.f;
+
+    EulerToQuaternion(vp->quat, yaw, pitch, roll);
 }
 
 void vlc_viewpoint_to_euler(const vlc_viewpoint_t *vp,
                             float *yaw, float *pitch, float *roll)
 {
-    *yaw   = vp->yaw;
-    *pitch = vp->pitch;
-    *roll  = vp->roll;
+    QuaternionToEuler(yaw, pitch, roll, vp->quat);
+
+    /* convert angles from radian into degrees */
+    *yaw   *= -180.f / (float)M_PI;
+    *pitch *= -180.f / (float)M_PI;
+    *roll  *=  180.f / (float)M_PI;
 }
