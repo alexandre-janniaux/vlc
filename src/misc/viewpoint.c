@@ -25,6 +25,30 @@
 #endif
 
 #include <vlc_viewpoint.h>
+#include <stdio.h>
+
+static void multiplyQuat(float *dst, const float *left, const float *right)
+{
+    dst[3] = left[3] * right[3] /* w * w terms */
+           - left[0] * right[0] /* other paired terms */
+           - left[1] * right[1]
+           - left[2] * right[2];
+
+    dst[0] = left[3] * right[0] /* w * i terms */
+           + left[0] * right[3]
+           + left[1] * right[2] /* j * k terms */
+           - left[2] * right[1];
+
+    dst[1] = left[3] * right[1] /* w * j terms */
+           + left[1] * right[3]
+           + left[2] * right[0] /* i * k terms */
+           - left[0] * right[2];
+
+    dst[2] = left[3] * right[2] /* w * k terms */
+           + left[2] * right[3]
+           + left[0] * right[1] /* i * j terms */
+           - left[1] * right[0];
+}
 
 /* Quaternion to/from Euler conversion.
  * Original code from:
