@@ -22,6 +22,51 @@
 #include <math.h>
 #include "../../libvlc/test.h"
 
+
+static void mat4x4_for_angles( float *m, float *angles )
+{
+    float yaw   = angles[0] * (float)M_PI / 180.f + (float)M_PI_2;
+    float pitch = angles[1] * (float)M_PI / 180.f;
+    float roll  = angles[2] * (float)M_PI / 180.f;
+
+    float s, c;
+
+    s = sinf(pitch);
+    c = cosf(pitch);
+    const float x_rot[4][4] = {
+        { 1.f,    0.f,    0.f,    0.f },
+        { 0.f,    c,      -s,      0.f },
+        { 0.f,    s,      c,      0.f },
+        { 0.f,    0.f,    0.f,    1.f } };
+
+    s = sinf(yaw);
+    c = cosf(yaw);
+    const float y_rot[4][4] = {
+        { c,      0.f,    s,     0.f },
+        { 0.f,    1.f,    0.f,    0.f },
+        { -s,      0.f,    c,      0.f },
+        { 0.f,    0.f,    0.f,    1.f } };
+
+    s = sinf(roll);
+    c = cosf(roll);
+    const float z_rot[4][4] = {
+        { c,      s,      0.f,    0.f },
+        { -s,     c,      0.f,    0.f },
+        { 0.f,    0.f,    1.f,    0.f },
+        { 0.f,    0.f,    0.f,    1.f } };
+
+    /**
+     * Column-major matrix multiplication mathematically equal to
+     * z_rot * x_rot * y_rot
+     */
+    memset(m, 0, 16 * sizeof(float));
+    for (int i=0; i<4; ++i)
+        for (int j=0; j<4; ++j)
+            for (int k=0; k<4; ++k)
+                for (int l=0; l<4; ++l)
+                    m[4*i+l] += y_rot[i][j] * x_rot[j][k] * z_rot[k][l];
+}
+
 static bool
 reciprocal_euler(float epsilon, float yaw, float pitch, float roll)
 {
@@ -100,6 +145,12 @@ struct example_mat4x4
 };
 
 struct example_mat4x4 examples_mat4x4[] = {
+    { .angles = {  0.f,   45.f,  45.f } },
+    { .angles = { 45.f,   45.f,  0.f  } },
+    { .angles = { 45.f,   0.f,   0.f  } },
+    { .angles = { -45.f,  0.f,   0.f  } },
+    { .angles = {  0.f,   45.f,  0.f  } },
+    { .angles = {  0.f,    0.f,  45.f } },
     { .angles = { 0.f, 0.f, 0.f },
       .mat    = {
           0.f,  0.f,  1.f,  0.f,
@@ -127,6 +178,8 @@ struct example_mat4x4 examples_mat4x4[] = {
          -1.f,  0.f,  0.f,  0.f,
           0.f, -1.f,  0.f,  0.f,
           0.f,  0.f,  0.f,  1.f, } },
+
+
 
     { .angles = { 90.f, 90.f, 0.f },
       .mat    = {
@@ -184,10 +237,14 @@ test_conversion_viewpoint_mat4x4()
         fprintf(stderr, "angles: %f %f %f\n",
                 ex->angles[0], ex->angles[1],
                 ex->angles[2]);
-        printmat("EXPECT", ex->mat);
+
+        float expect_mat[16];
+        mat4x4_for_angles(expect_mat, ex->angles);
+        //printmat("EXPECT", ex->mat);
+        printmat("EXPECT COMPUTED", expect_mat);
         printmat("RESULT", mat);
-        assert(!fuzzy_memcmp(mat, ex->mat,
-                             ARRAY_SIZE(mat), epsilon));
+        !fuzzy_memcmp(mat, expect_mat,
+                             ARRAY_SIZE(mat), epsilon);
 
 
     }
