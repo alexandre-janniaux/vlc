@@ -82,10 +82,10 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
     else
     {
         *yaw   = atan2(2 * (q[2] * q[3] + q[0] * q[1]),
-                       1 - 2 * (q[1]*q[1] + q[2]*q[2]));
+                       unit - 2 * (q[1]*q[1] + q[2]*q[2]));
         *pitch = asin(2 * test / unit);
         *roll  = atan2(2 * (q[0] * q[3] + q[1] * q[2]),
-                       1 - 2 * (q[0]*q[0] + q[1]*q[1]));
+                       unit - 2 * (q[0]*q[0] + q[1]*q[1]));
     }
 }
 
