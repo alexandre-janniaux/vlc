@@ -42,8 +42,8 @@ reciprocal_euler(float epsilon, float yaw, float pitch, float roll)
 
     /* Check the two borders of the tore, 0.f and 180.f or 360.f
      * depending on the range of the compared value. */
-    return (d1 < epsilon || fabs(d1 - 360.f) < epsilon) &&
-           (d2 < epsilon || fabs(d2 - 180.f) < epsilon) &&
+    return (d1 < epsilon || fabs(d1 - 180.f) < epsilon) &&
+           (d2 < epsilon || fabs(d2 - 360.f) < epsilon) &&
            (d3 < epsilon || fabs(d3 - 360.f) < epsilon);
 }
 
