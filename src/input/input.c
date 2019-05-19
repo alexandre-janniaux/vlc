@@ -2086,6 +2086,9 @@ static bool Control( input_thread_t *p_input,
                                        &previous[1], &previous[2]);
                 vlc_viewpoint_to_euler(&param.viewpoint, &update[0],
                                        &update[1], &update[2]);
+                fprintf(stderr, "UPDATE VIEWPOINT: %f %f %f => + %f %f %f\n",
+                        previous[0], previous[1], previous[2],
+                        update[0], update[1], update[2]);
                 vlc_viewpoint_from_euler(&priv->viewpoint,
                                          previous[0] + update[0],
                                          previous[1] + update[1],
