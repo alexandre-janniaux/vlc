@@ -2187,6 +2187,9 @@ Open(vlc_object_t *obj)
     vfmt->i_width = vfmt->i_visible_width + padding_x;
     vfmt->i_height = vfmt->i_visible_height + padding_y;
 
+    // TODO: change according to input format
+    vfmt->i_chroma = VLC_CODEC_NV12_RAVU_PASS1;
+
     sys->width = w;
     sys->height = h;
     filter->pf_video_filter = Filter;
