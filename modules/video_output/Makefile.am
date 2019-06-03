@@ -94,6 +94,7 @@ if HAVE_WIN32
 libgl_plugin_la_CFLAGS += -DHAVE_GL_CORE_SYMBOLS
 libgl_plugin_la_LIBADD += $(GL_LIBS)
 endif
+endif
 
 libglinterop_vaapi_plugin_la_SOURCES = video_output/opengl/interop_vaapi.c \
 	video_output/opengl/interop.h \
