@@ -351,6 +351,9 @@ int vlc_placebo_PlaneData(const picture_t *pic, struct pl_plane_data data[4],
 
 bool vlc_placebo_FormatSupported(const struct pl_gpu *gpu, vlc_fourcc_t fcc)
 {
+    if (fcc == VLC_CODEC_NV12_RAVU_PASS1)
+        return true;
+
     const struct fmt_desc *desc = FindDesc(fcc);
     if (!desc)
         return false;
