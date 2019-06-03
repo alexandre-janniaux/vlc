@@ -157,6 +157,7 @@ endif
 if HAVE_ANDROID
 vout_LTLIBRARIES += libvk_android_plugin.la
 endif
+endif
 
 ### XCB ###
 libvlc_xcb_events_la_SOURCES = \
