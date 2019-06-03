@@ -639,6 +639,10 @@
 /* MPEG-I/II layer 3 audio */
 #define VLC_CODEC_MP3       VLC_FOURCC('m','p','3',' ')
 
+#define VLC_CODEC_YUV_PLANAR_420_RAVU_PASS1 VLC_FOURCC('r','p','2','0')
+#define VLC_CODEC_YUV_PLANAR_422_RAVU_PASS1 VLC_FOURCC('r','p','2','2')
+#define VLC_CODEC_NV12_RAVU_PASS1 VLC_FOURCC('r','p','n','v')
+
 /**
  * It returns the codec associated to a fourcc within an ES category.
  *
