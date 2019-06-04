@@ -249,7 +249,7 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
         ravu_data[0].width = pic->format.i_visible_width;
         ravu_data[0].height = pic->format.i_visible_height;
         ravu_data[0].row_stride = pic->ravu_passes[0].i_pitch;
-        ravu_data[0].type = PL_TYPE_UNORM;
+        ravu_data[0].type = PL_FMT_UNORM;
         ravu_data[0].pixel_stride = 1;
         ravu_data[0].component_size[0] = 8;
         ravu_data[0].pixels = pic->ravu_passes[0].p_pixels;
