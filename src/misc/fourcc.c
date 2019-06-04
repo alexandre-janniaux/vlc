@@ -564,6 +564,7 @@ static const vlc_fourcc_t p_list_YUV[] = {
     VLC_CODEC_NVDEC_OPAQUE_16B,
     VLC_CODEC_NVDEC_OPAQUE_444,
     VLC_CODEC_NVDEC_OPAQUE_444_16B,
+    VLC_CODEC_YUV_PLANAR_420_RAVU_PASS1,
     0,
 };
 
@@ -840,7 +841,7 @@ static const struct
     { { VLC_CODEC_VAAPI_420, VLC_CODEC_VAAPI_420_10BPP },
                                                FAKE_FMT() },
 
-    { { 0 },                                   FAKE_FMT() }
+    { { 0 },                                   FAKE_FMT() },
 };
 
 #undef PACKED_FMT

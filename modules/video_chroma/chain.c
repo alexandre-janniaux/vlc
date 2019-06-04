@@ -74,6 +74,7 @@ static void EsFormatMergeSize( es_format_t *p_dst,
     VLC_CODEC_I420_16L \
 
 static const vlc_fourcc_t pi_allowed_chromas_yuv[] = {
+    VLC_CODEC_YUV_PLANAR_420_RAVU_PASS1,
     VLC_CODEC_I420,
     VLC_CODEC_I422,
     ALLOWED_CHROMAS_YUV10,
@@ -138,7 +139,7 @@ static picture_t *BufferChainNew( filter_t *p_filter )
     return filter_NewPicture( p_chain_parent );
 }
 
-#define CHAIN_LEVEL_MAX 2
+#define CHAIN_LEVEL_MAX 3
 
 static vlc_decoder_device * HoldChainDecoderDevice(vlc_object_t *o, void *sys)
 {
@@ -577,4 +578,3 @@ static void EsFormatMergeSize( es_format_t *p_dst,
     p_dst->video.i_sar_num = p_size->video.i_sar_num;
     p_dst->video.i_sar_den = p_size->video.i_sar_den;
 }
-
