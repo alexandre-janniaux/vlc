@@ -379,10 +379,14 @@ void picture_CopyProperties( picture_t *p_dst, const picture_t *p_src )
     p_dst->b_progressive = p_src->b_progressive;
     p_dst->i_nb_fields = p_src->i_nb_fields;
     p_dst->b_top_field_first = p_src->b_top_field_first;
+
+    p_dst->i_ravu_passes = p_src->i_ravu_passes;
+    memcpy(p_dst->ravu_passes, p_src->ravu_passes, sizeof(p_dst->ravu_passes));
 }
 
 void picture_CopyPixels( picture_t *p_dst, const picture_t *p_src )
 {
+
     for( int i = 0; i < p_src->i_planes ; i++ )
         plane_CopyPixels( p_dst->p+i, p_src->p+i );
 
@@ -427,6 +431,8 @@ picture_t *picture_Clone(picture_t *picture)
         if (picture->context != NULL)
             clone->context = picture->context->copy(picture->context);
     }
+    clone->i_ravu_passes = picture->i_ravu_passes;
+    memcpy(clone->ravu_passes, picture->ravu_passes, sizeof(clone->ravu_passes));
     return clone;
 }
 

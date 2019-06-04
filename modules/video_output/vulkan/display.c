@@ -388,30 +388,27 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
                                       &plane->shift_y);
     }
 
-    switch (vd->source.i_chroma)
-    {
-    case VLC_CODEC_NV12_RAVU_PASS1:
-    {
+    if (pic->i_ravu_passes > 0) {
         img.num_ravu_passes = 1;
         struct pl_plane_data ravu_data[3];
         memset(ravu_data, 0, sizeof(ravu_data));
         struct pl_plane *ravu_plane = &img.ravu_passes[0];
-        ravu_data[0].width = pic->format.i_visible_width * 2;
-        ravu_data[0].height = pic->format.i_visible_height * 2;
-        ravu_data[0].row_stride = pic->p[3].i_pitch;
-        ravu_data[0].pixels = pic->p[3].p_pixels;
-        if (!pl_upload_plane(gpu, ravu_plane, &img.ravu_passes[0], &ravu_data[0])) {
+
+        ravu_data[0].width = pic->format.i_visible_width;
+        ravu_data[0].height = pic->format.i_visible_height;
+        ravu_data[0].row_stride = pic->ravu_passes[0].i_pitch;
+        ravu_data[0].type = PL_TYPE_UNORM;
+        ravu_data[0].pixel_stride = 1;
+        ravu_data[0].component_size[0] = 8;
+        ravu_data[0].pixels = pic->ravu_passes[0].p_pixels;
+        ravu_data[0].buf = NULL;
+        if (!pl_upload_plane(gpu, ravu_plane, &img.ravu_passes[0].texture, &ravu_data[0])) {
             msg_Err(vd, "Failed uploading ravu pass image data!");
             failed = true;
             goto done;
         }
-        break;
     }
-    default:
-        img.num_ravu_passes = 0;
-        break;
-    }
-
+    else img.num_ravu_passes = 0;
 
     // If this was a mapped buffer, mark it as in use by the GPU
     if (picsys) {
