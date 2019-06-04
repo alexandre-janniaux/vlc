@@ -74,7 +74,6 @@ static void EsFormatMergeSize( es_format_t *p_dst,
     VLC_CODEC_I420_16L \
 
 static const vlc_fourcc_t pi_allowed_chromas_yuv[] = {
-    VLC_CODEC_YUV_PLANAR_420_RAVU_PASS1,
     VLC_CODEC_I420,
     VLC_CODEC_I422,
     ALLOWED_CHROMAS_YUV10,
