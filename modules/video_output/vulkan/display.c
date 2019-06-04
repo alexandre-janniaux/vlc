@@ -243,7 +243,7 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
     {
     case VLC_CODEC_NV12_RAVU_PASS1:
     {
-        img.ravu_passes = 1;
+        img.num_ravu_passes = 1;
         struct pl_plane_data ravu_data[3];
         memset(ravu_data, 0, sizeof(ravu_data));
         struct pl_plane *ravu_plane = &img.ravu_passes[0];
@@ -259,7 +259,7 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
         break;
     }
     default:
-        img.ravu_passes = 0;
+        img.num_ravu_passes = 0;
         break;
     }
 
