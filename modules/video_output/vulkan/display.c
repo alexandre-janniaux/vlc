@@ -166,8 +166,7 @@ static void Close(vout_display_t *vd)
 
     for (int i = 0; i < 4; i++)
         pl_tex_destroy(gpu, &sys->plane_tex[i]);
-    for (int i = 0; i < 1; ++i)
-        pl_tex_destroy(gpu, &sys->pass_texture);
+    //pl_tex_destroy(gpu, &sys->pass_texture);
     for (int i = 0; i < sys->num_overlays; i++)
         pl_tex_destroy(gpu, &sys->overlay_tex[i]);
 
