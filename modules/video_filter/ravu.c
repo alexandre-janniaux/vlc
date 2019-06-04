@@ -1970,7 +1970,9 @@ Filter(filter_t *filter, picture_t *ipic)
         opic->i_ravu_passes = 1;
         opic->ravu_passes[0].p_pixels = sys->pass_0[sys->current_pass_0] + 3 * sys->stride + 2;
         opic->ravu_passes[0].i_lines = h;
-        opic->ravu_passes[0].i_pitch = w;
+        opic->ravu_passes[0].i_pitch = stride;
+        opic->ravu_passes[0].i_visible_pitch = w;
+        opic->ravu_passes[0].i_visible_lines = h;
         opic->ravu_passes[0].i_pixel_pitch = 1;
 
         opic->ravu_passes[1].p_pixels = sys->pass_1[sys->current_pass_1];
