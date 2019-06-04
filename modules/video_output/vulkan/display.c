@@ -45,6 +45,7 @@ struct vout_display_sys_t
 {
     vlc_vk_t *vk;
     const struct pl_tex *plane_tex[4];
+    const struct pl_tex *pass_texture;
     struct pl_renderer *renderer;
     picture_pool_t *pool;
     bool pool_dr;
@@ -175,6 +176,8 @@ static void Close(vout_display_t *vd)
 
     for (int i = 0; i < 4; i++)
         pl_tex_destroy(gpu, &sys->plane_tex[i]);
+    for (int i = 0; i < 1; ++i)
+        pl_tex_destroy(gpu, &sys->pass_texture);
     for (int i = 0; i < sys->num_overlays; i++)
         pl_tex_destroy(gpu, &sys->overlay_tex[i]);
 
@@ -402,11 +405,12 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
         ravu_data[0].component_size[0] = 8;
         ravu_data[0].pixels = pic->ravu_passes[0].p_pixels;
         ravu_data[0].buf = NULL;
-        if (!pl_upload_plane(gpu, ravu_plane, &img.ravu_passes[0].texture, &ravu_data[0])) {
+        if (!pl_upload_plane(gpu, ravu_plane, &sys->pass_texture, &ravu_data[0])) {
             msg_Err(vd, "Failed uploading ravu pass image data!");
             failed = true;
             goto done;
         }
+        img.ravu_passes[0].texture = sys->pass_texture;
     }
     else img.num_ravu_passes = 0;
 
