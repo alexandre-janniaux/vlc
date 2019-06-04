@@ -16,15 +16,16 @@
 
 #define ENABLE_BENCH 0
 #define NUM_THREADS 8
+#define MAX_PASS_STORAGE 15
 
 #define ROUND2(x, n) (((x) + (1LL << ((n) - 1))) >> (n))
 
 struct filter_sys
 {
     uint8_t *input;
-    uint8_t *pass_0;
-    uint8_t *pass_1;
-    uint8_t *pass_2;
+    uint8_t *pass_0[MAX_PASS_STORAGE];
+    uint8_t *pass_1[MAX_PASS_STORAGE];
+    uint8_t *pass_2[MAX_PASS_STORAGE];
     int16_t *weights;
     int16_t *shuf_weights;
 
@@ -36,6 +37,9 @@ struct filter_sys
     struct timeval *tv_delta;
     size_t num_tv_delta;
 #endif
+    int current_pass_0;
+    int current_pass_1;
+    int current_pass_2;
 };
 
 struct vec3f  { float   a; float   b; float   c;            };
@@ -1953,20 +1957,45 @@ Filter(filter_t *filter, picture_t *ipic)
 {
     struct filter_sys *sys = (struct filter_sys *)filter->p_sys;
 
+    unsigned const w = filter->fmt_in.video.i_visible_width;
+    unsigned const h = filter->fmt_in.video.i_visible_height;
+    unsigned const extw = w + 5;
+    unsigned const exth = h + 5;
+    ptrdiff_t const stride = ((extw + 31) & ~31);
+
     picture_t *opic = filter_NewPicture(filter);
-    if (!opic)
-        return NULL;
     picture_CopyProperties(opic, ipic);
+    if (opic->i_ravu_passes == 0)
+    {
+        opic->i_ravu_passes = 1;
+        opic->ravu_passes[0].p_pixels = sys->pass_0[sys->current_pass_0] + 3 * sys->stride + 2;
+        opic->ravu_passes[0].i_lines = h;
+        opic->ravu_passes[0].i_pitch = w;
+        opic->ravu_passes[0].i_pixel_pitch = 1;
+
+        opic->ravu_passes[1].p_pixels = sys->pass_1[sys->current_pass_1];
+        opic->ravu_passes[1].i_lines = h;
+        opic->ravu_passes[1].i_pitch = w;
+        opic->ravu_passes[1].i_pixel_pitch = 1;
+
+        opic->ravu_passes[1].p_pixels = sys->pass_2[sys->current_pass_2];
+        opic->ravu_passes[1].i_lines = h;
+        opic->ravu_passes[1].i_pitch = w;
+        opic->ravu_passes[1].i_pixel_pitch = 1;
+
+    }
 
     uint8_t *input  = sys->input + 3 * sys->stride + 2;
-    uint8_t *pass_0 = sys->pass_0 + 3 * sys->stride + 2;
-    uint8_t *pass_1 = sys->pass_1;
-    uint8_t *pass_2 = sys->pass_2;
+    uint8_t *pass_0 = sys->pass_0[sys->current_pass_0] + 3 * sys->stride + 2;
+    uint8_t *pass_1 = sys->pass_1[sys->current_pass_1];
+    uint8_t *pass_2 = sys->pass_2[sys->current_pass_2];
 
 #if ENABLE_BENCH
     struct timeval tv_start;
     gettimeofday(&tv_start, NULL);
 #endif
+    if (!opic || !opic->ravu_passes[0].p_pixels)
+        return NULL;
 
     Filter_prepare(sys->input, ipic->Y_PIXELS,
                    sys->width, sys->height,
@@ -1979,8 +2008,23 @@ Filter(filter_t *filter, picture_t *ipic)
                             sys->width, sys->height, sys->stride))
         goto error;
 
-    Filter_pass_final(opic->Y_PIXELS, input, pass_0, pass_1, pass_2,
-                      sys->width, sys->height, sys->stride, opic->Y_PITCH);
+    // TODO: return previous image
+    //Filter_pass_final(opic->Y_PIXELS, input, pass_0, pass_1, pass_2,
+    //                  sys->width, sys->height, sys->stride, opic->Y_PITCH);
+
+    sys->current_pass_0 = (sys->current_pass_0+1) % MAX_PASS_STORAGE;
+    sys->current_pass_1 = (sys->current_pass_1+1) % MAX_PASS_STORAGE;
+    sys->current_pass_2 = (sys->current_pass_2+1) % MAX_PASS_STORAGE;
+
+    for (unsigned i = 0; i < sys->height; ++i)
+        memcpy(opic->Y_PIXELS + i * opic->Y_PITCH,
+               ipic->Y_PIXELS + i * ipic->Y_PITCH,
+               sys->width);
+
+    //for (unsigned i = 0; i < sys->height; ++i)
+    //    memcpy(opic->Y_PIXELS + i * opic->Y_PITCH,
+    //           opic->ravu_passes[0].p_pixels + i * sys->stride,
+    //           sys->width);
 
 #if 0
     msg_Warn(filter, "nearest neighbor chroma upscaling");
@@ -2055,9 +2099,12 @@ Close(vlc_object_t *obj)
 #endif
     free(sys->shuf_weights);
     free(sys->weights);
-    free(sys->pass_2);
-    free(sys->pass_1);
-    free(sys->pass_0);
+    for (int i=0; i< MAX_PASS_STORAGE; ++i)
+    {
+        free(sys->pass_0[i]);
+        free(sys->pass_1[i]);
+        free(sys->pass_2[i]);
+    }
     free(sys->input);
     free(sys);
     var_Destroy(filter, "scale");
@@ -2087,6 +2134,8 @@ Open(vlc_object_t *obj)
         goto error;
     filter->p_sys = sys;
 
+    sys->current_pass_0 = 0;
+
     int ret = VLC_SUCCESS;
 
     unsigned const scale_factor = var_CreateGetFloat(filter, "scale");
@@ -2096,9 +2145,12 @@ Open(vlc_object_t *obj)
     ptrdiff_t const stride = ((w + 5 + 31) & ~31);
 
     sys->input  = malloc(exth * stride); if (!sys->input)  goto error;
-    sys->pass_0 = malloc(exth * stride); if (!sys->pass_0) goto error;
-    sys->pass_1 = malloc(h * stride);    if (!sys->pass_1) goto error;
-    sys->pass_2 = malloc(h * stride);    if (!sys->pass_2) goto error;
+    for (int i=0; i<MAX_PASS_STORAGE; ++i)
+    {
+        sys->pass_0[i] = malloc(exth * stride); if (!sys->pass_0) goto error;
+	sys->pass_1[i] = malloc(h * stride);    if (!sys->pass_1[i]) goto error;
+	sys->pass_2[i] = malloc(h * stride);    if (!sys->pass_2[i]) goto error;
+    }
     sys->weights = malloc(18 * stride * h * sizeof(int16_t)); if (!sys->weights) goto error;
     sys->shuf_weights = malloc(18 * stride * h * sizeof(int16_t)); if (!sys->shuf_weights) goto error;
 
