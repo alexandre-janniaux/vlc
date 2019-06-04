@@ -138,7 +138,7 @@ static picture_t *BufferChainNew( filter_t *p_filter )
     return filter_NewPicture( p_chain_parent );
 }
 
-#define CHAIN_LEVEL_MAX 3
+#define CHAIN_LEVEL_MAX 2
 
 static vlc_decoder_device * HoldChainDecoderDevice(vlc_object_t *o, void *sys)
 {
