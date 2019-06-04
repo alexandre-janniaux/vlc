@@ -396,8 +396,8 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
         memset(ravu_data, 0, sizeof(ravu_data));
         struct pl_plane *ravu_plane = &img.ravu_passes[0];
 
-        ravu_data[0].width = pic->format.i_visible_width;
-        ravu_data[0].height = pic->format.i_visible_height;
+        ravu_data[0].width = pic->ravu_passes[0].i_visible_pitch;
+        ravu_data[0].height = pic->ravu_passes[0].i_visible_lines;
         ravu_data[0].row_stride = pic->ravu_passes[0].i_pitch;
         ravu_data[0].type = PL_FMT_UNORM;
         ravu_data[0].pixel_stride = 1;
