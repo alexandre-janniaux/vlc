@@ -137,7 +137,7 @@ static picture_t *BufferNew( filter_t *p_filter )
     return filter_NewPicture( p_parent );
 }
 
-#define CHAIN_LEVEL_MAX 3
+#define CHAIN_LEVEL_MAX 2
 
 static const struct filter_video_callbacks filter_video_chain_cbs =
 {
