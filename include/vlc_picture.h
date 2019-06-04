@@ -98,6 +98,9 @@ struct picture_t
     plane_t         p[PICTURE_PLANE_MAX];     /**< description of the planes */
     int             i_planes;                /**< number of allocated planes */
 
+    plane_t         ravu_passes[3];
+    int             i_ravu_passes;
+
     /** \name Picture management properties
      * These properties can be modified using the video output thread API,
      * but should never be written directly */

@@ -375,6 +375,7 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
 
     for (int i = 0; i < pic->i_planes; i++) {
         struct pl_plane *plane = &img.planes[i];
+
         if (!pl_upload_plane(gpu, plane, &sys->plane_tex[i], &data[i])) {
             msg_Err(vd, "Failed uploading image data!");
             failed = true;

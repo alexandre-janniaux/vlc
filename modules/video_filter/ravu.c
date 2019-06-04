@@ -12,6 +12,7 @@
 #include <vlc_filter.h>
 #include <vlc_picture.h>
 #include <vlc_plugin.h>
+#include <vlc_fourcc.h>
 
 struct filter_sys
 {
@@ -1518,6 +1519,12 @@ Open(vlc_object_t *obj)
 {
     filter_t *filter = (filter_t *)obj;
 
+    //if (filter->fmt_in.video.i_chroma != VLC_CODEC_YUV_PLANAR_420_RAVU_PASS1)
+    //{
+    //    msg_Err(filter, "Unsupported chroma (%4.4s)", (char *)&filter->fmt_in.video.i_chroma);
+    //    return VLC_EGENERIC;
+    //}
+
     vlc_fourcc_t fourcc = filter->fmt_in.video.i_chroma;
     vlc_chroma_description_t const *p_chroma = vlc_fourcc_GetChromaDescription(fourcc);
     if (p_chroma == NULL || p_chroma->pixel_size != 1)
@@ -1543,6 +1550,7 @@ Open(vlc_object_t *obj)
     sys->pass_0 = malloc(h * stride); if (!sys->pass_0) goto error;
     sys->weights = malloc(18 * stride * h * sizeof(int16_t)); if (!sys->weights) goto error;
     sys->shuf_weights = malloc(18 * stride * h * sizeof(int16_t)); if (!sys->shuf_weights) goto error;
+
     sys->width = w;
     sys->height = h;
     sys->stride = stride;
@@ -1557,6 +1565,42 @@ ret:
     return ret;
 }
 
+static picture_t *ConverterFilter(filter_t *filter, picture_t *pic)
+{
+    // TODO picture_Hold ?
+    picture_t *clone = picture_Clone(pic);
+    return clone;
+}
+
+static int
+OpenConverter(vlc_object_t *obj)
+{
+    filter_t *filter = (filter_t *)obj;
+
+    switch (filter->fmt_out.video.i_chroma)
+    {
+        case VLC_CODEC_YUV_PLANAR_420_RAVU_PASS1:
+            if (filter->fmt_in.video.i_chroma != VLC_CODEC_I420)
+            {
+                msg_Err(filter, "Can't convert %4.4s to ravu format", (char*)&filter->fmt_in.video.i_chroma);
+                return -1;
+            }
+        default:
+            return -1;
+    }
+
+    filter->pf_video_filter = ConverterFilter;
+
+    return 0;
+
+}
+
+static void
+CloseConverter(vlc_object_t *obj)
+{
+    filter_t *filter = (filter_t *)obj;
+}
+
 vlc_module_begin()
     set_description(N_("Smart upscaler"))
     set_shortname(N_("RAVU"))
@@ -1565,4 +1609,10 @@ vlc_module_begin()
     set_capability("video filter", 200)
     add_shortcut("ravu")
     set_callbacks(Open, Close)
+
+    add_submodule ()
+        set_capability("video converter", 100)
+        set_callbacks(OpenConverter, CloseConverter)
+        add_shortcut("ravu converter")
+
 vlc_module_end()
