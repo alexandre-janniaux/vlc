@@ -121,7 +121,8 @@ vlc_module_begin ()
         add_integer( "adaptive-maxheight", 0,
                      ADAPT_HEIGHT_TEXT, ADAPT_HEIGHT_TEXT, false )
         add_integer( "adaptive-bw",     250, ADAPT_BW_TEXT,     ADAPT_BW_LONGTEXT,     false )
-        add_bool   ( "adaptive-use-access", false, ADAPT_ACCESS_TEXT, ADAPT_ACCESS_LONGTEXT, true );
+        add_bool   ( "adaptive-use-access", false, ADAPT_ACCESS_TEXT, ADAPT_ACCESS_LONGTEXT, true )
+        add_integer( "adaptive-minbuffertime", 6, "Minimum buffertime for playlist", "Minimum buffertime for playlist", false)
         set_callbacks( Open, Close )
 vlc_module_end ()
 

@@ -87,7 +87,7 @@ void AbstractPlaylist::setMinBuffering( vlc_tick_t min )
 
 vlc_tick_t AbstractPlaylist::getMinBuffering() const
 {
-    return std::max(minBufferTime, VLC_TICK_FROM_SEC(6));
+    return std::max(minBufferTime, VLC_TICK_FROM_SEC(var_InheritInteger(p_object, "adaptive-minbuffertime")));
 }
 
 vlc_tick_t AbstractPlaylist::getMaxBuffering() const
@@ -149,5 +149,3 @@ void AbstractPlaylist::updateWith(AbstractPlaylist *updatedAbstractPlaylist)
     for(size_t i = 0; i < periods.size() && i < updatedAbstractPlaylist->periods.size(); i++)
         periods.at(i)->updateWith(updatedAbstractPlaylist->periods.at(i));
 }
-
-
