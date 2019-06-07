@@ -129,4 +129,7 @@ endif
 	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Core.pc"
 	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Gui.pc"
 	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Widgets.pc"
+	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5Core.pc")
+	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5Gui.pc")
+	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5Widgets.pc")
 	touch $@

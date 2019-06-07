@@ -32,4 +32,5 @@ qtsvg: qtsvg-everywhere-src-$(QTSVG_VERSION).tar.xz .sum-qtsvg
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Svg plugins/iconengines qsvgicon
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Svg plugins/imageformats qsvg
 	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Svg.pc"
+	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5Svg.pc")
 	touch $@
