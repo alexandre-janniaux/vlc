@@ -109,6 +109,10 @@ endif
 
 ENV_VARS := $(HOSTVARS) DXSDK_DIR=$(PREFIX)/bin
 
+QT_PC = Qt5Core.pc \
+        Qt5Gui.pc \
+        Qt5Widgets.pc
+
 .qt: qt
 	# Tell Qt we don't need it to generate useless libtool .la files
 	cd $< && sed -i "s/ create_libtool/ -create_libtool/g" mkspecs/features/qt_module.prf
@@ -133,4 +137,10 @@ ifdef HAVE_LINUX
 endif
 	# Install a qmake with correct paths set
 	cd $< && $(MAKE) sub-qmake-qmake-aux-pro-install_subtargets install_mkspecs
+
+	# Patch all pkgconfig files
+	for pc_file in $(QT_PC); do \
+		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+	done
+
 	touch $@

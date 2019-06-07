@@ -14,6 +14,8 @@ ifeq ($(call need_pkg,"Qt5QuickControls2"),)
 PKGS_FOUND += qtgraphicaleffects
 endif
 
+QTGE_PC = Qt5QuickWidgets.pc
+
 $(TARBALLS)/qtgraphicaleffects-everywhere-src-$(QTGE_VERSION).tar.xz:
 	$(call download_pkg,$(QTGE_URL),qt)
 
@@ -30,4 +32,10 @@ qtgraphicaleffects: qtgraphicaleffects-everywhere-src-$(QTGE_VERSION).tar.xz .su
 	cd $< && $(MAKE) -C src sub-effects-install_subtargets
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5QuickWidgets qml/QtGraphicalEffects qtgraphicaleffectsplugin
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5QuickWidgets qml/QtGraphicalEffects/private qtgraphicaleffectsprivate
+
+	# Patch all pkgconfig files
+	for pc_file in $(QTGE_PC); do \
+		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+	done
+
 	touch $@

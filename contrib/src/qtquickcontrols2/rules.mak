@@ -15,6 +15,8 @@ endif
 
 DEPS_qtquickcontrols2 = qtdeclarative $(DEPS_qtdeclarative)
 
+QTQC2_PC = Qt5QuickControls2.pc
+
 $(TARBALLS)/qtquickcontrols2-everywhere-src-$(QTQC2_VERSION).tar.xz:
 	$(call download_pkg,$(QTQC2_URL),qt)
 
@@ -31,4 +33,10 @@ qtquickcontrols2: qtquickcontrols2-everywhere-src-$(QTQC2_VERSION).tar.xz .sum-q
 	cd $< && $(MAKE) -C src sub-quickcontrols2-install_subtargets sub-imports-install_subtargets
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5QuickControls2 qml/QtQuick/Controls.2 qtquickcontrols2plugin
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5QuickControls2 qml/QtQuick/Templates.2 qtquicktemplates2plugin
+
+	# Patch all pkgconfig files
+	for pc_file in $(QTQC2_PC); do \
+		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+	done
+
 	touch $@

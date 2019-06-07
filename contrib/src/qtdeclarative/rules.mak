@@ -14,6 +14,11 @@ ifeq ($(call need_pkg,"Qt5Quick"),)
 PKGS_FOUND += qtdeclarative
 endif
 
+QTDECLARATIVE_PC = Qt5QuickWidgets.pc \
+                   Qt5QuickTest.pc \
+                   Qt5Quick.pc \
+                   Qt5Qml.pc
+
 $(TARBALLS)/qtdeclarative-everywhere-src-$(QTDECLARATIVE_VERSION).tar.xz:
 	$(call download_pkg,$(QTDECLARATIVE_URL),qt)
 
@@ -41,4 +46,8 @@ qtdeclarative: qtdeclarative-everywhere-src-$(QTDECLARATIVE_VERSION).tar.xz .sum
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Quick qml/QtQuick/Window.2 windowplugin
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Qml qml/QtQml/Models.2 modelsplugin
 
+	# Patch all pkgconfig files
+	for pc_file in $(QTDECLARATIVE_PC); do \
+		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+	done
 	touch $@

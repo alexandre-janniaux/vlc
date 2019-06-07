@@ -14,6 +14,8 @@ ifeq ($(call need_pkg,"Qt5Svg"),)
 PKGS_FOUND += qtsvg
 endif
 
+QTSVG_PC = Qt5Svg.pc
+
 $(TARBALLS)/qtsvg-everywhere-src-$(QTSVG_VERSION).tar.xz:
 	$(call download_pkg,$(QTSVG_URL),qt)
 
@@ -31,4 +33,10 @@ qtsvg: qtsvg-everywhere-src-$(QTSVG_VERSION).tar.xz .sum-qtsvg
 	cd $< && $(MAKE) -C src sub-plugins-install_subtargets sub-svg-install_subtargets
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Svg plugins/iconengines qsvgicon
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Svg plugins/imageformats qsvg
+
+	# Patch all pkgconfig files
+	for pc_file in $(QTSVG_PC); do \
+		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+	done
+
 	touch $@

@@ -10,6 +10,8 @@ ifeq ($(call need_pkg,"Qt5X11Extras"),)
 PKGS_FOUND += qtx11extras
 endif
 
+QTX11_PC = Qt5X11Extra.pc
+
 $(TARBALLS)/qtx11extras-$(QTX11_VERSION).tar.xz:
 	$(call download,$(QTX11_URL))
 
@@ -25,4 +27,10 @@ qtx11extras: qtx11extras-$(QTX11_VERSION).tar.xz .sum-qtx11extras
 	# Make && Install libraries
 	cd $< && $(MAKE)
 	cd $< && $(MAKE) -C src sub-x11extras-install_subtargets
+
+	# Patch all pkgconfig files
+	for pc_file in $(QTX11_PC); do \
+		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+	done
+
 	touch $@
