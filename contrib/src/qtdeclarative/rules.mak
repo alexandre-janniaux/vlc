@@ -40,5 +40,8 @@ qtdeclarative: qtdeclarative-everywhere-src-$(QTDECLARATIVE_VERSION).tar.xz .sum
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Quick qml/QtQuick/Layouts qquicklayoutsplugin
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Quick qml/QtQuick/Window.2 windowplugin
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Qml qml/QtQml/Models.2 modelsplugin
-
+	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5QuickWidgets.pc"
+	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5QuickTest.pc"
+	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Quick.pc"
+	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Qml.pc"
 	touch $@

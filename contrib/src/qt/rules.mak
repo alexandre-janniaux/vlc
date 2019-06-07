@@ -126,4 +126,7 @@ ifdef HAVE_WIN32
 endif
 	# Install a qmake with correct paths set
 	cd $< && $(MAKE) sub-qmake-qmake-aux-pro-install_subtargets install_mkspecs
+	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Core.pc"
+	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Gui.pc"
+	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Widgets.pc"
 	touch $@

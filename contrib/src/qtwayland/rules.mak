@@ -27,5 +27,6 @@ qtwayland: qtwayland-$(QTWAYLAND_VERSION).tar.xz .sum-qtwayland
 	cp $(PREFIX)/plugins/platforms/libqwayland-egl.a $(PREFIX)/lib/
 	cp $(PREFIX)/plugins/wayland-shell-integration/libwl-shell.a $(PREFIX)/lib/
 	cd $(PREFIX)/lib/pkgconfig; sed -i.orig -e 's/ -lQt5WaylandClient/ -lqwayland-egl -lwl-shell -lQt5WaylandClient -lQt5EglSupport -lEGL -lwayland-egl/' Qt5WaylandClient.pc
+	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5WaylandClient.pc"
 	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5WaylandClient.pc")
 	touch $@
