@@ -36,6 +36,7 @@ qtgraphicaleffects: qtgraphicaleffects-everywhere-src-$(QTGE_VERSION).tar.xz .su
 	# Patch all pkgconfig files
 	for pc_file in $(QTGE_PC); do \
 		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+		$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/$${pc_file}"; \
 	done
 
 	touch $@

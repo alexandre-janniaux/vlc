@@ -141,6 +141,7 @@ endif
 	# Patch all pkgconfig files
 	for pc_file in $(QT_PC); do \
 		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+		$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/$${pc_file}"; \
 	done
 
 	touch $@

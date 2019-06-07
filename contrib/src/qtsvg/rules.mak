@@ -37,6 +37,7 @@ qtsvg: qtsvg-everywhere-src-$(QTSVG_VERSION).tar.xz .sum-qtsvg
 	# Patch all pkgconfig files
 	for pc_file in $(QTSVG_PC); do \
 		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+		$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/$${pc_file}"; \
 	done
 
 	touch $@

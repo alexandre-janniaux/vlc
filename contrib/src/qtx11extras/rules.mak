@@ -31,6 +31,7 @@ qtx11extras: qtx11extras-$(QTX11_VERSION).tar.xz .sum-qtx11extras
 	# Patch all pkgconfig files
 	for pc_file in $(QTX11_PC); do \
 		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+		$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/$${pc_file}"; \
 	done
 
 	touch $@

@@ -15,7 +15,11 @@ endif
 
 DEPS_qtquickcontrols2 = qtdeclarative $(DEPS_qtdeclarative)
 
-QTQC2_PC = Qt5QuickControls2.pc
+QTQC2_PC := Qt5QuickControls2.pc
+
+ifndef HAVE_WIN32
+QTQC2_PC += Qt5QuickTemplates2.pc
+endif
 
 $(TARBALLS)/qtquickcontrols2-everywhere-src-$(QTQC2_VERSION).tar.xz:
 	$(call download_pkg,$(QTQC2_URL),qt)
@@ -37,6 +41,7 @@ qtquickcontrols2: qtquickcontrols2-everywhere-src-$(QTQC2_VERSION).tar.xz .sum-q
 	# Patch all pkgconfig files
 	for pc_file in $(QTQC2_PC); do \
 		$(call pkg_static,"$(PREFIX)/lib/pkgconfig/$${pc_file}"); \
+		$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/$${pc_file}"; \
 	done
 
 	touch $@
