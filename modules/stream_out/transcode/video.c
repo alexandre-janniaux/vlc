@@ -293,6 +293,8 @@ static int transcode_video_set_conversions( sout_stream_t *p_stream,
                                             const es_format_t *p_dst,
                                             bool b_reorient )
 {
+    const float scale_factor = var_InheritFloat(p_stream, "scale");
+
     filter_owner_t owner = {
         .video = &transcode_filter_video_cbs,
         .sys = id,
@@ -306,7 +308,8 @@ static int transcode_video_set_conversions( sout_stream_t *p_stream,
     for( int step = STEP_NONSTATIC; step <= STEP_STATIC; step++ )
     {
         const bool b_do_scale = (*pp_src)->video.i_width != p_dst->video.i_width ||
-                                (*pp_src)->video.i_height != p_dst->video.i_height;
+                                (*pp_src)->video.i_height != p_dst->video.i_height ||
+                                scale_factor != 1.f;
         const bool b_do_chroma = (*pp_src)->video.i_chroma != p_dst->video.i_chroma;
         const bool b_do_orient = ((*pp_src)->video.orientation != ORIENT_NORMAL) && b_reorient;
 
