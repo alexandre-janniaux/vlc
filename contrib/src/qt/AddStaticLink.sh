@@ -35,6 +35,5 @@ LIBS=$(sed -e "/QMAKE_PRL_LIBS/ { \
          }; d"  $PRL_SOURCE )
 
 # prepend the plugin that uses the module
-sed -i -e "s# -l${2}# -l${PLUGIN_NAME} -l${2}#" $PC_DEST
 # add the plugin static dependencies to the ones of the module
-sed -i -e "s#Libs.private: #Libs.private: $LIBS -L\${prefix}/${PLUGIN_PATH} #" $PC_DEST
+sed -i -e "s# -l${2}# -L\${prefix}/${PLUGIN_PATH} -l${PLUGIN_NAME} $LIBS -l${2}#" $PC_DEST
