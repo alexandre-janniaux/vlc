@@ -34,6 +34,12 @@ Utils.MenuExt {
     */
 
     CheckableModelSubMenu {
+        title: qsTr("Audio &Device")
+        enabled: player.isPlaying
+        model: audioDevice
+    }
+
+    CheckableModelSubMenu {
         title: qsTr("&Stereo Mode");
         enabled: player.isPlaying
         model: player.audioStereoMode
