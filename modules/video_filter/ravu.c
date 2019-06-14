@@ -1479,7 +1479,7 @@ Filter(filter_t *filter, picture_t *ipic)
 
     picture_t *opic = filter_NewPicture(filter);
     picture_CopyProperties(opic, ipic);
-    if (opic->i_ravu_passes == 0)
+    //if (opic->i_ravu_passes == 0)
     {
         opic->i_ravu_passes = 1;
         opic->ravu_passes[0].p_pixels = sys->pass_0[sys->current_pass_0];
@@ -1493,17 +1493,14 @@ Filter(filter_t *filter, picture_t *ipic)
     }
     if (!opic || !opic->ravu_passes[0].p_pixels)
         return NULL;
-    //Filter_prepare(sys->input, ipic->Y_PIXELS,
-    //               sys->width, sys->height,
-    //               sys->stride, ipic->Y_PITCH);
-    //Filter_pass_0(opic->ravu_passes[0].p_pixels, sys->input + 2 * sys->stride + 2,
-    //              sys->weights, sys->shuf_weights,
-    //              sys->width, sys->height, sys->stride);
+    Filter_prepare(sys->input, ipic->Y_PIXELS,
+                   sys->width, sys->height,
+                   sys->stride, ipic->Y_PITCH);
+    Filter_pass_0(opic->ravu_passes[0].p_pixels, sys->input + 2 * sys->stride + 2,
+                  sys->weights, sys->shuf_weights,
+                  sys->width, sys->height, sys->stride);
 
-    for (unsigned i = 0; i < sys->height; ++i)
-        memcpy(opic->Y_PIXELS + i * opic->Y_PITCH,
-               opic->ravu_passes[0].p_pixels + i * sys->stride,
-               sys->width);
+    picture_CopyPixels(opic, ipic);
 
     vlc_fourcc_t fourcc = filter->fmt_in.video.i_chroma;
     vlc_chroma_description_t const *chroma = vlc_fourcc_GetChromaDescription(fourcc);
