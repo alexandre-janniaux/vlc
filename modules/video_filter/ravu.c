@@ -1967,7 +1967,7 @@ Filter(filter_t *filter, picture_t *ipic)
     picture_CopyProperties(opic, ipic);
     if (opic->i_ravu_passes == 0)
     {
-        opic->i_ravu_passes = 1;
+        opic->i_ravu_passes = 3;
         opic->ravu_passes[0].p_pixels = sys->pass_0[sys->current_pass_0] + 3 * sys->stride + 2;
         opic->ravu_passes[0].i_lines = h;
         opic->ravu_passes[0].i_pitch = stride;
@@ -2018,10 +2018,11 @@ Filter(filter_t *filter, picture_t *ipic)
     sys->current_pass_1 = (sys->current_pass_1+1) % MAX_PASS_STORAGE;
     sys->current_pass_2 = (sys->current_pass_2+1) % MAX_PASS_STORAGE;
 
-    for (unsigned i = 0; i < sys->height; ++i)
-        memcpy(opic->Y_PIXELS + i * opic->Y_PITCH,
-               ipic->Y_PIXELS + i * ipic->Y_PITCH,
-               sys->width);
+    picture_CopyPixels(opic, ipic);
+    //for (unsigned i = 0; i < sys->height; ++i)
+    //    memcpy(opic->Y_PIXELS + i * opic->Y_PITCH,
+    //           ipic->Y_PIXELS + i * ipic->Y_PITCH,
+    //           sys->width);
 
     //for (unsigned i = 0; i < sys->height; ++i)
     //    memcpy(opic->Y_PIXELS + i * opic->Y_PITCH,
@@ -2033,8 +2034,10 @@ Filter(filter_t *filter, picture_t *ipic)
     upscale_chroma(opic->p + U_PLANE, ipic->p + U_PLANE);
     upscale_chroma(opic->p + V_PLANE, ipic->p + V_PLANE);
 #else
+  #if 0
     memset(opic->U_PIXELS, 0x80, opic->U_PITCH * opic->p[U_PLANE].i_visible_lines);
     memset(opic->V_PIXELS, 0x80, opic->V_PITCH * opic->p[V_PLANE].i_visible_lines);
+  #endif
 #endif
 
 #if 0
