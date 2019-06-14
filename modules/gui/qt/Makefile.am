@@ -241,6 +241,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	gui/qt/dialogs/firstrun.moc.cpp \
 	gui/qt/dialogs/extensions.moc.cpp \
 	gui/qt/dialogs/fingerprintdialog.moc.cpp \
+	gui/qt/components/audio_device_model.moc.cpp \
 	gui/qt/components/qml_main_context.moc.cpp \
 	gui/qt/components/aboutmodel.moc.cpp \
 	gui/qt/components/dialogmodel.moc.cpp \
