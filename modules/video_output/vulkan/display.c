@@ -242,28 +242,28 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
                                       &plane->shift_y);
     }
 
-    if (pic->i_ravu_passes > 0) {
-        img.num_ravu_passes = 1;
-        struct pl_plane_data ravu_data[3];
-        memset(ravu_data, 0, sizeof(ravu_data));
-        struct pl_plane *ravu_plane = &img.ravu_passes[0];
+    struct pl_plane_data ravu_data;
+    for (int i=0; pic->i_ravu_passes > i; ++i) {
 
-        ravu_data[0].width = pic->ravu_passes[0].i_visible_pitch;
-        ravu_data[0].height = pic->ravu_passes[0].i_visible_lines;
-        ravu_data[0].row_stride = pic->ravu_passes[0].i_pitch;
-        ravu_data[0].type = PL_FMT_UNORM;
-        ravu_data[0].pixel_stride = 1;
-        ravu_data[0].component_size[0] = 8;
-        ravu_data[0].pixels = pic->ravu_passes[0].p_pixels;
-        ravu_data[0].buf = NULL;
-        if (!pl_upload_plane(gpu, ravu_plane, &sys->pass_texture, &ravu_data[0])) {
+	memset(&ravu_data, 0, sizeof(ravu_data));
+        struct pl_plane *ravu_plane = &img.ravu_passes[i];
+
+        ravu_data.width = pic->ravu_passes[i].i_visible_pitch;
+        ravu_data.height = pic->ravu_passes[i].i_visible_lines;
+        ravu_data.row_stride = pic->ravu_passes[i].i_pitch;
+        ravu_data.type = PL_FMT_UNORM;
+        ravu_data.pixel_stride = 1;
+        ravu_data.component_size[0] = 8;
+        ravu_data.pixels = pic->ravu_passes[i].p_pixels;
+        ravu_data.buf = NULL;
+        if (!pl_upload_plane(gpu, ravu_plane, &sys->pass_texture, &ravu_data)) {
             msg_Err(vd, "Failed uploading ravu pass image data!");
             failed = true;
             goto done;
         }
-        img.ravu_passes[0].texture = sys->pass_texture;
+        img.ravu_passes[i].texture = sys->pass_texture;
     }
-    else img.num_ravu_passes = 0;
+    img.num_ravu_passes = pic->i_ravu_passes;
 
     // If this was a mapped buffer, mark it as in use by the GPU
     if (picsys) {
