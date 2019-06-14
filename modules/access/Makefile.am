@@ -445,3 +445,12 @@ librist_plugin_la_LIBADD = $(SOCKET_LIBS)
 if HAVE_BITSTREAM
 access_LTLIBRARIES += librist_plugin.la
 endif
+
+### FBXAPI ###
+
+libaccess_fbxapi_plugin_la_SOURCES = access/fbxapi.c
+libaccess_fbxapi_plugin_la_CFLAGS = $(AM_CFLAGS) $(FBXAPI_CFLAGS)
+libaccess_fbxapi_plugin_la_LIBADD = $(FBXAPI_LIBS)
+access_LTLIBRARIES += libaccess_fbxapi_plugin.la
+#if HAVE_FBXAPI
+#endif
