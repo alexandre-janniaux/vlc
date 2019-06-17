@@ -1,8 +1,8 @@
 # libplacebo
 
-PLACEBO_HASH := a432b7460312170b7df07f596ee3d2c39a22f6d1
+PLACEBO_HASH := d36c9eb9103960fe2f47ca83bb415fd38d27ce30
 PLACEBO_VERSION := git-$(PLACEBO_HASH)
-PLACEBO_GITURL := https://code.videolan.org/videolan/libplacebo.git
+PLACEBO_GITURL := https://github.com/alexandre-janniaux/libplacebo.git
 PLACEBO_BRANCH := hack_branch
 PLACEBO_ARCHIVE := libplacebo-$(PLACEBO_VERSION).tar.xz
 
