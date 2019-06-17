@@ -40,6 +40,16 @@
  * Window modules interface
  */
 
+/**
+ * \defgroup vout_window__module Implementation of a vout_window module
+ * @{ @}
+ */
+
+/**
+ * \defgroup vout_window__usage Usage of a vout_window
+ * @{ @}
+ */
+
 struct vout_window_t;
 struct wl_display;
 struct wl_surface;
@@ -186,6 +196,8 @@ typedef struct vout_window_cfg_t {
  * Also, a window object functions are not reentrant, so the callbacks must not
  * invoke the window object functions.
  * Otherwise a deadlock or infinite recursion may occur.
+ *
+ * \ingroup vout_window__usage
  */
 struct vout_window_callbacks {
     /**
@@ -292,14 +304,17 @@ struct vout_window_callbacks {
 
 /**
  * Window callbacks and opaque data.
+ * \ingroup vout_window__usage
  */
 typedef struct vout_window_owner {
     const struct vout_window_callbacks *cbs; /**< Callbacks */
     void *sys; /**< Opaque data / private pointer for callbacks */
 } vout_window_owner_t;
 
+
 /**
  * Window implementation callbacks.
+ * \ingroup vout_window__module
  */
 struct vout_window_operations {
     int (*enable)(struct vout_window_t *, const vout_window_cfg_t *);
@@ -318,6 +333,7 @@ struct vout_window_operations {
     void (*set_fullscreen)(struct vout_window_t *, const char *id);
     void (*set_title)(struct vout_window_t *, const char *id);
 };
+
 
 /**
  * Window object.
@@ -391,6 +407,11 @@ typedef struct vout_window_t {
 
     vout_window_owner_t owner;
 } vout_window_t;
+
+/**
+ * \addtogroup vout_window__usage
+ * @{
+ */
 
 /**
  * Creates a new window.
@@ -527,6 +548,31 @@ int vout_window_Enable(vout_window_t *window, const vout_window_cfg_t *cfg);
 VLC_API
 void vout_window_Disable(vout_window_t *window);
 
+/** @} */
+
+/**
+ * Send a mouse event to the given window so it can report it.
+ *
+ * This function is meant to be called from a display module, but you should
+ * avoid using it, and use it if you really have no other choice
+ * */
+static inline void vout_window_SendMouseEvent(vout_window_t *window,
+                                              const vout_window_mouse_event_t *mouse)
+{
+    if (window->owner.cbs->mouse_event != NULL)
+        window->owner.cbs->mouse_event(window, mouse);
+}
+
+
+
+/** \addtogroup vout_window__module
+ *
+ * Functions used by the module to report the actual state and parameters from
+ * the real window to the core.
+ *
+ * @{
+ */
+
 /**
  * Reports the current window size.
  *
@@ -584,13 +630,6 @@ VLC_API void vout_window_ReportWindowed(vout_window_t *wnd);
  * \param id fullscreen output nul-terminated identifier, NULL for default
  */
 VLC_API void vout_window_ReportFullscreen(vout_window_t *wnd, const char *id);
-
-static inline void vout_window_SendMouseEvent(vout_window_t *window,
-                                              const vout_window_mouse_event_t *mouse)
-{
-    if (window->owner.cbs->mouse_event != NULL)
-        window->owner.cbs->mouse_event(window, mouse);
-}
 
 /**
  * Reports a pointer movement.
@@ -688,6 +727,8 @@ static inline void vout_window_ReportOutputDevice(vout_window_t *window,
     if (window->owner.cbs->output_event != NULL)
         window->owner.cbs->output_event(window, id, name);
 }
+
+/** @} */
 
 /** @} */
 #endif /* VLC_VOUT_WINDOW_H */
