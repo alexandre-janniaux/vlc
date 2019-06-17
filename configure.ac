@@ -4356,6 +4356,15 @@ fi
 AM_CONDITIONAL([UPDATE_CHECK], [test "${enable_update_check}" = "yes"])
 
 dnl
+dnl freebox API module
+dnl
+AC_ARG_ENABLE([fbxapi],
+	AS_HELP_STRING([--disable-fbxapi],
+		[use fbxapi for device service discovery (default enabled)]))
+AM_CONDITIONAL([FBXAPI], [test "${enable_fbxapi}" != "no"])
+
+
+dnl
 dnl OS X notification plugin
 dnl
 AC_ARG_ENABLE([osx_notifications],

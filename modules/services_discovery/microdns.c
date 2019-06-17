@@ -84,7 +84,7 @@ static const struct
     { "sftp", "_sftp-ssh._tcp.local", false, 0 },
     { "rtsp", "_rtsp._tcp.local", false, 0 },
     { "chromecast", "_googlecast._tcp.local", true, VLC_RENDERER_CAN_AUDIO },
-	{ "fapi", "_fbx-api._tcp.local", false, 0 },
+	{ "fbxapi", "_fbx-api._tcp.local", false, 0 },
 };
 #define NB_PROTOCOLS (sizeof(protocols) / sizeof(*protocols))
 
