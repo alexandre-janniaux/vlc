@@ -958,6 +958,11 @@ struct vlc_player_aout_cbs
 };
 
 /**
+ * \ingroup vlc_player__tracks
+ * @{
+ */
+
+/**
  * Duplicate a track
  *
  * This function can be used to pass a track from a callback to an other
@@ -975,6 +980,13 @@ vlc_player_track_Dup(const struct vlc_player_track *track);
  */
 VLC_API void
 vlc_player_track_Delete(struct vlc_player_track *track);
+
+/** @} */
+
+/**
+ * \defgroup vlc_player__programs Program control
+ * @{
+ */
 
 /**
  * Duplicate a program
@@ -994,6 +1006,13 @@ vlc_player_program_Dup(const struct vlc_player_program *prgm);
  */
 VLC_API void
 vlc_player_program_Delete(struct vlc_player_program *prgm);
+
+/** @} */
+
+/**
+ * \defgroup vlc_player__titles Title and chapter control
+ * @{
+ */
 
 /**
  * Hold the title list of the player
@@ -1028,6 +1047,8 @@ vlc_player_title_list_GetCount(vlc_player_title_list *titles);
  */
 VLC_API const struct vlc_player_title *
 vlc_player_title_list_GetAt(vlc_player_title_list *titles, size_t idx);
+
+/** @} */
 
 /**
  * Create a new player instance
@@ -1088,6 +1109,11 @@ VLC_API void
 vlc_player_CondWait(vlc_player_t *player, vlc_cond_t *cond);
 
 /**
+ * \name Player events
+ * @{
+ */
+
+/**
  * Add a listener callback
  *
  * @note Every registered callbacks need to be removed by the caller with
@@ -1112,6 +1138,13 @@ vlc_player_AddListener(vlc_player_t *player,
 VLC_API void
 vlc_player_RemoveListener(vlc_player_t *player,
                           vlc_player_listener_id *listener_id);
+
+/** @} */
+
+/**
+ * \defgroup vlc_player__playback Playback control
+ * @{
+ */
 
 /**
  * Set the current media
@@ -1573,6 +1606,14 @@ VLC_API enum vlc_player_abloop
 vlc_player_GetAtoBLoop(vlc_player_t *player, vlc_tick_t *a_time, float *a_pos,
                        vlc_tick_t *b_time, float *b_pos);
 
+/** @} */
+
+/**
+ * \defgroup vlc_player__tracks Track control in the current playback
+ * @{
+ */
+
+
 /**
  * Get the number of tracks for an ES category
  *
@@ -1975,6 +2016,13 @@ vlc_player_ToggleSubtitle(vlc_player_t *player)
     return vlc_player_SetSubtitleEnabled(player, enabled);
 }
 
+/** @} */
+
+/**
+ * \ingroup vlc_player__programs Program control
+ * @{
+ */
+
 /**
  * Get the number of programs
  *
@@ -2144,6 +2192,13 @@ vlc_player_SetTeletextTransparency(vlc_player_t *player, bool enabled);
 VLC_API bool
 vlc_player_IsTeletextTransparent(vlc_player_t *player);
 
+/** @} */
+
+/**
+ * \ingroup vlc_player__titles
+ * @{
+ */
+
 /**
  * Get the title list of the current media
  *
@@ -2294,6 +2349,8 @@ vlc_player_SelectNextChapter(vlc_player_t *player);
 VLC_API void
 vlc_player_SelectPrevChapter(vlc_player_t *player);
 
+/** @} */
+
 /**
  * Add an associated (or external) media to the current media
  *
@@ -2337,6 +2394,11 @@ VLC_API float
 vlc_player_GetAssociatedSubsFPS(vlc_player_t *player);
 
 /**
+ * \defgroup vlc_player__renderer External renderer control
+ * @{
+ */
+
+/**
  * Set the renderer
  *
  * Valid for the current media and all future ones.
@@ -2361,6 +2423,8 @@ vlc_player_SetRenderer(vlc_player_t *player, vlc_renderer_item_t *renderer);
  */
 VLC_API vlc_renderer_item_t *
 vlc_player_GetRenderer(vlc_player_t *player);
+
+/** @} */
 
 /**
  * Navigate (for DVD/Bluray menus or viewpoint)
@@ -2441,6 +2505,11 @@ vlc_player_SetAudioDelay(vlc_player_t *player, vlc_tick_t delay,
                          enum vlc_player_whence whence);
 
 /**
+ * \defgroup vlc_player__subtitles Subtitle controls
+ * @{
+ */
+
+/**
  * Get the subtitle delay for the current media
  *
  * @see vlc_player_cbs.on_subtitle_delay_changed
@@ -2504,6 +2573,8 @@ vlc_player_SetSubtitleTextScale(vlc_player_t *player, unsigned scale);
 VLC_API unsigned
 vlc_player_GetSubtitleTextScale(vlc_player_t *player);
 
+/** @} */
+
 /**
  * Get the signal quality and strength of the current media
  *
@@ -2548,6 +2619,11 @@ vlc_player_SetPauseOnCork(vlc_player_t *player, bool enabled);
  */
 VLC_API vlc_object_t *
 vlc_player_GetV4l2Object(vlc_player_t *player) VLC_DEPRECATED;
+
+/**
+ * \defgroup vlc_player__aout Audio output control
+ * @{
+ */
 
 /**
  * Get the audio output
@@ -2691,6 +2767,15 @@ vlc_player_aout_ToggleMute(vlc_player_t *player)
  */
 VLC_API int
 vlc_player_aout_EnableFilter(vlc_player_t *player, const char *name, bool add);
+
+/** @} */
+
+
+/**
+ * \defgroup vlc_player__vout Video output control
+ * @{
+ */
+
 
 /**
  * Get and hold the main video output
@@ -2853,6 +2938,8 @@ vlc_player_vout_Snapshot(vlc_player_t *player);
  */
 VLC_API void
 vlc_player_vout_OSDMessage(vlc_player_t *player, const char *fmt, ...);
+
+/** @} */
 
 
 /** @} */
