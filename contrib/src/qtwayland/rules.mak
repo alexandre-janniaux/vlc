@@ -6,7 +6,11 @@ QTWAYLAND_URL := http://download.qt.io/official_releases/qt/$(QTWAYLAND_VERSION_
 
 DEPS_qtwayland += qt $(DEPS_qt)
 
-QTWAYLAND_PC = Qt5WaylandClient.pc
+ifeq ($(call need_pkg,"Qt5WaylandClient >= 5.11"),)
+PKGS_FOUND += qtwayland
+endif
+
+QTWAYLAND_PC := Qt5WaylandClient.pc
 
 $(TARBALLS)/qtwayland-$(QTWAYLAND_VERSION).tar.xz:
 	$(call download,$(QTWAYLAND_URL))
