@@ -34,31 +34,57 @@ void CmdPlaylistDel::execute()
 
 void CmdPlaylistNext::execute()
 {
-    playlist_Next( getPL() );
+    auto *playlist = getPL();
+
+    vlc_playlist_Lock(playlist);
+    vlc_playlist_Next(playlist);
+    vlc_playlist_Unlock(playlist)
 }
 
 
 void CmdPlaylistPrevious::execute()
 {
-    playlist_Prev( getPL() );
+    auto *playlist = getPL();
+
+    vlc_playlist_Lock(playlist);
+    vlc_playlist_Prev(playlist);
+    vlc_playlist_Unlock(playlist)
 }
 
 
 void CmdPlaylistRandom::execute()
 {
-    var_SetBool( getPL(), "random", m_value );
+    auto *playlist = getPL();
+    auto order = m_value ? VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM
+                         : VLC_PLAYLIST_PLAYBACK_ORDER_NORMAL;
+
+    vlc_playlist_Lock(playlist);
+    vlc_playlist_SetPlaybackOrder(playlist, order);
+    vlc_playlist_Unlock(playlist)
 }
 
 
 void CmdPlaylistLoop::execute()
 {
-    var_SetBool( getPL(), "loop", m_value );
+    auto *playlist = getPL();
+    auto loop = m_value ? VLC_PLAYLIST_PLAYBACK_REPEAT_ALL
+                        : VLC_PLAYLIST_PLAYBACK_REPEAT_NONE;
+
+    vlc_playlist_Lock(playlist);
+    vlc_playlist_SetPlaybackRepeat(playlist, loop);
+    vlc_playlist_Unlock(playlist)
 }
 
 
 void CmdPlaylistRepeat::execute()
 {
-    var_SetBool( getPL(), "repeat", m_value );
+    auto *playlist = getPL();
+    auto loop = m_value ? VLC_PLAYLIST_PLAYBACK_REPEAT_CURRENT
+                        : VLC_PLAYLIST_PLAYBACK_REPEAT_NONE;
+
+    vlc_playlist_Lock(playlist);
+    vlc_playlist_SetPlaybackRepeat(playlist, loop);
+    vlc_playlist_Unlock(playlist)
 }
 
 
@@ -70,8 +96,10 @@ void CmdPlaylistLoad::execute()
         msg_Err(getIntf(),"unable to load playlist %s", m_file.c_str() );
         return;
     }
-    playlist_Import( getPL(), psz_path );
+    // TODO: import playlist
+    //playlist_Import( getPL(), psz_path );
     free( psz_path );
+    msg_Err(getIntf(), "Playlist import feature is disabled for now");
 }
 
 
@@ -90,10 +118,16 @@ void CmdPlaylistSave::execute()
         return;
     }
 
-    playlist_Export( getPL(), m_file.c_str(), psz_module );
+    // TODO: playlist export
+    //playlist_Export( getPL(), m_file.c_str(), psz_module );
+    msg_Err(getIntf(), "Playlist export feature is disabled for now");
 }
 
 void CmdPlaylistFirst::execute()
 {
-    playlist_Control(getPL(), PLAYLIST_PLAY, pl_Unlocked);
+    auto *playlist = getPL();
+
+    vlc_playlist_Lock(playlist);
+    vlc_playlist_Start(playlist);
+    vlc_playlist_Unlock(playlist)
 }
