@@ -83,7 +83,7 @@ endif
 
 endif
 
-QT_CONFIG := -static -opensource -confirm-license -no-pkg-config \
+QT_CONFIG := -static -opensource -confirm-license -force-pkg-config \
 	-no-sql-sqlite -no-gif -qt-libjpeg -no-openssl $(QT_OPENGL) -no-dbus \
 	-no-vulkan -no-sql-odbc -no-pch \
 	-no-compile-examples -nomake examples -nomake tests -qt-zlib
