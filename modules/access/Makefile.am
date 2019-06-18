@@ -448,7 +448,8 @@ endif
 
 ### FBXAPI ###
 
-libaccess_fbxapi_plugin_la_SOURCES = access/fbxapi.c
+libaccess_fbxapi_plugin_la_SOURCES = access/fbxapi/fbxapi.c access/fbxapi/fbxapi_request.c
+libaccess_fbxapi_plugin_la_SOURCES += access/fbxapi/fbxapi.h access/fbxapi/fbxapi_request.h
 libaccess_fbxapi_plugin_la_CFLAGS = $(AM_CFLAGS) $(FBXAPI_CFLAGS)
 libaccess_fbxapi_plugin_la_LIBADD = $(FBXAPI_LIBS)
 access_LTLIBRARIES += libaccess_fbxapi_plugin.la
