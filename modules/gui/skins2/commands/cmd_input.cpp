@@ -28,70 +28,110 @@
 
 void CmdPlay::execute()
 {
-    playlist_t *pPlaylist = getPL();
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
-    // if already playing an input, reset rate to normal speed
-    input_thread_t *pInput = playlist_CurrentInput( pPlaylist );
-    if( pInput )
+    vlc_playlist_Lock(playlist);
+
+    if (vlc_playlist_GetCurrentIndex(playlist) != -1)
     {
-        var_SetFloat( getPL(), "rate", 1.0 );
-        input_Release(pInput);
+        // if already playing an input, reset rate to normal speed
+        vlc_player_Lock(player);
+        vlc_player_ChangeRate(player, 1.f);
+        vlc_player_Unlock(player);
     }
 
-    playlist_Lock( pPlaylist );
-    const bool b_empty = playlist_IsEmpty( pPlaylist );
-    playlist_Unlock( pPlaylist );
-
-    if( !b_empty )
+    if (vlc_playlist_Count(playlist) > 0)
     {
-        playlist_Play( pPlaylist );
+        vlc_playlist_Start(playlist);
     }
     else
     {
         // If the playlist is empty, open a file requester instead
         CmdDlgFile( getIntf() ).execute();
     }
+
+    vlc_playlist_Unlock(playlist);
 }
 
 
 void CmdPause::execute()
 {
-    playlist_TogglePause( getPL() );
+    auto *playlist = getPL();
+
+    vlc_playlist_Lock(playlist)
+    vlc_playlist_Pause(playlist);
+    vlc_playlist_Unlock(playlist);
 }
 
 
 void CmdStop::execute()
 {
-    playlist_Stop( getPL() );
+    auto *playlist = getPL();
+
+    vlc_playlist_Lock(playlist)
+    vlc_playlist_Stop(playlist);
+    vlc_playlist_Unlock(playlist);
+
 }
 
 
 void CmdSlower::execute()
 {
-    var_TriggerCallback( getPL(), "rate-slower" );
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(player);
+
+    vlc_playlist_Lock(playlist)
+    // TODO: how to call rate-slower ?
+    //vlc_player_ChangeRate(playlist);
+    vlc_playlist_Unlock(playlist);
+    //var_TriggerCallback( getPL(), "rate-slower" );
 }
 
 
 void CmdFaster::execute()
 {
-    var_TriggerCallback( getPL(), "rate-faster" );
+    auto *playlist = getPL();
+
+    // TODO: how to call rate-faster ?
+    vlc_playlist_Lock(playlist)
+    vlc_playlist_Unlock(playlist);
+    //var_TriggerCallback( getPL(), "rate-faster" );
 }
 
 
 void CmdMute::execute()
 {
-    playlist_MuteToggle( getPL() );
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
+
+    vlc_player_Lock(player)
+    vlc_player_aout_Mute(player, !vlc_player_aout_IsMuted(player));
+    vlc_player_Unlock(player);
 }
 
 
 void CmdVolumeUp::execute()
 {
-    playlist_VolumeUp( getPL(), 1, NULL );
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(player);
+
+    vlc_player_Lock(player);
+    auto volume = vlc_player_aout_VolumeGet(player);
+    // TODO: increase volume
+    vlc_player_aout_VolumeSet(player, volume);
+    vlc_player_Unlock(player);
 }
 
 
 void CmdVolumeDown::execute()
 {
-    playlist_VolumeDown( getPL(), 1, NULL );
-}
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(player);
 
+    vlc_player_Lock(player);
+    auto volume = vlc_player_aout_VolumeGet(player);
+    // TODO: decrease volume
+    vlc_player_aout_VolumeSet(player, volume);
+    vlc_player_Unlock(player);
+}
