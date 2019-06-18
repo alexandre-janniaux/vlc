@@ -32,8 +32,6 @@
 
 void CmdAddItem::execute()
 {
-    playlist_t *pPlaylist = getPL();
-
     if( strstr( m_name.c_str(), "://" ) == NULL )
     {
         char *psz_uri = vlc_path2uri( m_name.c_str(), NULL );
@@ -42,5 +40,17 @@ void CmdAddItem::execute()
         m_name = psz_uri;
         free( psz_uri );
     }
-    playlist_Add( pPlaylist, m_name.c_str(), m_playNow );
+
+    auto *playlist = getPL();
+
+    auto *item = input_item_New(m_name.c_str(), NULL);
+
+    vlc_playlist_Lock(playlist);
+    auto count = vlc_playlist_Count(playlist);
+    vlc_playlist_AppendOne(playlist, item);
+    if (m_playNow)
+        vlc_playlist_PlayAt(playlist, count);
+    vlc_playlist_Unlock(playlist);
+
+    input_item_Release(item);
 }
