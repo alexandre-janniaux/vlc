@@ -32,24 +32,27 @@ void CmdItemUpdate::execute()
     if( !m_pItem )
         return;
 
-    // update playtree
-    playlist_t* pPlaylist = getPL();
-    playlist_Lock( pPlaylist );
-    playlist_item_t* p_plItem = playlist_ItemGetByInput( pPlaylist, m_pItem );
-    int id = p_plItem ? p_plItem->i_id : 0;
-    playlist_Unlock( pPlaylist );
+    auto *playlist = getPL();
 
-    if( id )
+    vlc_playlist_Lock(playlist);
+    auto index = vlc_playlist_IndexOfMedia(playlist, m_pItem);
+    auto *item = index ? vlc_playlist_Get(playlist, index) : NULL;
+    auto id = item ? vlc_playlist_item_GetId(item) : 0;
+    vlc_playlist_Unlock(playlist);
+
+    // update playtree
+    if (item)
         VlcProc::instance( getIntf() )->getPlaytreeVar().onUpdateItem( id );
 
     // update current input if needed
-    input_item_t* p_current = NULL;
-    input_thread_t* pInput = getIntf()->p_sys->p_input;
-    if( pInput )
-        p_current = input_GetItem( pInput );
+    // TODO
+    //input_item_t* p_current = NULL;
+    //input_thread_t* pInput = getIntf()->p_sys->p_input;
+    //if( pInput )
+    //    p_current = input_GetItem( pInput );
 
-    if( p_current == m_pItem )
-        VlcProc::instance( getIntf() )->update_current_input();
+    //if( p_current == m_pItem )
+    //    VlcProc::instance( getIntf() )->update_current_input();
 }
 
 bool CmdItemUpdate::checkRemove( CmdGeneric *pQueuedCommand ) const
