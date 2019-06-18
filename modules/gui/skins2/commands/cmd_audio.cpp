@@ -28,7 +28,8 @@
 
 void CmdSetEqualizer::execute()
 {
-    playlist_EnableAudioFilter( getPL(), "equalizer", m_enable );
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
+
+    vlc_player_aout_EnableFilter(player, "equalizer", m_enable);
 }
-
-
