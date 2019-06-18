@@ -44,6 +44,7 @@ qtdeclarative: qtdeclarative-everywhere-src-$(QTDECLARATIVE_VERSION).tar.xz .sum
 	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5QuickTest.pc"
 	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Quick.pc"
 	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5Qml.pc"
+	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5QuickTest.pc"
 	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5QuickWidgets.pc")
 	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5QuickTest.pc")
 	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5Quick.pc")
