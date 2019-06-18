@@ -93,6 +93,8 @@ ifdef HAVE_LINUX
 # freetype & fontconfig to be available
 QT_CONFIG += -fontconfig -system-freetype
 DEPS_qt += freetype2 $(DEPS_freetype2) fontconfig $(DEPS_fontconfig)
+# Force building of xcb platform, can it be detected?
+QT_CONFIG += -xcb
 endif
 
 QT_CONFIG += -release
