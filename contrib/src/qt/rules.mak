@@ -108,6 +108,8 @@ endif
 ENV_VARS := $(HOSTVARS) DXSDK_DIR=$(PREFIX)/bin
 
 .qt: qt
+	# Tell Qt we don't need it to generate useless libtool .la files
+	cd $< && sed -i "s/ create_libtool/ -create_libtool/g" mkspecs/features/qt_module.prf
 	cd $< && $(ENV_VARS) ./configure $(QT_PLATFORM) $(QT_CONFIG) -prefix $(PREFIX) -I $(PREFIX)/include
 	# Make && Install libraries
 	cd $< && $(ENV_VARS) $(MAKE)
