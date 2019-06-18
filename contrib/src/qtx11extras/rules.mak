@@ -26,4 +26,5 @@ qtx11extras: qtx11extras-$(QTX11_VERSION).tar.xz .sum-qtx11extras
 	cd $< && $(MAKE)
 	cd $< && $(MAKE) -C src sub-x11extras-install_subtargets
 	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5X11Extras.pc"
+	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5X11Extras.pc")
 	touch $@

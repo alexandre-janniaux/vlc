@@ -34,4 +34,5 @@ qtquickcontrols2: qtquickcontrols2-everywhere-src-$(QTQC2_VERSION).tar.xz .sum-q
 	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5QuickControls2.pc"
 	$(SRC)/qt/FixPkgConfig.sh "$(PREFIX)/lib/pkgconfig/Qt5QuickTemplates2.pc"
 	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5QuickControls2.pc")
+	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5QuickTemplates2.pc")
 	touch $@

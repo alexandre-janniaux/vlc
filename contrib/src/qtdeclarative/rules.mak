@@ -49,4 +49,5 @@ qtdeclarative: qtdeclarative-everywhere-src-$(QTDECLARATIVE_VERSION).tar.xz .sum
 	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5QuickTest.pc")
 	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5Quick.pc")
 	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5Qml.pc")
+	$(call pkg_static,"$(PREFIX)/lib/pkgconfig/Qt5QuickTest.pc")
 	touch $@
