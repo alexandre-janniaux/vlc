@@ -26,60 +26,79 @@
 
 void CmdDvdNextTitle::execute()
 {
-    input_thread_t *p_input = playlist_CurrentInput( getPL() );
+    auto *playlist = GetPL();
 
-    if( p_input )
-    {
-        var_TriggerCallback( p_input, "next-title" );
-        input_Release(p_input);
-    }
+    vlc_playlist_Lock(playlist);
+    auto index = vlc_playlist_GetCurrentIndex(playlist);
+    auto *item = vlc_playlist_Get(playlist, index);
+    auto *input = vlc_playlist_item_GetMedia(item);
+
+    if (input)
+        var_TriggerCallback(input, "next-title");
+
+    vlc_playlist_Unlock(playlist);
 }
 
 
 void CmdDvdPreviousTitle::execute()
 {
-    input_thread_t *p_input = playlist_CurrentInput( getPL() );
+    auto *playlist = GetPL();
 
-    if( p_input )
-    {
-        var_TriggerCallback( p_input, "prev-title" );
-        input_Release(p_input);
-    }
+    vlc_playlist_Lock(playlist);
+    auto index = vlc_playlist_GetCurrentIndex(playlist);
+    auto *item = vlc_playlist_Get(playlist, index);
+    auto *input = vlc_playlist_item_GetMedia(item);
+
+    if (input)
+        var_TriggerCallback(input, "prev-title");
+
+    vlc_playlist_Unlock(playlist);
 }
 
 
 void CmdDvdNextChapter::execute()
 {
-    input_thread_t *p_input = playlist_CurrentInput( getPL() );
+    auto *playlist = GetPL();
 
-    if( p_input )
-    {
-        var_TriggerCallback( p_input, "next-chapter" );
-        input_Release(p_input);
-    }
+    vlc_playlist_Lock(playlist);
+    auto index = vlc_playlist_GetCurrentIndex(playlist);
+    auto *item = vlc_playlist_Get(playlist, index);
+    auto *input = vlc_playlist_item_GetMedia(item);
+
+    if (input)
+        var_TriggerCallback(input, "next-chapter");
+
+    vlc_playlist_Unlock(playlist);
 }
 
 
 void CmdDvdPreviousChapter::execute()
 {
-    input_thread_t *p_input = playlist_CurrentInput( getPL() );
+    auto *playlist = GetPL();
 
-    if( p_input )
-    {
-        var_TriggerCallback( p_input, "prev-chapter" );
-        input_Release(p_input);
-    }
+    vlc_playlist_Lock(playlist);
+    auto index = vlc_playlist_GetCurrentIndex(playlist);
+    auto *item = vlc_playlist_Get(playlist, index);
+    auto *input = vlc_playlist_item_GetMedia(item);
+
+    if (input)
+        var_TriggerCallback(input, "prev-chapter");
+
+    vlc_playlist_Unlock(input);
 }
 
 
 void CmdDvdRootMenu::execute()
 {
-    input_thread_t *p_input = playlist_CurrentInput( getPL() );
+    auto *playlist = GetPL();
 
-    if( p_input )
-    {
-        var_SetInteger( p_input, "title  0", 2);
-        input_Release(p_input);
-    }
+    vlc_playlist_Lock(playlist);
+    auto index = vlc_playlist_GetCurrentIndex(playlist);
+    auto *item = vlc_playlist_Get(playlist, index);
+    auto *input = vlc_playlist_item_GetMedia(item);
+
+    if (input)
+        var_SetInteger(input, "title  0", 2);
+
+    vlc_playlist_Unlock(playlist);
 }
-
