@@ -29,22 +29,7 @@
 
 void CmdFullscreen::execute()
 {
-    bool fs;
-    bool hasVout = false;
-    if( getIntf()->p_sys->p_input != NULL )
-    {
-        vout_thread_t *pVout = input_GetVout( getIntf()->p_sys->p_input );
-        if( pVout )
-        {
-            // Toggle fullscreen
-            fs = var_ToggleBool( pVout, "fullscreen" );
-            vout_Release(pVout);
-            hasVout = true;
-        }
-    }
-
-    if( hasVout )
-        var_SetBool( pl_Get( getIntf() ), "fullscreen", fs );
-    else
-        var_ToggleBool( pl_Get( getIntf() ), "fullscreen" );
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
+    vlc_player_vout_SetFullscreen(player, fs);
 }
