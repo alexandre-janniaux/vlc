@@ -22,7 +22,8 @@
 
 #include "cmd_audio.hpp"
 #include "../src/vlcproc.hpp"
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
+#include <vlc_player.h>
 #include <vlc_input.h>
 #include <string>
 
