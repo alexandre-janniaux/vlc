@@ -22,7 +22,7 @@
  *****************************************************************************/
 
 #include "cmd_playlist.hpp"
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
 #include <vlc_url.h>
 #include "../src/vlcproc.hpp"
 #include "../utils/var_bool.hpp"
@@ -38,7 +38,7 @@ void CmdPlaylistNext::execute()
 
     vlc_playlist_Lock(playlist);
     vlc_playlist_Next(playlist);
-    vlc_playlist_Unlock(playlist)
+    vlc_playlist_Unlock(playlist);
 }
 
 
@@ -48,7 +48,7 @@ void CmdPlaylistPrevious::execute()
 
     vlc_playlist_Lock(playlist);
     vlc_playlist_Prev(playlist);
-    vlc_playlist_Unlock(playlist)
+    vlc_playlist_Unlock(playlist);
 }
 
 
@@ -60,7 +60,7 @@ void CmdPlaylistRandom::execute()
 
     vlc_playlist_Lock(playlist);
     vlc_playlist_SetPlaybackOrder(playlist, order);
-    vlc_playlist_Unlock(playlist)
+    vlc_playlist_Unlock(playlist);
 }
 
 
@@ -72,7 +72,7 @@ void CmdPlaylistLoop::execute()
 
     vlc_playlist_Lock(playlist);
     vlc_playlist_SetPlaybackRepeat(playlist, loop);
-    vlc_playlist_Unlock(playlist)
+    vlc_playlist_Unlock(playlist);
 }
 
 
@@ -84,7 +84,7 @@ void CmdPlaylistRepeat::execute()
 
     vlc_playlist_Lock(playlist);
     vlc_playlist_SetPlaybackRepeat(playlist, loop);
-    vlc_playlist_Unlock(playlist)
+    vlc_playlist_Unlock(playlist);
 }
 
 
@@ -129,5 +129,5 @@ void CmdPlaylistFirst::execute()
 
     vlc_playlist_Lock(playlist);
     vlc_playlist_Start(playlist);
-    vlc_playlist_Unlock(playlist)
+    vlc_playlist_Unlock(playlist);
 }
