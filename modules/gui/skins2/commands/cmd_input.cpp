@@ -24,7 +24,8 @@
 #include "cmd_input.hpp"
 #include "cmd_dialogs.hpp"
 #include <vlc_input.h>
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
+#include <vlc_player.h>
 
 void CmdPlay::execute()
 {
@@ -59,7 +60,7 @@ void CmdPause::execute()
 {
     auto *playlist = getPL();
 
-    vlc_playlist_Lock(playlist)
+    vlc_playlist_Lock(playlist);
     vlc_playlist_Pause(playlist);
     vlc_playlist_Unlock(playlist);
 }
@@ -69,7 +70,7 @@ void CmdStop::execute()
 {
     auto *playlist = getPL();
 
-    vlc_playlist_Lock(playlist)
+    vlc_playlist_Lock(playlist);
     vlc_playlist_Stop(playlist);
     vlc_playlist_Unlock(playlist);
 
@@ -79,9 +80,9 @@ void CmdStop::execute()
 void CmdSlower::execute()
 {
     auto *playlist = getPL();
-    auto *player = vlc_playlist_GetPlayer(player);
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vlc_playlist_Lock(playlist)
+    vlc_playlist_Lock(playlist);
     // TODO: how to call rate-slower ?
     //vlc_player_ChangeRate(playlist);
     vlc_playlist_Unlock(playlist);
@@ -94,7 +95,7 @@ void CmdFaster::execute()
     auto *playlist = getPL();
 
     // TODO: how to call rate-faster ?
-    vlc_playlist_Lock(playlist)
+    vlc_playlist_Lock(playlist);
     vlc_playlist_Unlock(playlist);
     //var_TriggerCallback( getPL(), "rate-faster" );
 }
@@ -105,7 +106,7 @@ void CmdMute::execute()
     auto *playlist = getPL();
     auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vlc_player_Lock(player)
+    vlc_player_Lock(player);
     vlc_player_aout_Mute(player, !vlc_player_aout_IsMuted(player));
     vlc_player_Unlock(player);
 }
@@ -114,12 +115,12 @@ void CmdMute::execute()
 void CmdVolumeUp::execute()
 {
     auto *playlist = getPL();
-    auto *player = vlc_playlist_GetPlayer(player);
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
     vlc_player_Lock(player);
-    auto volume = vlc_player_aout_VolumeGet(player);
+    auto volume = vlc_player_aout_GetVolume(player);
     // TODO: increase volume
-    vlc_player_aout_VolumeSet(player, volume);
+    vlc_player_aout_SetVolume(player, volume);
     vlc_player_Unlock(player);
 }
 
@@ -127,11 +128,11 @@ void CmdVolumeUp::execute()
 void CmdVolumeDown::execute()
 {
     auto *playlist = getPL();
-    auto *player = vlc_playlist_GetPlayer(player);
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
     vlc_player_Lock(player);
-    auto volume = vlc_player_aout_VolumeGet(player);
+    auto volume = vlc_player_aout_GetVolume(player);
     // TODO: decrease volume
-    vlc_player_aout_VolumeSet(player, volume);
+    vlc_player_aout_SetVolume(player, volume);
     vlc_player_Unlock(player);
 }
