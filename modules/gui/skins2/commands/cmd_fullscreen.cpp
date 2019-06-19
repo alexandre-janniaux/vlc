@@ -24,12 +24,14 @@
 #include "cmd_fullscreen.hpp"
 #include <vlc_input.h>
 #include <vlc_vout.h>
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
+#include <vlc_player.h>
 
 
 void CmdFullscreen::execute()
 {
     auto *playlist = getPL();
     auto *player = vlc_playlist_GetPlayer(playlist);
+    bool fs = !vlc_player_vout_IsFullscreen(player);
     vlc_player_vout_SetFullscreen(player, fs);
 }
