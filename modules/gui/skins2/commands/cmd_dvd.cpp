@@ -22,83 +22,60 @@
 
 #include "cmd_dvd.hpp"
 #include <vlc_input.h>
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
+#include <vlc_player.h>
 
 void CmdDvdNextTitle::execute()
 {
-    auto *playlist = GetPL();
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vlc_playlist_Lock(playlist);
-    auto index = vlc_playlist_GetCurrentIndex(playlist);
-    auto *item = vlc_playlist_Get(playlist, index);
-    auto *input = vlc_playlist_item_GetMedia(item);
-
-    if (input)
-        var_TriggerCallback(input, "next-title");
-
-    vlc_playlist_Unlock(playlist);
+    vlc_player_Lock(player);
+    vlc_player_SelectNextTitle(player);
+    vlc_player_Unlock(player);
 }
 
 
 void CmdDvdPreviousTitle::execute()
 {
-    auto *playlist = GetPL();
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vlc_playlist_Lock(playlist);
-    auto index = vlc_playlist_GetCurrentIndex(playlist);
-    auto *item = vlc_playlist_Get(playlist, index);
-    auto *input = vlc_playlist_item_GetMedia(item);
-
-    if (input)
-        var_TriggerCallback(input, "prev-title");
-
-    vlc_playlist_Unlock(playlist);
+    vlc_player_Lock(player);
+    vlc_player_SelectPrevTitle(player);
+    vlc_player_Unlock(player);
 }
 
 
 void CmdDvdNextChapter::execute()
 {
-    auto *playlist = GetPL();
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vlc_playlist_Lock(playlist);
-    auto index = vlc_playlist_GetCurrentIndex(playlist);
-    auto *item = vlc_playlist_Get(playlist, index);
-    auto *input = vlc_playlist_item_GetMedia(item);
-
-    if (input)
-        var_TriggerCallback(input, "next-chapter");
-
-    vlc_playlist_Unlock(playlist);
+    vlc_player_Lock(player);
+    vlc_player_SelectNextChapter(player);
+    vlc_player_Unlock(player);
 }
 
 
 void CmdDvdPreviousChapter::execute()
 {
-    auto *playlist = GetPL();
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vlc_playlist_Lock(playlist);
-    auto index = vlc_playlist_GetCurrentIndex(playlist);
-    auto *item = vlc_playlist_Get(playlist, index);
-    auto *input = vlc_playlist_item_GetMedia(item);
-
-    if (input)
-        var_TriggerCallback(input, "prev-chapter");
-
-    vlc_playlist_Unlock(input);
+    vlc_player_Lock(player);
+    vlc_player_SelectPrevChapter(player);
+    vlc_player_Unlock(player);
 }
 
 
 void CmdDvdRootMenu::execute()
 {
-    auto *playlist = GetPL();
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vlc_playlist_Lock(playlist);
-    auto index = vlc_playlist_GetCurrentIndex(playlist);
-    auto *item = vlc_playlist_Get(playlist, index);
-    auto *input = vlc_playlist_item_GetMedia(item);
-
-    if (input)
-        var_SetInteger(input, "title  0", 2);
-
-    vlc_playlist_Unlock(playlist);
+    vlc_player_Lock(player);
+    // TODO: is it how we go to rootmenu ?
+    vlc_player_Navigate(player, VLC_PLAYER_NAV_MENU);
+    vlc_player_Unlock(player);
 }
