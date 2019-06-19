@@ -133,7 +133,7 @@ public:
     /// Getter (public because it is used in C callbacks in the win32
     /// interface)
     intf_thread_t *getIntf() const { return m_pIntf; }
-    playlist_t *getPL() const { return pl_Get(m_pIntf); }
+    vlc_playlist_t *getPL() const { return vlc_intf_GetMainPlaylist(m_pIntf); }
 
 private:
     intf_thread_t *m_pIntf;
