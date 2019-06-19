@@ -72,9 +72,10 @@ static int		fbxapi_open_tls( vlc_object_t *self )
 
 static int		fbxapi_connect( vlc_object_t *self )
 {
-    stream_t    *access = (stream_t *)self;
-    s_fbxapi    *fbx;
-    int         res;
+    stream_t            *access = (stream_t *)self;
+    s_fbxapi            *fbx;
+    s_fbxapi_request    request;
+    int                 res;
 
     access->p_sys = fbx = calloc(1, sizeof(*fbx));
     /* Hard coded settings to retrieve later */
@@ -103,11 +104,13 @@ static int		fbxapi_connect( vlc_object_t *self )
      */
     fbxapi_request(
         fbx,
+        &request,
         "GET",
         "/api/v6/login",
         NULL,
         NULL
     );
+    printf("body == %s\n", request.body);
 
     return VLC_SUCCESS;
 }
