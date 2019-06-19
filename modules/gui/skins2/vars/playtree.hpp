@@ -24,7 +24,7 @@
 #ifndef PLAYTREE_HPP
 #define PLAYTREE_HPP
 
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
 #include "../utils/var_tree.hpp"
 
 #include <map>
