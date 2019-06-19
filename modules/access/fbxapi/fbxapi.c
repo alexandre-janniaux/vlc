@@ -13,6 +13,7 @@
 #include <vlc_url.h>
 #include <vlc_tls.h>
 
+#include "../../misc/webservices/json.h"
 #include "fbxapi_request.h"
 #include "fbxapi.h"
 
@@ -69,12 +70,78 @@ static int		fbxapi_open_tls( vlc_object_t *self )
     return VLC_SUCCESS;
 }
 
+static char     *fbxapi_get_challenge(s_fbxapi *fbx)
+{
+    json_value  *json_body;
+    json_value  *obj;
+
+    /* In order to connect we first have to retrieve a challenge */
+    res = fbxapi_request(
+        fbx,
+        &request,
+        "GET",
+        "/api/v6/login",
+        NULL,
+        NULL
+    );
+    if ( res != VLC_SUCCESS )
+    {
+        msg_Err(access, "Could not send login request");
+        return NULL;
+    }
+    else if ( request.status_code / 100 != 2 || request.body == NULL )
+    {
+        msg_Err(
+            access,
+            "Could not send login request ( %d : %s )",
+            request.status_code,
+            request.status_text
+        );
+        return NULL;
+    }
+
+    json_body = json_parse(cursor);
+
+    if ( (cursor = strrchr(request.body, '}') == NULL) )
+    {
+        cursor[0] = 0;
+        return NULL;
+    }
+    if ( (cursor = strchr(request.body, '{') == NULL) )
+    {
+        return NULL;
+    }
+
+    /*
+     * Expected format : { "success": true, "result": { ..., "challenge": "random string" } }
+     */
+    obj = json_getbyname(json_body, "success");
+    if ( obj == NULL || obj->type != json_bool || obj->u.boolean != true )
+    {
+        return NULL;
+    }
+
+    obj = json_getbyname(json_body, "result");
+    if ( obj == NULL || obj->type != json_object )
+    {
+        return NULL;
+    }
+    obj = json_getbyname(obj, "challenge");
+    if ( obj == NUL || obj->type != json_string )
+    {
+        return NULL;
+    }
+    challenge = obj->u.string.ptr;
+
+    json_value_free(json_body);
+    return challenge;
+}
 
 static int		fbxapi_connect( vlc_object_t *self )
 {
     stream_t            *access = (stream_t *)self;
     s_fbxapi            *fbx;
-    s_fbxapi_request    request;
+    char                *challenge;
     int                 res;
 
     access->p_sys = fbx = calloc(1, sizeof(*fbx));
@@ -98,19 +165,11 @@ static int		fbxapi_connect( vlc_object_t *self )
     access->pf_control = access_vaDirectoryControlHelper;
     access->pf_seek = fbxapi_seek;
 
-    /*
-     *	GET /api/v6/login
-     *	Host: any.host
-     */
-    fbxapi_request(
-        fbx,
-        &request,
-        "GET",
-        "/api/v6/login",
-        NULL,
-        NULL
-    );
-    printf("body == %s\n", request.body);
+    challenge = fbxapi_get_challenge(fbx);
+    if (challenge == NULL)
+    {
+        return VLC_EGENERIC;
+    }
 
     return VLC_SUCCESS;
 }
