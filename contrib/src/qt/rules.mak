@@ -83,18 +83,18 @@ endif
 
 endif
 
-QT_CONFIG := -static -opensource -confirm-license -no-pkg-config \
-	-no-sql-sqlite -no-gif -qt-libjpeg -no-openssl $(QT_OPENGL) -no-dbus \
+QT_CONFIG := -static -opensource -confirm-license \
+	-no-sql-sqlite -no-gif -qt-libjpeg -qt-libpng -no-openssl $(QT_OPENGL) -no-dbus \
 	-no-vulkan -no-sql-odbc -no-pch \
 	-no-compile-examples -nomake examples -nomake tests -qt-zlib
 
 ifdef HAVE_LINUX
 # Force building of xcb platform, can it be detected?
-QT_CONFIG += -xcb
+QT_CONFIG += -qt-xcb #-L"$(PREFIX)/lib/" -I"$(PREFIX)/include"
 # Building Qt with fontconfig requires non-embedded
 # freetype & fontconfig to be available
-QT_CONFIG += -fontconfig -system-freetype
-DEPS_qt += freetype2 $(DEPS_freetype2) fontconfig $(DEPS_fontconfig)
+#QT_CONFIG += -fontconfig -system-freetype
+#DEPS_qt += freetype2 $(DEPS_freetype2) fontconfig $(DEPS_fontconfig)
 endif
 
 QT_CONFIG += -release
@@ -125,6 +125,7 @@ QT_PC = Qt5Core.pc \
 	# Install plugins
 	cd $< && $(MAKE) -C src -C plugins sub-imageformats-install_subtargets sub-platforms-install_subtargets sub-styles-install_subtargets
 	$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Gui plugins/imageformats qjpeg
+	#$(SRC)/qt/AddStaticLink.sh "$(PREFIX)" Qt5Gui plugins/imageformats qpng
 ifdef HAVE_WIN32
 	# Add the private include to our project (similar to using "gui-private" in a qmake project)
 	sed -i.orig -e 's#-I$${includedir}/QtGui#-I$${includedir}/QtGui -I$${includedir}/QtGui/$(QT_VERSION)/QtGui#' $(PREFIX)/lib/pkgconfig/Qt5Gui.pc
