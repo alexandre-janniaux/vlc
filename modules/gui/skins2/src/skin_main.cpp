@@ -29,7 +29,7 @@
 #include <vlc_common.h>
 #include <vlc_plugin.h>
 #include <vlc_input.h>
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
 #include <vlc_threads.h>
 #include <vlc_vout_window.h>
 
@@ -147,7 +147,10 @@ static void Close( vlc_object_t *p_this )
     msg_Dbg( p_intf, "closing skins2 module" );
 
     /* Terminate input to ensure that our window provider is released. */
-    playlist_Deactivate( pl_Get(p_intf) );
+    auto *playlist = vlc_intf_GetMainPlaylist(p_intf);
+    vlc_playlist_Lock(playlist);
+    vlc_playlist_Stop(playlist);
+    vlc_playlist_Unlock(playlist);
 
     vlc_mutex_lock( &skin_load.mutex );
     skin_load.intf = NULL;
