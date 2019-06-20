@@ -29,7 +29,7 @@
 #include <vlc_common.h>
 #include <vlc_aout.h>
 #include <vlc_vout.h>
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
 #include <vlc_url.h>
 #include <vlc_strings.h>
 
@@ -80,9 +80,68 @@ void VlcProc::destroy( intf_thread_t *pIntf )
 #define SET_STRING(m,v)       ((VarString*)(m).get())->set(v)
 #define SET_VOLUME(m,v,b)     ((Volume*)(m).get())->setVolume(v,b)
 
+static const vlc_player_cbs skins2_player_cbs =
+{
+    nullptr, /* on_current_media_changed */
+    nullptr, /* on_state_changed */
+    nullptr, /* on_error_changed */
+    nullptr, /* on_buffering_changed */
+    nullptr, /* on_rate_changed */
+    nullptr,
+    nullptr, /* on_position_changed */
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr, /* on_program_list_changed */
+    nullptr,
+    nullptr, /* on_titles_changed */
+    nullptr,
+    nullptr, /* on_chapter_selection_changed */
+    nullptr,
+    nullptr, /* on_teletext_enabled_changed */
+    nullptr,
+    nullptr, /* on_teletext_page_changed */
+    nullptr,
+    nullptr, /* on_teletext_transparency_changed */
+    nullptr,
+    nullptr, /* on_subtitle_delay_changed */
+    nullptr,
+    nullptr, /* on_renderer_changed */
+    nullptr,
+    nullptr, /* on_signal_changed */
+    nullptr,
+    nullptr, /* on_atobloop_changed */
+    nullptr,
+    nullptr, /* on_media_meta_changed */
+    nullptr,
+    nullptr, /* on_media_subitems_changed */
+    nullptr,
+    nullptr  /* on_cork_changed */
+};
+
+static const vlc_player_vout_cbs skins2_player_vout_cbs =
+{
+    nullptr, /* on_fullscreen_changed */
+    nullptr  /* on_wallpaper_mode_changed */
+};
+
+static const vlc_player_aout_cbs skins2_player_aout_cbs =
+{
+    nullptr, /* on_volume_changed */
+    nullptr, /* on_mute_changed */
+    nullptr  /* on_device_changed */
+};
+
 VlcProc::VlcProc( intf_thread_t *pIntf ): SkinObject( pIntf ),
     m_varEqBands( pIntf ), m_pVout( NULL )
 {
+    auto *playlist = vlc_intf_GetMainPlaylist(pIntf);
+    auto *player = vlc_playlist_GetPlayer(playlist);
+
+    vlc_player_AddListener(player, &skins2_player_cbs, this);
+    vlc_player_aout_AddListener(player, &skins2_player_aout_cbs, this);
+    vlc_player_vout_AddListener(player, &skins2_player_vout_cbs, this);
+
     // Create and register VLC variables
     VarManager *pVarManager = VarManager::instance( getIntf() );
 
@@ -250,6 +309,7 @@ int VlcProc::onItemAppend( vlc_object_t *pObj, const char *pVariable,
     (void)pObj; (void)pVariable; (void)oldVal;
     VlcProc *pThis = (VlcProc*)pParam;
 
+    // TODO
     playlist_item_t *item = static_cast<playlist_item_t *>(newVal.p_address);
     CmdPlaytreeAppend *pCmdTree =
         new CmdPlaytreeAppend( pThis->getIntf(), item->i_id );
@@ -268,6 +328,7 @@ int VlcProc::onItemDelete( vlc_object_t *pObj, const char *pVariable,
     (void)pObj; (void)pVariable; (void)oldVal;
     VlcProc *pThis = (VlcProc*)pParam;
 
+    // TODO
     playlist_item_t *item = static_cast<playlist_item_t *>(newVal.p_address);
     CmdPlaytreeDelete *pCmdTree =
         new CmdPlaytreeDelete( pThis->getIntf(), item->i_id);
