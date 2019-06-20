@@ -21,37 +21,36 @@
  *****************************************************************************/
 
 #include "cmd_snapshot.hpp"
-#include <vlc_input.h>
-#include <vlc_vout.h>
+#include <vlc_playlist.h>
+#include <vlc_player.h>
 
 void CmdSnapshot::execute()
 {
-    if( getIntf()->p_sys->p_input == NULL )
-        return;
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vout_thread_t *pVout = input_GetVout( getIntf()->p_sys->p_input );
-    if( pVout )
-    {
-        // Take a snapshot
-        var_TriggerCallback( pVout, "video-snapshot" );
-        vout_Release(pVout);
-    }
+    vlc_player_Lock(player);
+    vlc_player_vout_Snapshot(player);
+    vlc_player_Unlock(player);
 }
 
 
 void CmdToggleRecord::execute()
 {
-    input_thread_t* pInput = getIntf()->p_sys->p_input;
-    if( pInput )
-        var_ToggleBool( pInput, "record" );
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
+
+    vlc_player_Lock(player);
+    vlc_player_ToggleRecording(player);
+    vlc_player_Unlock(player);
 }
 
 
 void CmdNextFrame::execute()
 {
-    input_thread_t* pInput = getIntf()->p_sys->p_input;
-    if( pInput )
-        var_TriggerCallback( pInput, "frame-next" );
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
+    vlc_player_Lock(player);
+    vlc_player_NextVideoFrame(player);
+    vlc_player_Unlock(player);
 }
-
-
