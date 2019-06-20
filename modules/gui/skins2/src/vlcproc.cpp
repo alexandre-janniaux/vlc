@@ -80,6 +80,11 @@ void VlcProc::destroy( intf_thread_t *pIntf )
 #define SET_STRING(m,v)       ((VarString*)(m).get())->set(v)
 #define SET_VOLUME(m,v,b)     ((Volume*)(m).get())->setVolume(v,b)
 
+void skins2_volume_changed(vlc_player_t *player, float volume, void *data)
+{
+    VlcProc *proc = static_cast<VlcProc *>(data);
+}
+
 static const vlc_player_cbs skins2_player_cbs =
 {
     nullptr, /* on_current_media_changed */
@@ -127,7 +132,7 @@ static const vlc_player_vout_cbs skins2_player_vout_cbs =
 
 static const vlc_player_aout_cbs skins2_player_aout_cbs =
 {
-    nullptr, /* on_volume_changed */
+    skins2_volume_changed, /* on_volume_changed */
     nullptr, /* on_mute_changed */
     nullptr  /* on_device_changed */
 };
@@ -697,41 +702,25 @@ void VlcProc::on_can_record_changed( vlc_object_t* p_obj, vlc_value_t newVal )
     SET_BOOL( m_cVarRecordable, var_GetBool(  pInput, "can-record" ) );
 }
 
-void VlcProc::on_random_changed( vlc_object_t* p_obj, vlc_value_t newVal )
+void VlcProc::on_random_changed(vlc_playlist_playback_order order)
 {
-    (void)newVal;
-    playlist_t* pPlaylist = (playlist_t*) p_obj;
-
-    SET_BOOL( m_cVarRandom, var_GetBool( pPlaylist, "random" ) );
+    SET_BOOL(m_cVarRandom, order == VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM);
 }
 
-void VlcProc::on_loop_changed( vlc_object_t* p_obj, vlc_value_t newVal )
+void VlcProc::on_repeat_changed(vlc_playlist_playback_repeat repeat)
 {
-    (void)newVal;
-    playlist_t* pPlaylist = (playlist_t*) p_obj;
-
-    SET_BOOL( m_cVarLoop, var_GetBool( pPlaylist, "loop" ) );
+    SET_BOOL(m_cVarRepeat, repeat == VLC_PLAYLIST_PLAYBACK_REPEAT_CURRENT);
+    SET_BOOL(m_cVarLoop, repeat == VLC_PLAYLIST_PLAYBACK_REPEAT_LOOP);
 }
 
-void VlcProc::on_repeat_changed( vlc_object_t* p_obj, vlc_value_t newVal )
+void VlcProc::on_volume_changed(float volume)
 {
-    (void)newVal;
-    playlist_t* pPlaylist = (playlist_t*) p_obj;
-
-    SET_BOOL( m_cVarRepeat, var_GetBool( pPlaylist, "repeat" ) );
+    SET_VOLUME(m_cVarVolume, volume, false);
 }
 
-void VlcProc::on_volume_changed( vlc_object_t* p_obj, vlc_value_t newVal )
+void VlcProc::on_mute_changed(bool is_muted)
 {
-    (void)p_obj; (void)newVal;
-
-    SET_VOLUME( m_cVarVolume, var_GetFloat( getPL(), "volume" ), false );
-}
-
-void VlcProc::on_mute_changed( vlc_object_t* p_obj, vlc_value_t newVal )
-{
-    (void)p_obj;
-    SET_BOOL( m_cVarMute, newVal.b_bool );
+    SET_BOOL(m_cVarMute, is_muted);
 }
 
 void VlcProc::on_audio_filter_changed( vlc_object_t* p_obj, vlc_value_t newVal )
