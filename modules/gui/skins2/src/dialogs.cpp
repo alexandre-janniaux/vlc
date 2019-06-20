@@ -28,7 +28,7 @@
 #include "../commands/cmd_quit.hpp"
 #include "../commands/cmd_playlist.hpp"
 #include "../commands/cmd_playtree.hpp"
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
 #include <vlc_modules.h>
 #include <vlc_url.h>
 
@@ -126,8 +126,8 @@ Dialogs::~Dialogs()
         vlc_object_delete(m_pProvider);
 
         /* Unregister callbacks */
-        var_DelCallback( pl_Get(getIntf()), "intf-popupmenu",
-                         PopupMenuCB, this );
+        var_DelCallback(vlc_object_instance(getIntf()), "intf-popupmenu",
+                        PopupMenuCB, this);
     }
 }
 
@@ -176,8 +176,8 @@ bool Dialogs::init()
     }
 
     /* Register callback for the intf-popupmenu variable */
-    var_AddCallback( pl_Get(getIntf()), "intf-popupmenu",
-                     PopupMenuCB, this );
+    var_AddCallback(vlc_object_instance(getIntf()), "intf-popupmenu",
+                    PopupMenuCB, this);
 
     return true;
 }
