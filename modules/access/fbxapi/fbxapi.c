@@ -153,7 +153,7 @@ static char     *fbxapi_get_challenge(stream_t *access, s_fbxapi *fbx)
 
 static char     *encrypt_password(const char *app_token, const char *challenge)
 {
-    char                        password[SHA1_DIGEST_SIZE + 0] = {0};
+    char                        password[SHA1_DIGEST_SIZE + 1] = {0}; // NULL terminated
     char                        *b64_password;
     struct hmac_sha1_ctx        sha1;
     size_t                      b64_length;
