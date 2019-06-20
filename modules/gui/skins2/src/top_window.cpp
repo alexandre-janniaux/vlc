@@ -47,7 +47,8 @@
 #include "../utils/ustring.hpp"
 
 #include <vlc_actions.h>
-#include <vlc_input.h>
+#include <vlc_playlist.h>
+#include <vlc_player.h>
 #include <vlc_url.h>
 #include <list>
 
@@ -254,14 +255,19 @@ void TopWindow::processEvent( EvtDragDrop &rEvtDragDrop )
     }
     else
     {
-        input_thread_t *pInput = getIntf()->p_sys->p_input;
+        auto *playlist = vlc_intf_GetMainPlaylist(getIntf());
+        auto *player = vlc_playlist_GetPlayer(playlist);
+
         bool is_subtitle = false;
         std::list<std::string> files = rEvtDragDrop.getFiles();
-        if( files.size() == 1 && pInput != NULL )
+        if (files.size() == 1)
         {
+            vlc_player_Lock(player);
             std::list<std::string>::const_iterator it = files.begin();
-            is_subtitle = !input_AddSlave( pInput, SLAVE_TYPE_SPU,
-                                           it->c_str(), true, true, true );
+            is_subtitle = !vlc_player_AddAssociatedMedia(player, SPU_ES,
+                                                           it->c_str(),
+                                                           true, true, true);
+            vlc_player_Unlock(player);
         }
         if( !is_subtitle )
         {
@@ -555,4 +561,3 @@ void TopWindow::setLastHit( CtrlGeneric *pNewHitControl )
 
     m_pLastHitControl = pNewHitControl;
 }
-
