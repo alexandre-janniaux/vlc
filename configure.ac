@@ -4225,6 +4225,8 @@ AS_IF([test "${enable_vsxu}" != "no"],
     ])
   ])
 
+PKG_CHECK_MODULES(NETTLE, nettle,[],[AC_MSG_WARN([${NETTLE_PKG_ERRORS}.])])
+
 EXTEND_HELP_STRING([Service Discovery plugins:])
 dnl
 dnl  Avahi-Zeroconf services discovery

@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <nettle/hmac.h>
+#include <nettle/base64.h>
+
 #include <vlc_common.h>
 #include <vlc_access.h>
 #include <vlc_stream.h>
@@ -14,6 +17,7 @@
 #include <vlc_tls.h>
 
 #include "../../misc/webservices/json.h"
+#include "../../misc/webservices/json_helper.h"
 #include "fbxapi_request.h"
 #include "fbxapi.h"
 
@@ -50,7 +54,7 @@ static int		fbxapi_open_tls( vlc_object_t *self )
 
     fbx = access->p_sys;
     if (
-        vlc_UrlParse(&url, /*"https://k0bazxqu.fbxos.fr:922"*/access->psz_url)
+        vlc_UrlParse(&url, access->psz_url)
         || url.psz_host == NULL
         || url.i_port == 0
     )
@@ -70,10 +74,14 @@ static int		fbxapi_open_tls( vlc_object_t *self )
     return VLC_SUCCESS;
 }
 
-static char     *fbxapi_get_challenge(s_fbxapi *fbx)
+static char     *fbxapi_get_challenge(stream_t *access, s_fbxapi *fbx)
 {
-    json_value  *json_body;
-    json_value  *obj;
+    json_value              *json_body;
+    json_value              *obj;
+    int                     res;
+    struct s_fbxapi_request request;
+    char                    *challenge;
+    char                    *cursor;
 
     /* In order to connect we first have to retrieve a challenge */
     res = fbxapi_request(
@@ -100,14 +108,20 @@ static char     *fbxapi_get_challenge(s_fbxapi *fbx)
         return NULL;
     }
 
-    json_body = json_parse(cursor);
 
-    if ( (cursor = strrchr(request.body, '}') == NULL) )
+    if ( (cursor = strrchr(request.body, '}')) == NULL )
     {
-        cursor[0] = 0;
         return NULL;
     }
-    if ( (cursor = strchr(request.body, '{') == NULL) )
+    cursor[1] = '\0';
+    if ( (cursor = strchr(request.body, '{')) == NULL )
+    {
+        return NULL;
+    }
+    json_body = json_parse(cursor);
+    printf("Parse %s gives %p\n", cursor, json_body);
+
+    if ( json_body == NULL )
     {
         return NULL;
     }
@@ -116,7 +130,7 @@ static char     *fbxapi_get_challenge(s_fbxapi *fbx)
      * Expected format : { "success": true, "result": { ..., "challenge": "random string" } }
      */
     obj = json_getbyname(json_body, "success");
-    if ( obj == NULL || obj->type != json_bool || obj->u.boolean != true )
+    if ( obj == NULL || obj->type != json_boolean || obj->u.boolean != true )
     {
         return NULL;
     }
@@ -127,14 +141,94 @@ static char     *fbxapi_get_challenge(s_fbxapi *fbx)
         return NULL;
     }
     obj = json_getbyname(obj, "challenge");
-    if ( obj == NUL || obj->type != json_string )
+    if ( obj == NULL || obj->type != json_string )
     {
         return NULL;
     }
-    challenge = obj->u.string.ptr;
+    challenge = strdup(obj->u.string.ptr);
 
     json_value_free(json_body);
     return challenge;
+}
+
+static char     *encrypt_password(const char *app_token, const char *challenge)
+{
+    char                        password[SHA1_DIGEST_SIZE + 0] = {0};
+    char                        *b64_password;
+    struct hmac_sha1_ctx        sha1;
+    size_t                      b64_length;
+
+    memset(&sha1, 0, sizeof(sha1));
+    hmac_sha1_set_key(&sha1, strlen(app_token), (uint8_t *)app_token);
+    hmac_sha1_update(&sha1, strlen(challenge), (uint8_t *)challenge);
+    hmac_sha1_digest(&sha1, SHA1_DIGEST_SIZE, (uint8_t *)password);
+
+    b64_length = BASE64_ENCODE_RAW_LENGTH(strlen(password));
+    b64_password = calloc(b64_length + 1, 1);
+    if ( b64_password != NULL )
+    {
+        base64_encode_raw(b64_password, b64_length, password);
+    }
+    return b64_password;
+}
+
+static char     *fbxapi_get_token_session(
+    stream_t *access,
+    s_fbxapi *fbx,
+    const char *challenge
+)
+{
+    //json_value                *json_body;
+    //json_value                *obj;
+    char                        *payload;
+    int                         res;
+    struct s_fbxapi_request     request;
+    char                        *password;
+
+    password = encrypt_password(fbx->app_token, challenge);
+    if (
+        asprintf(
+            &payload,
+            "{\"app_id\":\"%s\",\"password\":\"%s\", \"app_version\": \"%s\"}",
+            fbx->app_id,
+            password,
+            fbx->app_version
+        ) == -1
+    )
+    {
+        return NULL;
+    }
+    /* In order to connect we first have to retrieve a challenge */
+    printf("%s %s %d\n", __FILE__, __FUNCTION__, __LINE__);
+    res = fbxapi_request(
+        fbx,
+        &request,
+        "POST",
+        "/api/v6/login/session",
+        NULL,
+        payload
+    );
+    printf("payload == %s == payload \n", payload);
+    free(payload);
+    payload = NULL;
+    printf("request = %d %s %s\n", request.status_code, request.status_text, request.body);
+
+    if ( res != VLC_SUCCESS )
+    {
+        msg_Err(access, "Could not send login request");
+        return NULL;
+    }
+    else if ( request.status_code / 100 != 2 || request.body == NULL )
+    {
+        msg_Err(
+            access,
+            "Could not send login request ( %d : %s )",
+            request.status_code,
+            request.status_text
+        );
+        return NULL;
+    }
+    return strdup("");
 }
 
 static int		fbxapi_connect( vlc_object_t *self )
@@ -147,8 +241,10 @@ static int		fbxapi_connect( vlc_object_t *self )
     access->p_sys = fbx = calloc(1, sizeof(*fbx));
     /* Hard coded settings to retrieve later */
 
-    fbx->http.domain = "k0bazxqu.fbxos.fr";
+    fbx->http.domain = strdup("k0bazxqu.fbxos.fr");
     fbx->http.port = 922;
+    fbx->app_token = strdup("oSxk06TlWAmTqzi9VGEI1q6U625Z68SjuAVcFw+pkTEHCQz968mH18F/wT3jbqJ5");
+    fbx->app_version = strdup("0.0.1");
 
     /* \\ Hard coded settings to retrieve later */
 
@@ -165,11 +261,14 @@ static int		fbxapi_connect( vlc_object_t *self )
     access->pf_control = access_vaDirectoryControlHelper;
     access->pf_seek = fbxapi_seek;
 
-    challenge = fbxapi_get_challenge(fbx);
+    printf("Going to require challenge...\n");
+    challenge = fbxapi_get_challenge(access, fbx);
+    printf("Challenge == %s\n", challenge);
     if (challenge == NULL)
     {
         return VLC_EGENERIC;
     }
+    printf("Token session == %s\n", fbxapi_get_token_session(access, fbx, challenge));
 
     return VLC_SUCCESS;
 }

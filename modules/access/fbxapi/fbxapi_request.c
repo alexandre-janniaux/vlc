@@ -37,11 +37,11 @@ static void		fbxapi_set_bases(
 {
     vlc_memstream_printf(stream, "%s %s HTTP/1.1\r\n", verb, endpoint);
     vlc_memstream_printf(
-            stream,
-            "Host: %s:%d\r\n",
-            fbx->http.domain,
-            fbx->http.port
-            );
+        stream,
+        "Host: %s:%d\r\n",
+        fbx->http.domain,
+        fbx->http.port
+    );
     vlc_memstream_puts(stream, "Accept: text/html,Application/json,*/*;q=8\r\n");
     vlc_memstream_puts(stream, "Accept-Language: en-US,en,q=0.5\r\n");
     vlc_memstream_puts(stream, "Accept-Encoding: " FBX_ACCEPTED_ENCODING "\r\n\r\n");
@@ -64,6 +64,7 @@ static int      fbx_get_body(
      */
     body_length = 0;
     index = 0;
+    printf("%s %s %d\n", __FILE__, __FUNCTION__, __LINE__);
     while ( (input = vlc_tls_GetLine(fbx->http.tls)) != NULL )
     {
         body_length += strlen(input);
@@ -229,6 +230,7 @@ int				fbxapi_request(
     }
 
     vlc_tls_Write(fbx->http.tls, stream.ptr, stream.length);
+    free(stream.ptr);
 
     fbx_get_response(fbx, request);
 

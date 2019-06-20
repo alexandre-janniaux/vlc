@@ -19,6 +19,7 @@ struct		s_fbxapi
      * Informations about the application
      */
     char        *app_name;
+    char        *app_id;
     char        *app_version;
     char        *app_token;
     char        *device_name;
