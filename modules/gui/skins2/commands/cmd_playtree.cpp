@@ -35,11 +35,18 @@ void CmdPlaytreeSort::execute()
 {
     /// \todo Choose sort method/order - Need more commands
     /// \todo Choose the correct view
-    playlist_t *p_playlist = getPL();
-    PL_LOCK;
-    playlist_RecursiveNodeSort( p_playlist, &p_playlist->root,
-                                SORT_TITLE, ORDER_NORMAL );
-    PL_UNLOCK;
+    auto *playlist = getPL();
+
+    vlc_playlist_Lock(playlist);
+    vlc_playlist_sort_criterion criterion {};
+    criterion.key = VLC_PLAYLIST_SORT_KEY_TITLE;
+    criterion.order = VLC_PLAYLIST_SORT_ORDER_DESCENDING;
+
+    vlc_playlist_Sort(playlist, &criterion, 1);
+    // TODO
+    //playlist_RecursiveNodeSort( p_playlist, &p_playlist->root,
+    //                            SORT_TITLE, ORDER_NORMAL );
+    vlc_playlist_Unlock(playlist);
 
     // Ask for rebuild
     VlcProc::instance( getIntf() )->getPlaytreeVar().onChange();
