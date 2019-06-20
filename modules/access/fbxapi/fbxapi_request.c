@@ -193,7 +193,7 @@ static int		fbx_get_response(
         request->headers[index] = input;
         index++;
     }
-    request->headers[index + 1] = NULL;
+    request->headers[index] = NULL;
     if ( input != NULL )
     {
         free(input);
@@ -214,6 +214,7 @@ int				fbxapi_request(
 {
     struct vlc_memstream	stream;
 
+    memset(&stream, 0, sizeof(stream));
     vlc_memstream_open(&stream);
     fbxapi_set_bases(&stream, fbx, verb, endpoint);
     if ( headers != NULL )
