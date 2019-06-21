@@ -3301,6 +3301,16 @@ vlc_player_AoutCallback(vlc_object_t *this, const char *var,
             vlc_player_aout_SendEvent(player, on_device_changed,
                                       newval.psz_string);
     }
+    else if (strcmp(var, "device-plugged") == 0)
+    {
+        vlc_player_aout_SendEvent(player, on_device_hotplugged,
+                                  newval.psz_string, true);
+    }
+    else if (strcmp(var, "device-unplugged") == 0)
+    {
+        vlc_player_aout_SendEvent(player, on_device_hotplugged,
+                                  newval.psz_string, false);
+    }
     else
         vlc_assert_unreachable();
 
