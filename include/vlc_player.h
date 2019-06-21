@@ -971,6 +971,17 @@ struct vlc_player_aout_cbs
      */
     void (*on_device_changed)(vlc_player_t *player, const char *device,
                               void *data);
+
+    /**
+     * Called when an audio device has been plugged or unplugged
+     *
+     * @param player unlocked player instance
+     * @param device the device name
+     * @param was_plugged true if the device was plugged, false otherwise
+     * @param data opaque pointer set by vlc_player_aout_AddListener()
+     */
+     void (*on_device_hotplugged)(vlc_player_t *player, const char *device,
+                                  bool was_plugged, void* data);
 };
 
 /**
