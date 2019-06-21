@@ -900,6 +900,7 @@ static const struct vlc_player_vout_cbs player_vout_cbs = {
 static const struct vlc_player_aout_cbs player_aout_cbs = {
     on_player_aout_volume_changed,
     on_player_aout_mute_changed,
+    nullptr,
     nullptr
 };
 
