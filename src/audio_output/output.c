@@ -111,7 +111,9 @@ static void aout_HotplugNotify (audio_output_t *aout,
         pp = &dev->next;
     }
 
-    if (name != NULL)
+    bool is_plugged = name != NULL;
+
+    if (is_plugged)
     {
         if (dev == NULL) /* Added device */
         {
@@ -137,6 +139,14 @@ static void aout_HotplugNotify (audio_output_t *aout,
             free (dev);
         }
     }
+    vlc_mutex_unlock (&owner->dev.lock);
+
+    if (is_plugged)
+        var_SetString (aout, "device-plugged", name);
+    else
+        var_SetString (aout, "device-unplugged", name);
+    return;
+
 out:
     vlc_mutex_unlock (&owner->dev.lock);
 }
