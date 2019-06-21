@@ -65,7 +65,7 @@ public:
 
 private:
     /// VLC playlist object
-    playlist_t *m_pPlaylist;
+    vlc_playlist_t *m_playlist;
 
     ///
     std::map< int, VarTree* > m_allItems;

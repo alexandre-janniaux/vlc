@@ -25,7 +25,8 @@
 #endif
 
 #include <vlc_common.h>
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
+#include <vlc_player.h>
 #include <vlc_input.h>
 #include <vlc_aout.h>
 #include "equalizer.hpp"
@@ -83,7 +84,9 @@ VariablePtr EqualizerBands::getBand( int band )
 void EqualizerBands::onUpdate( Subject<VarPercent> &rBand, void *arg )
 {
     (void)rBand; (void)arg;
-    audio_output_t *pAout = playlist_GetAout( getPL() );
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
+    audio_output_t *pAout = vlc_player_aout_Hold(player);
 
     // Make sure we are not called from set()
     if (!m_isUpdating)
@@ -126,7 +129,9 @@ EqualizerPreamp::EqualizerPreamp( intf_thread_t *pIntf ): VarPercent( pIntf )
 
 void EqualizerPreamp::set( float percentage, bool updateVLC )
 {
-    audio_output_t *pAout = playlist_GetAout( getPL() );
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
+    audio_output_t *pAout = vlc_player_aout_Hold(player);
 
     VarPercent::set( percentage );
 

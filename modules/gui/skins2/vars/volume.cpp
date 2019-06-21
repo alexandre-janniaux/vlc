@@ -27,7 +27,7 @@
 #endif
 
 #include <vlc_common.h>
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
 #include <vlc_aout.h>
 #include "volume.hpp"
 #include <math.h>
@@ -38,7 +38,7 @@ Volume::Volume( intf_thread_t *pIntf ): VarPercent( pIntf )
     m_step = config_GetFloat( "volume-step" ) / (float)AOUT_VOLUME_MAX;
 
     // set current volume from the playlist
-    setVolume( var_GetFloat( getPL(), "volume" ), false );
+    // setVolume( var_GetFloat( getPL(), "volume" ), false );
 }
 
 
@@ -47,7 +47,7 @@ void Volume::set( float percentage, bool updateVLC )
     VarPercent::set( percentage );
     if( updateVLC )
     {
-        playlist_VolumeSet( getPL(), getVolume() );
+        // playlist_VolumeSet( getPL(), getVolume() );
     }
 }
 
@@ -77,4 +77,3 @@ std::string Volume::getAsStringPercent() const
     snprintf( str, 4, "%i", value );
     return std::string(str);
 }
-

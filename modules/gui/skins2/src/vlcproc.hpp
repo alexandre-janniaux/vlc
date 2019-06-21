@@ -29,6 +29,7 @@
 #include <vlc_common.h>
 #include <vlc_input.h>
 #include <vlc_vout.h>
+#include <vlc_player.h>
 #include "../vars/equalizer.hpp"
 #include "../vars/playtree.hpp"
 #include "../vars/time.hpp"
@@ -100,22 +101,171 @@ public:
     /// update global variables for the current input
     void update_current_input( );
 
-    void on_intf_event_changed( vlc_object_t* p_obj, vlc_value_t newVal );
-    void on_bit_rate_changed( vlc_object_t* p_obj, vlc_value_t newVal );
-    void on_sample_rate_changed( vlc_object_t* p_obj, vlc_value_t newVal );
-    void on_can_record_changed( vlc_object_t* p_obj, vlc_value_t newVal );
+    static void
+    on_current_media_changed(vlc_player_t* player,
+                             input_item_t *new_media,
+                             void *data);
 
-    void on_random_changed( vlc_object_t* p_obj, vlc_value_t newVal );
-    void on_loop_changed( vlc_object_t* p_obj, vlc_value_t newVal );
-    void on_repeat_changed( vlc_object_t* p_obj, vlc_value_t newVal );
+    static void
+    on_state_changed(vlc_player_t *player,
+                     vlc_player_state new_state,
+                     void *data);
 
-    void on_volume_changed( vlc_object_t* p_obj, vlc_value_t newVal );
-    void on_mute_changed( vlc_object_t* p_obj, vlc_value_t newVal );
-    void on_audio_filter_changed( vlc_object_t* p_obj, vlc_value_t newVal );
+    static void
+    on_error_changed(vlc_player_t *player,
+                     vlc_player_error error,
+                     void *data);
 
-    void on_intf_show_changed( vlc_object_t* p_obj, vlc_value_t newVal );
+    static void
+    on_buffering_changed(vlc_player_t *player,
+                         float new_buffering,
+                         void *data);
 
-    void on_mouse_moved_changed( vlc_object_t* p_obj, vlc_value_t newVal );
+    static void
+    on_capabilites_changed(vlc_player_t *player,
+                           int old_caps, int new_caps,
+                           void *data);
+
+    static void
+    on_position_changed(vlc_player_t *player,
+                        vlc_tick_t new_time,
+                        float new_pos,
+                        void *data);
+
+    static void
+    on_length_changed(vlc_player_t *player,
+                      vlc_tick_t new_length,
+                      void *data);
+
+    static void
+    on_track_list_changed(vlc_player_t *player,
+                          vlc_player_list_action action,
+                          const vlc_player_track *track,
+                          void *data);
+
+    static void
+    on_track_selection_changed(vlc_player_t *player,
+                               vlc_es_id_t *unselected_id,
+                               vlc_es_id_t *selected_id,
+                               void *data);
+
+    static void
+    on_program_list_changed(vlc_player_t *player,
+                            vlc_player_list_action action,
+                            const vlc_player_program *prgm,
+                            void *data);
+
+    static void
+    on_program_selection_changed(vlc_player_t *player,
+                                 int unselected_id, int selected_id,
+                                 void *data);
+
+    static void
+    on_titles_changed(vlc_player_t *player,
+                      vlc_player_title_list *titles,
+                      void *data);
+
+    static void
+    on_title_selection_changed(vlc_player_t *player,
+                               const struct vlc_player_title *new_title,
+                               size_t new_idx,
+                               void *data);
+
+    static void
+    on_chapter_selection_changed(vlc_player_t *player,
+                                 const vlc_player_title *title, size_t t_idx,
+                                 const vlc_player_chapter *chap, size_t c_idx);
+
+    static void
+    on_teletext_menu_changed(vlc_player_t *player,
+                             bool has_teletext_menu,
+                             void *data);
+
+    static void
+    on_teletext_enabled_changed(vlc_player_t *player,
+                                bool enabled,
+                                void *data);
+
+    static void
+    on_teletext_page_changed(vlc_player_t *player,
+                             unsigned new_page, void *data);
+
+    static void
+    on_teletext_transparency_changed(vlc_player_t *player,
+                                     bool enabled,
+                                     void *data);
+
+    static void
+    on_audio_delay_changed(vlc_player_t *player,
+                           vlc_tick_t new_delay,
+                           void *data);
+
+    static void
+    on_subtitle_delay_changed(vlc_player_t *player,
+                              vlc_tick_t new_delay,
+                              void *data);
+
+    static void
+    on_associated_subs_fps_changed(vlc_player_t *player,
+                                   float subs_fps,
+                                   void *data);
+
+    static void on_renderer_changed(vlc_player_t *player,
+                                    vlc_renderer_item_t *new_item,
+                                    void *data);
+
+    static void on_recording_changed(vlc_player_t *player,
+                                     bool recording,
+                                     void *data);
+
+    static void
+    on_signal_changed(vlc_player_t *player,
+                      float quality,
+                      float strength,
+                      void *data);
+
+    static void
+    on_statistics_changed(vlc_player_t *player,
+                          const input_stats_t *stats,
+                          void *data);
+
+    static void
+    on_atobloop_changed(vlc_player_t *player,
+                        vlc_player_abloop new_state,
+                        vlc_tick_t time, float pos,
+                        void *data);
+
+    static void
+    on_media_stopped_action_changed(vlc_player_t *player,
+                                    vlc_player_media_stopped_action new_action,
+                                    void *data);
+
+    static void
+    on_media_meta_changed(vlc_player_t *player,
+                          input_item_t *media,
+                          void *data);
+
+    static void
+    on_media_epg_changed(vlc_player_t *player,
+                         input_item_t *media,
+                         void *data);
+
+    static void
+    on_media_subtimes_changed(vlc_player_t *player,
+                              input_item_t *media,
+                              input_item_node_t *new_subitems,
+                              void *data);
+
+    static void
+    on_vout_changed(vlc_player_t *player,
+                    vlc_player_vout_action action,
+                    vout_thread_t *vout,
+                    void *data);
+
+    static void
+    on_cork_changed(vlc_player_t *player,
+                    unsigned cork_count,
+                    void *data);
 
 protected:
     // Protected because it is a singleton
