@@ -1130,6 +1130,9 @@ static void SpuRenderRegion(spu_t *spu,
                                    (entry->stop - fade_start);
         }
         dst->i_alpha   = fade_alpha * subpic->i_alpha * region->i_alpha / 65025;
+
+        dst->raster.i_width  = region->raster.i_width;
+        dst->raster.i_height = region->raster.i_height;
     }
 
 exit:
