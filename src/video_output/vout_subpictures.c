@@ -816,6 +816,8 @@ static void SpuRenderRegion(spu_t *spu,
         /* Check if the rendering has failed ... */
         if (region->fmt.i_chroma == VLC_CODEC_TEXT)
             goto exit;
+        region->raster.i_width  = fmt->i_width;
+        region->raster.i_height = fmt->i_height;
     }
 
     video_format_AdjustColorSpace(&region->fmt);
