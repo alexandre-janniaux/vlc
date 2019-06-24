@@ -279,7 +279,14 @@ static void SpuRenderText(spu_t *spu, bool *rerender_text,
     var_SetBool(text, "text-rerender", false);
 
     if ( region->p_text )
+    {
+        /* We will render the text into the output format of the text
+         * filter by default. It is used as a scaling information. */
+        region->screen.i_width  = text->fmt_out.video.i_width;
+        region->screen.i_height = text->fmt_out.video.i_height;
+
         text->pf_render(text, region, region, chroma_list);
+    }
     *rerender_text = var_GetBool(text, "text-rerender");
 }
 
@@ -694,6 +701,9 @@ static void SpuRenderRegion(spu_t *spu,
         /* Check if the rendering has failed ... */
         if (region->fmt.i_chroma == VLC_CODEC_TEXT)
             goto exit;
+
+        region->screen.i_width  = fmt->i_width;
+        region->screen.i_height = fmt->i_height;
     }
 
     video_format_AdjustColorSpace(&region->fmt);
@@ -1739,4 +1749,3 @@ void spu_ChangeMargin(spu_t *spu, int margin)
     sys->margin = margin;
     vlc_mutex_unlock(&sys->lock);
 }
-
