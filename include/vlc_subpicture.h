@@ -76,6 +76,12 @@ struct subpicture_region_t
     vlc_rational_t  zoom_h;
     vlc_rational_t  zoom_v;
 
+    struct
+    {
+        int i_width;
+        int i_height;
+    } raster;
+
     subpicture_region_t *p_next;                /**< next region in the list */
     subpicture_region_private_t *p_private;  /**< Private data for spu_t *only* */
 };
