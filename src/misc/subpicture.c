@@ -332,3 +332,18 @@ subpicture_region_t* subpicture_region_Copy( subpicture_region_t *p_region_src )
                p_region_src->p_picture->p[i].i_lines * p_region_src->p_picture->p[i].i_pitch);
     return p_region_dst;
 }
+
+void vlc_subpicture_region_Place(
+    struct vlc_subpicture_place *place,
+    const subpicture_region_t *region)
+{
+    /* TODO: should we handle display PAR? */
+    float sar    = region->fmt.i_sar_num / (float)region->fmt.i_sar_den;
+    float zoom_v = 2.f / region->screen.i_height;
+    float zoom_h = 2.f / region->screen.i_width;
+
+    place->left   = -1.f + zoom_h * region->i_x;
+    place->top    =  1.f - zoom_v * region->i_y;
+    place->right  = -1.f + zoom_h * (region->i_x + region->fmt.i_visible_width * sar);
+    place->bottom =  1.f - zoom_v * (region->i_y + region->fmt.i_visible_height);
+}
