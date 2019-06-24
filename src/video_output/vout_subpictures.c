@@ -326,7 +326,15 @@ static void SpuRenderText(spu_t *spu, bool *rerender_text,
     var_SetBool(text, "text-rerender", false);
 
     if ( region->p_text )
+    {
+        /* We will always rasterize the text into the output
+         * format of the text filter by default.
+         * It is used as a scaling information. */
+        region->raster.i_width  = text->fmt_out.video.i_width;
+        region->raster.i_height = text->fmt_out.video.i_height;
+
         text->pf_render(text, region, region, chroma_list);
+    }
     *rerender_text = var_GetBool(text, "text-rerender");
 }
 
