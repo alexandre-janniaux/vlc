@@ -780,7 +780,7 @@ static void SpuRenderRegion(spu_t *spu,
                             const vlc_fourcc_t *chroma_list,
                             const video_format_t *fmt,
                             const spu_area_t *subtitle_area, size_t subtitle_area_count,
-                            vlc_tick_t render_date)
+                            vlc_tick_t render_date, bool external_scale)
 {
     subpicture_t *subpic = entry->subpic;
     spu_private_t *sys = spu->p;
@@ -985,7 +985,7 @@ static void SpuRenderRegion(spu_t *spu,
         }
 
         /* Scale if needed into cache */
-        if (!region->p_private && dst_width > 0 && dst_height > 0) {
+        if (!region->p_private && dst_width > 0 && dst_height > 0 && !external_scale) {
             filter_t *scale = sys->scale;
 
             picture_t *picture = region->p_picture;
@@ -1275,7 +1275,8 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
                             entry, region, virtual_scale,
                             chroma_list, fmt_dst,
                             subtitle_area, subtitle_area_count,
-                            subpic->b_subtitle ? render_subtitle_date : system_now);
+                            subpic->b_subtitle ? render_subtitle_date : system_now,
+                            external_scale);
             if (*output_last_ptr)
             {
                 if (do_external_scale)
