@@ -86,6 +86,11 @@ struct subpicture_region_t
     subpicture_region_private_t *p_private;  /**< Private data for spu_t *only* */
 };
 
+struct vlc_subpicture_place
+{
+    float left, right, top, bottom;
+};
+
 /* Subpicture region position flags */
 #define SUBPICTURE_ALIGN_LEFT       0x1
 #define SUBPICTURE_ALIGN_RIGHT      0x2
@@ -240,6 +245,10 @@ VLC_API void subpicture_Update( subpicture_t *, const video_format_t *src, const
  * \return the number of region(s) successfully blent
  */
 VLC_API unsigned picture_BlendSubpicture( picture_t *, filter_t *p_blend, subpicture_t * );
+
+
+VLC_API void vlc_subpicture_region_Place(struct vlc_subpicture_place *place,
+                                         const subpicture_region_t *region);
 
 /**@}*/
 
