@@ -1281,23 +1281,7 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
                             subpic->b_subtitle ? render_subtitle_date : system_now,
                             external_scale);
             if (*output_last_ptr)
-            {
-                if (do_external_scale)
-                {
-                    if (scale.h != SCALE_UNIT)
-                    {
-                        (*output_last_ptr)->zoom_h.num = scale.h;
-                        (*output_last_ptr)->zoom_h.den = SCALE_UNIT;
-                    }
-                    if (scale.w != SCALE_UNIT)
-                    {
-                        (*output_last_ptr)->zoom_v.num = scale.w;
-                        (*output_last_ptr)->zoom_v.den = SCALE_UNIT;
-                    }
-                }
-
                 output_last_ptr = &(*output_last_ptr)->p_next;
-            }
 
             if (subpic->b_subtitle) {
                 area = spu_area_unscaled(area, scale);
