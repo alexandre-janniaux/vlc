@@ -1034,6 +1034,12 @@ static void SpuRenderRegion(spu_t *spu,
                 picture = scale->pf_video_filter(scale, picture);
                 if (!picture)
                     msg_Err(spu, "scaling failed");
+                else
+                {
+                    /* We rescaled to the given output fmt size. */
+                    region->raster.i_width  = fmt->i_visible_width;
+                    region->raster.i_height = fmt->i_visible_height;
+                }
             }
 
             /* */
