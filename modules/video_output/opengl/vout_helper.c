@@ -83,11 +83,10 @@ typedef struct {
 
     float    alpha;
 
-    float    top;
-    float    left;
-    float    bottom;
-    float    right;
+    /* Display render paramaters */
+    struct vlc_subpicture_place place;
 
+    /* Texture information */
     float    tex_width;
     float    tex_height;
 } gl_region_t;
@@ -1085,6 +1084,9 @@ int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,
              r && ret == VLC_SUCCESS; r = r->p_next, i++) {
             gl_region_t *glr = &vgl->region[i];
 
+            vlc_subpicture_region_Place(&glr->place, r);
+
+            glr->alpha  = (float)subpicture->i_alpha * r->i_alpha / 255 / 255;
             glr->width  = r->fmt.i_visible_width;
             glr->height = r->fmt.i_visible_height;
             if (!vgl->supports_npot) {
@@ -1096,11 +1098,6 @@ int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,
                 glr->tex_width  = 1.0;
                 glr->tex_height = 1.0;
             }
-            glr->alpha  = (float)subpicture->i_alpha * r->i_alpha / 255 / 255;
-            glr->left   =  2.0 * (r->i_x                          ) / subpicture->i_original_picture_width  - 1.0;
-            glr->top    = -2.0 * (r->i_y                          ) / subpicture->i_original_picture_height + 1.0;
-            glr->right  =  2.0 * (r->i_x + r->fmt.i_visible_width ) / subpicture->i_original_picture_width  - 1.0;
-            glr->bottom = -2.0 * (r->i_y + r->fmt.i_visible_height) / subpicture->i_original_picture_height + 1.0;
 
             glr->texture = 0;
             /* Try to recycle the textures allocated by the previous
@@ -1137,8 +1134,6 @@ int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,
             DelTextures(tc, &last[i].texture);
     }
     free(last);
-
-    VLC_UNUSED(subpicture);
 
     GL_ASSERT_NOERROR();
     return ret;
@@ -1648,10 +1643,10 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     for (int i = 0; i < vgl->region_count; i++) {
         gl_region_t *glr = &vgl->region[i];
         const GLfloat vertexCoord[] = {
-            glr->left,  glr->top,
-            glr->left,  glr->bottom,
-            glr->right, glr->top,
-            glr->right, glr->bottom,
+            glr->place.left,  glr->place.top,
+            glr->place.left,  glr->place.bottom,
+            glr->place.right, glr->place.top,
+            glr->place.right, glr->place.bottom,
         };
         const GLfloat textureCoord[] = {
             0.0, 0.0,
@@ -1697,4 +1692,3 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
     return VLC_SUCCESS;
 }
-
