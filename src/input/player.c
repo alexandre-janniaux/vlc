@@ -3787,6 +3787,8 @@ vlc_player_New(vlc_object_t *parent, enum vlc_player_lock_type lock_type,
         var_AddCallback(aout, "volume", vlc_player_AoutCallback, player);
         var_AddCallback(aout, "mute", vlc_player_AoutCallback, player);
         var_AddCallback(aout, "device", vlc_player_AoutCallback, player);
+        var_AddCallback(aout, "device-plugged", vlc_player_AoutCallback, player);
+        var_AddCallback(aout, "device-unplugged", vlc_player_AoutCallback, player);
         var_AddCallback(player, "corks", vlc_player_CorkCallback, NULL);
         input_resource_PutAout(player->resource, aout);
     }
@@ -3809,6 +3811,8 @@ error:
         var_DelCallback(aout, "volume", vlc_player_AoutCallback, player);
         var_DelCallback(aout, "mute", vlc_player_AoutCallback, player);
         var_DelCallback(aout, "device", vlc_player_AoutCallback, player);
+        var_DelCallback(aout, "device-plugged", vlc_player_AoutCallback, player);
+        var_DelCallback(aout, "device-unplugged", vlc_player_AoutCallback, player);
         var_DelCallback(player, "corks", vlc_player_AoutCallback, NULL);
     }
     if (player->resource)
