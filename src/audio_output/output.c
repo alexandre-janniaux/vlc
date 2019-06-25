@@ -142,9 +142,15 @@ static void aout_HotplugNotify (audio_output_t *aout,
     vlc_mutex_unlock (&owner->dev.lock);
 
     if (is_plugged)
+    {
+        msg_Err(aout, "triggering device-plugged for %s", name);
         var_SetString (aout, "device-plugged", name);
+    }
     else
+    {
+        msg_Err(aout, "triggering device-unplugged for %s", name);
         var_SetString (aout, "device-unplugged", name);
+    }
     return;
 
 out:
