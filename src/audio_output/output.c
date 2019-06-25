@@ -124,9 +124,14 @@ static void aout_HotplugNotify (audio_output_t *aout,
             strcpy (dev->id, id);
             *pp = dev;
             owner->dev.count++;
+            msg_Err(aout, "triggering device-plugged for %s", name);
+            var_SetString (aout, "device-plugged", name);
         }
         else /* Modified device */
+        {
+            // TODO: handle rename ?
             free (dev->name);
+        }
         dev->name = strdup (name);
     }
     else
@@ -135,24 +140,12 @@ static void aout_HotplugNotify (audio_output_t *aout,
         {
             owner->dev.count--;
             *pp = dev->next;
+            msg_Err(aout, "triggering device-unplugged for %s", dev->name);
+            var_SetString (aout, "device-unplugged", dev->name);
             free (dev->name);
             free (dev);
         }
     }
-    vlc_mutex_unlock (&owner->dev.lock);
-
-    if (is_plugged)
-    {
-        msg_Err(aout, "triggering device-plugged for %s", name);
-        var_SetString (aout, "device-plugged", name);
-    }
-    else
-    {
-        msg_Err(aout, "triggering device-unplugged for %s", name);
-        var_SetString (aout, "device-unplugged", name);
-    }
-    return;
-
 out:
     vlc_mutex_unlock (&owner->dev.lock);
 }
