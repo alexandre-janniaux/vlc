@@ -1137,7 +1137,7 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
                             chroma_list, fmt_dst,
                             subtitle_area, subtitle_area_count,
                             subpic->b_subtitle ? render_subtitle_date : render_osd_date,
-                            external_scale);
+                            do_external_scale);
             if (*output_last_ptr)
                 output_last_ptr = &(*output_last_ptr)->p_next;
 
