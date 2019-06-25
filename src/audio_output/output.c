@@ -130,6 +130,7 @@ static void aout_HotplugNotify (audio_output_t *aout,
         else /* Modified device */
         {
             // TODO: handle rename ?
+            msg_Dbg(aout, "signaling audio device renaming is currently not supported");
             free (dev->name);
         }
         dev->name = strdup (name);
