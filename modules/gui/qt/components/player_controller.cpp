@@ -854,6 +854,14 @@ static void on_player_corks_changed(vlc_player_t *, unsigned, void *data)
     msg_Dbg( that->p_intf, "on_player_corks_changed");
 }
 
+static void on_player_device_hotplugged(vlc_player_t *, const char *device,
+                                        bool plugged, void *data)
+{
+    PlayerControllerPrivate* that = static_cast<PlayerControllerPrivate*>(data);
+    msg_Err(that->p_intf, "on_player_device_hotplugged: %s has been %s",
+            device, plugged ? "plugged" : "unplugged");
+}
+
 } //extern "C"
 
 static const struct vlc_player_cbs player_cbs = {
@@ -901,7 +909,7 @@ static const struct vlc_player_aout_cbs player_aout_cbs = {
     on_player_aout_volume_changed,
     on_player_aout_mute_changed,
     nullptr,
-    nullptr
+    on_player_device_hotplugged
 };
 
 PlayerControllerPrivate::PlayerControllerPrivate(PlayerController *playercontroller, intf_thread_t *p_intf)
