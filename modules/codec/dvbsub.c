@@ -1625,6 +1625,8 @@ static subpicture_t *render( decoder_t *p_dec )
         }
         p_spu_region->i_x = i_base_x + p_regiondef->i_x;
         p_spu_region->i_y = i_base_y + p_regiondef->i_y;
+        p_spu_region->screen.i_width  = p_spu->i_original_picture_width;
+        p_spu_region->screen.i_height = p_spu->i_original_picture_height;
         p_spu_region->i_align = p_sys->i_spu_position;
         *pp_spu_region = p_spu_region;
         pp_spu_region = &p_spu_region->p_next;
@@ -2671,4 +2673,3 @@ static void default_dds_init( decoder_t * p_dec )
     p_sys->display.i_height = 576;
     p_sys->display.b_windowed = false;
 }
-
