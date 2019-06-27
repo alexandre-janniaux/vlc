@@ -42,11 +42,11 @@ static int          fbxapi_seek( stream_t *, uint64_t );
 /*static int
 fbxapi_rest_connect( stream_t *p_access )
 {
-    const char	base_get_challenge[] = "/login";
-    const char	base_get_login[] = "/login/session";
+    const char    base_get_challenge[] = "/login";
+    const char    base_get_login[] = "/login/session";
 }*/
 
-static int		fbxapi_open_tls( vlc_object_t *self )
+static int        fbxapi_open_tls( vlc_object_t *self )
 {
     stream_t    *access = (stream_t *)self;
     vlc_url_t   url;
@@ -231,7 +231,7 @@ static char     *fbxapi_get_token_session(
     return strdup("");
 }
 
-static int		fbxapi_connect( vlc_object_t *self )
+static int        fbxapi_connect( vlc_object_t *self )
 {
     stream_t            *access = (stream_t *)self;
     s_fbxapi            *fbx;
@@ -273,7 +273,7 @@ static int		fbxapi_connect( vlc_object_t *self )
     return VLC_SUCCESS;
 }
 
-static void		fbxapi_disconnect( vlc_object_t *self )
+static void        fbxapi_disconnect( vlc_object_t *self )
 {
     stream_t    *p_access = (stream_t *)self;
     s_fbxapi    *fbx = p_access->p_sys;
@@ -284,7 +284,7 @@ static void		fbxapi_disconnect( vlc_object_t *self )
     (void)self;
 }
 
-static int		fbxapi_seek( stream_t *p_access, uint64_t u )
+static int        fbxapi_seek( stream_t *p_access, uint64_t u )
 {
     (void)p_access;
     (void)u;
@@ -292,7 +292,7 @@ static int		fbxapi_seek( stream_t *p_access, uint64_t u )
 }
 
 /*
-static int		fbxapi_readdir(
+static int        fbxapi_readdir(
     stream_t *p_access,
     input_item_node_t *current_node
 )
@@ -344,7 +344,7 @@ static ssize_t      fbxapi_read( stream_t *p_access, void *buffer, size_t len )
         p_access->psz_filepath
     );
 
-    input_item_t	*item = p_access->p_input_item;
+    input_item_t    *item = p_access->p_input_item;
 
     size_t      l = len >= sizeof(sample) ? sizeof(sample) : len;
     memcpy(buffer, sample, l);

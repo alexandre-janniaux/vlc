@@ -5,7 +5,7 @@
 
 # define FBX_ACCEPTED_ENCODING "deflate"
 
-struct		s_fbxapi_request
+struct        s_fbxapi_request
 {
     int     status_code;
     char    *status_text; // Ok, Not Found, etc
@@ -24,9 +24,9 @@ typedef struct s_fbxapi_request     s_fbxapi_request;
  * \param headers an array of formed headers like {
  *                      "Authorization: gfdsgsfgv"
  *                  } or NULL
- * 	\param body full formated request's body or NULL
+ *     \param body full formated request's body or NULL
  */
-int		fbxapi_request(
+int        fbxapi_request(
     const s_fbxapi *fbx,
     s_fbxapi_request *request,
     const char *verb,

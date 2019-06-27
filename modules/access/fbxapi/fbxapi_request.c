@@ -15,12 +15,12 @@
 #include "fbxapi.h"
 #include "fbxapi_request.h"
 
-static void		fbxapi_set_headers(
+static void        fbxapi_set_headers(
     struct vlc_memstream *stream,
     const char **headers
 )
 {
-    size_t		i;
+    size_t        i;
 
     for ( i = 0; headers[i] != NULL; i++ )
     {
@@ -28,7 +28,7 @@ static void		fbxapi_set_headers(
     }
 }
 
-static void		fbxapi_set_bases(
+static void        fbxapi_set_bases(
     struct vlc_memstream *stream,
     const struct s_fbxapi *fbx,
     const char *verb,
@@ -112,7 +112,7 @@ eclear_and_return:
     return VLC_ENOMEM;
 }
 
-static int		fbx_get_response(
+static int        fbx_get_response(
     const s_fbxapi *fbx,
     s_fbxapi_request *request
 )
@@ -203,7 +203,7 @@ static int		fbx_get_response(
     return VLC_SUCCESS;
 }
 
-int				fbxapi_request(
+int                fbxapi_request(
     const s_fbxapi *fbx,
     s_fbxapi_request *request,
     const char *verb,
@@ -212,7 +212,7 @@ int				fbxapi_request(
     const char *body
 )
 {
-    struct vlc_memstream	stream;
+    struct vlc_memstream    stream;
 
     memset(&stream, 0, sizeof(stream));
     vlc_memstream_open(&stream);

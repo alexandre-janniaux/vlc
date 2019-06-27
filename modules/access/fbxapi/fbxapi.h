@@ -1,7 +1,7 @@
 #ifndef FBXAPI_H
 # define FBXAPI_H
 
-struct		s_fbxapi
+struct        s_fbxapi
 {
     struct
     {
@@ -25,7 +25,7 @@ struct		s_fbxapi
     char        *device_name;
 
     /*
-     *	Session woking on
+     *    Session woking on
      */
     char        *session_id;
 };
