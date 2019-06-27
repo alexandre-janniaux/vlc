@@ -81,57 +81,304 @@ void VlcProc::destroy( intf_thread_t *pIntf )
 #define SET_STRING(m,v)       ((VarString*)(m).get())->set(v)
 #define SET_VOLUME(m,v,b)     ((Volume*)(m).get())->setVolume(v,b)
 
-void skins2_volume_changed(vlc_player_t *player, float volume, void *data)
+void
+VlcProc::on_current_media_changed(vlc_player_t *player,
+                                  input_item_t *new_media,
+                                  void *data)
 {
     VlcProc *proc = static_cast<VlcProc *>(data);
 }
 
-static const vlc_player_cbs skins2_player_cbs =
+
+void
+VlcProc::on_state_changed(vlc_player_t *player,
+                          vlc_player_state new_state,
+                          void *data)
 {
-    nullptr, /* on_current_media_changed */
-    nullptr, /* on_state_changed */
-    nullptr, /* on_error_changed */
-    nullptr, /* on_buffering_changed */
-    nullptr, /* on_rate_changed */
-    nullptr,
-    nullptr, /* on_position_changed */
-    nullptr,
-    nullptr, /* on_program_list_changed */
-    nullptr,
-    nullptr, /* on_titles_changed */
-    nullptr,
-    nullptr, /* on_chapter_selection_changed */
-    nullptr,
-    nullptr, /* on_teletext_enabled_changed */
-    nullptr,
-    nullptr, /* on_teletext_page_changed */
-    nullptr,
-    nullptr, /* on_teletext_transparency_changed */
-    nullptr,
-    nullptr, /* on_subtitle_delay_changed */
-    nullptr,
-    nullptr, /* on_renderer_changed */
-    nullptr,
-    nullptr, /* on_signal_changed */
-    nullptr,
-    nullptr, /* on_atobloop_changed */
-    nullptr,
-    nullptr, /* on_media_meta_changed */
-    nullptr,
-    nullptr, /* on_media_subitems_changed */
-    nullptr,
-    nullptr  /* on_cork_changed */
+}
+
+void
+VlcProc::on_error_changed(vlc_player_t *player,
+                          vlc_player_error error,
+                          void *data)
+{
+
+}
+
+void
+VlcProc::on_buffering_changed(vlc_player_t *player,
+                              float new_buffering,
+                              void *data)
+{
+
+}
+
+void
+VlcProc::on_rate_changed(vlc_player_t *player,
+                         float new_rate,
+                         void *data)
+{
+
+}
+
+void
+VlcProc::on_capabilities_changed(vlc_player_t *player,
+                                 int old_caps, int new_caps,
+                                 void *data)
+{
+}
+
+void
+VlcProc::on_position_changed(vlc_player_t *player,
+                             vlc_tick_t new_time,
+                             float new_pos,
+                             void *data)
+{
+
+}
+
+void
+VlcProc::on_length_changed(vlc_player_t *player,
+                           vlc_tick_t new_length,
+                           void *data)
+{
+}
+
+void
+VlcProc::on_track_list_changed(vlc_player_t *player,
+                               vlc_player_list_action action,
+                               const vlc_player_track *track,
+                               void *data)
+{
+}
+
+void
+VlcProc::on_track_selection_changed(vlc_player_t *player,
+                                    vlc_es_id_t *unselected_id,
+                                    vlc_es_id_t *selected_id,
+                                    void *data)
+{
+
+}
+
+void
+VlcProc::on_program_list_changed(vlc_player_t *player,
+                                 vlc_player_list_action aciton,
+                                 const vlc_player_program *prgm,
+                                 void *data)
+{
+}
+
+void
+VlcProc::on_program_selection_changed(vlc_player_t *player,
+                                      int unselected_id,
+                                      int selected_id,
+                                      void *data)
+{
+
+}
+
+void
+VlcProc::on_titles_changed(vlc_player_t *player,
+                           vlc_player_title_list *titles,
+                           void *data)
+{
+}
+
+void
+VlcProc::on_title_selection_changed(vlc_player_t *player,
+                                    const vlc_player_title *new_title,
+                                    size_t new_idx,
+                                    void *data)
+{
+}
+
+void
+VlcProc::on_chapter_selection_changed(vlc_player_t *player,
+                                      const vlc_player_title *title,
+                                      size_t title_idx,
+                                      const vlc_player_chapter *new_chapter,
+                                      size_t new_chapter_idx,
+                                      void *data)
+{
+}
+
+void
+VlcProc::on_teletext_menu_changed(vlc_player_t *player,
+                                  bool has_teletext_menu,
+                                  void *data)
+{
+}
+
+void
+VlcProc::on_teletext_enabled_changed(vlc_player_t *player,
+                                     bool enabled,
+                                     void *data)
+{
+}
+
+void
+VlcProc::on_teletext_page_changed(vlc_player_t *player,
+                                  unsigned new_page,
+                                  void *data)
+{
+}
+
+void
+VlcProc::on_teletext_transparency_changed(vlc_player_t *player,
+                                          bool enabled,
+                                          void *data)
+{
+}
+
+void
+VlcProc::on_audio_delay_changed(vlc_player_t *player,
+                                vlc_tick_t new_delay,
+                                void *data)
+{
+}
+
+void
+VlcProc::on_subtitle_delay_changed(vlc_player_t *player,
+                                   vlc_tick_t new_delay,
+                                   void *data)
+{
+}
+
+void
+VlcProc::on_associated_subs_fps_changed(vlc_player_t *player,
+                                        float subs_fps,
+                                        void *data)
+{
+}
+
+void
+VlcProc::on_renderer_changed(vlc_player_t *player,
+                             vlc_renderer_item_t *new_item,
+                             void *data)
+{
+}
+
+void
+VlcProc::on_recording_changed(vlc_player_t *player,
+                              bool recording,
+                              void *data)
+{
+}
+
+void
+VlcProc::on_signal_changed(vlc_player_t *player,
+                           float quality,
+                           float strength,
+                           void *data)
+{
+}
+
+void
+VlcProc::on_statistics_changed(vlc_player_t *player,
+                               const input_stats_t *stats,
+                               void *data)
+{
+}
+
+void
+VlcProc::on_media_stopped_action_changed(vlc_player_t *player,
+                                         vlc_player_media_stopped_action action,
+                                         void *data)
+{
+}
+
+void
+VlcProc::on_media_meta_changed(vlc_player_t *player,
+                               input_item_t *media,
+                               void *data)
+{
+}
+
+void
+VlcProc::on_media_epg_changed(vlc_player_t *player,
+                              input_item_t *media,
+                              void *data)
+{
+}
+
+void
+VlcProc::on_media_subitems_changed(vlc_player_t *player,
+                                   input_item_t *media,
+                                   input_item_node_t *new_subitems,
+                                   void *data)
+{
+}
+
+void
+VlcProc::on_vout_changed(vlc_player_t *player,
+                         vlc_player_vout_action action,
+                         vout_thread_t *vout,
+                         void *data)
+{
+}
+
+void
+VlcProc::on_cork_changed(vlc_player_t *player,
+                         unsigned cork_count,
+                         void *data)
+{
+}
+
+const vlc_player_cbs VlcProc::player_cbs =
+{
+    VlcProc::on_current_media_changed,
+    VlcProc::on_state_changed,
+    VlcProc::on_error_changed,
+    VlcProc::on_buffering_changed,
+    VlcProc::on_rate_changed,
+    VlcProc::on_capabilities_changed,
+    VlcProc::on_position_changed,
+    VlcProc::on_length_changed,
+    VlcProc::on_track_list_changed,
+    VlcProc::on_track_selection_changed,
+    VlcProc::on_program_list_changed,
+    VlcProc::on_program_selection_changed,
+    VlcProc::on_titles_changed,
+    VlcProc::on_title_selection_changed,
+    VlcProc::on_chapter_selection_changed,
+    VlcProc::on_teletext_menu_changed,
+    VlcProc::on_teletext_enabled_changed,
+    VlcProc::on_teletext_page_changed,
+    VlcProc::on_teletext_transparency_changed,
+    VlcProc::on_audio_delay_changed,
+    VlcProc::on_subtitle_delay_changed,
+    VlcProc::on_associated_subs_fps_changed,
+    VlcProc::on_renderer_changed,
+    VlcProc::on_recording_changed,
+    VlcProc::on_signal_changed,
+    VlcProc::on_statistics_changed,
+    VlcProc::on_atobloop_changed,
+    VlcProc::on_media_stopped_action_changed,
+    VlcProc::on_media_meta_changed,
+    VlcProc::on_media_epg_changed,
+    VlcProc::on_media_subitems_changed,
+    VlcProc::on_vout_changed,
+    VlcProc::on_cork_changed
 };
 
-static const vlc_player_vout_cbs skins2_player_vout_cbs =
+const vlc_player_vout_cbs VlcProc::player_vout_cbs =
 {
     nullptr, /* on_fullscreen_changed */
     nullptr  /* on_wallpaper_mode_changed */
 };
 
-static const vlc_player_aout_cbs skins2_player_aout_cbs =
+void
+VlcProc::on_volume_changed(vlc_player_t *player,
+                           float volume,
+                           void *data)
 {
-    skins2_volume_changed, /* on_volume_changed */
+    VlcProc *proc = static_cast<VlcProc *>(data);
+}
+
+const vlc_player_aout_cbs VlcProc::player_aout_cbs =
+{
+    VlcProc::on_volume_changed, /* on_volume_changed */
     nullptr, /* on_mute_changed */
     nullptr  /* on_device_changed */
 };
@@ -144,11 +391,11 @@ VlcProc::VlcProc( intf_thread_t *pIntf ): SkinObject( pIntf ),
 
     vlc_player_Lock(player);
     m_playerListener =
-        vlc_player_AddListener(player, &skins2_player_cbs, this);
+        vlc_player_AddListener(player, &player_cbs, this);
     m_playerAoutListener =
-        vlc_player_aout_AddListener(player, &skins2_player_aout_cbs, this);
+        vlc_player_aout_AddListener(player, &player_aout_cbs, this);
     m_playerVoutListener =
-        vlc_player_vout_AddListener(player, &skins2_player_vout_cbs, this);
+        vlc_player_vout_AddListener(player, &player_vout_cbs, this);
     vlc_player_Unlock(player);
 
     // Create and register VLC variables
