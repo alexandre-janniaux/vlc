@@ -36,6 +36,21 @@ int        fbxapi_request(
 );
 
 /**
+ * Fill http's basic header in a memstream 
+ *
+ * \param stream The stream to fill
+ * \param fbx
+ * \param verb One of existing http verb ( GET, PUT, etc... )
+ * \param http's request destination ( /api/version )
+*/
+void                fbxapi_set_request_bases(
+    struct vlc_memstream *stream,
+    const struct s_fbxapi *fbx,
+    const char *verb,
+    const char *endpoint
+);
+
+/**
  * Free all internal data ( all ), and memset it
  *
  * \param request A valid pointer to a valid request structure to be freed

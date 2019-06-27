@@ -40,7 +40,7 @@ vlc_module_end()
 static int          fbxapi_seek( stream_t *, uint64_t );
 
 /*static int
-fbxapi_rest_connect( stream_t *p_access )
+fbxapi_rest_connect( stream_t *access )
 {
     const char    base_get_challenge[] = "/login";
     const char    base_get_login[] = "/login/session";
@@ -275,25 +275,25 @@ static int        fbxapi_connect( vlc_object_t *self )
 
 static void        fbxapi_disconnect( vlc_object_t *self )
 {
-    stream_t    *p_access = (stream_t *)self;
-    s_fbxapi    *fbx = p_access->p_sys;
+    stream_t    *access = (stream_t *)self;
+    s_fbxapi    *fbx = access->p_sys;
 
     vlc_tls_SessionDelete(fbx->http.tls);
-    free(p_access->p_sys);
-    p_access->p_sys = fbx = NULL;
+    free(access->p_sys);
+    access->p_sys = fbx = NULL;
     (void)self;
 }
 
-static int        fbxapi_seek( stream_t *p_access, uint64_t u )
+static int        fbxapi_seek( stream_t *access, uint64_t u )
 {
-    (void)p_access;
+    (void)access;
     (void)u;
     return 1;
 }
 
 /*
 static int        fbxapi_readdir(
-    stream_t *p_access,
+    stream_t *access,
     input_item_node_t *current_node
 )
 {
@@ -305,12 +305,12 @@ static int        fbxapi_readdir(
     printf(
         "From %s -> '%s' %s\n",
         __FUNCTION__,
-        p_access->psz_name,
-        p_access->psz_url
+        access->psz_name,
+        access->psz_url
     );
 
 
-    vlc_readdir_helper_init( &rdh, p_access, current_node );
+    vlc_readdir_helper_init( &rdh, access, current_node );
 
     for ( int i = 0; i < 5; i++ )
     {
@@ -321,33 +321,53 @@ static int        fbxapi_readdir(
     vlc_readdir_helper_finish( &rdh, 1 );
     return VLC_SUCCESS;
 }
-
-static ssize_t      fbxapi_read( stream_t *p_access, void *buffer, size_t len )
-{
-    const char sample[] = "gdsgjsfdlgfdgjsfdkghsfdjkghsfdjghsfdlkgjsfdlghsfdlghsfdg";
-    static int i = 0;
-
-    (void)buffer;
-    (void)len;
-    printf("From %s\n", __FUNCTION__);
-    if ( i != 0 )
-    {
-        return 0;
-    }
-    i++;
-    printf(
-        "Function %s called on %s - %s - %s - %s\n",
-        __FUNCTION__,
-        p_access->psz_name,
-        p_access->psz_url,
-        p_access->psz_location,
-        p_access->psz_filepath
-    );
-
-    input_item_t    *item = p_access->p_input_item;
-
-    size_t      l = len >= sizeof(sample) ? sizeof(sample) : len;
-    memcpy(buffer, sample, l);
-    return l;
-}
 */
+
+static ssize_t    fbxapi_read(
+    stream_t *access,
+    void *buffer,
+    size_t buffer_length
+)
+{
+    s_fbxapi    *fbx = access->p_sys;
+
+    if ( fbx->first_read == 0 )
+    {
+        /* First, send request to the freebox to have a file */
+        int                     res = 0;
+        char                    *url = NULL;
+        char                    *path_encoded = NULL;
+        struct vlc_memstream    stream;
+
+        url = NULL;
+        path_encoded = path_encode(file_name);
+        if ( path_encoded == NULL )
+        {
+            return NULL;
+        }
+        res = asprintf(&url, "/api/v6/dl/%s", path_encoded);
+        free(path_encoded);
+        path_encoded = NULL;
+        if ( res == -1 || url == NULL )
+        {
+            return (NULL);
+        }
+
+        /*
+         * Not using fbx_request because we don't want to receive all the file at one
+         */
+        memset(&stream, 0, sizeof(stream));
+        vlc_memstream_open(&stream);
+        fbxapi_set_request_bases(&stream, fbx, "GET", url);
+        free(url);
+        if ( vlc_memstream_flush(&stream) || vlc_memstream_close(&stream) )
+        {
+            return VLC_EGENERIC;
+        }
+
+        vlc_tls_Write(fbx->http.tls, stream.ptr, stream.length);
+    }
+
+    vlc_tls_Read(fbx->http.tls, buffer, buffer_length);
+    url = NULL;
+}

@@ -28,7 +28,7 @@ static void        fbxapi_set_headers(
     }
 }
 
-static void        fbxapi_set_bases(
+void                fbxapi_set_request_bases(
     struct vlc_memstream *stream,
     const struct s_fbxapi *fbx,
     const char *verb,
@@ -216,7 +216,7 @@ int                fbxapi_request(
 
     memset(&stream, 0, sizeof(stream));
     vlc_memstream_open(&stream);
-    fbxapi_set_bases(&stream, fbx, verb, endpoint);
+    fbxapi_set_request_bases(&stream, fbx, verb, endpoint);
     if ( headers != NULL )
     {
         fbxapi_set_headers(&stream, headers);

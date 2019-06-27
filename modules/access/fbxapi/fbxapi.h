@@ -25,9 +25,14 @@ struct        s_fbxapi
     char        *device_name;
 
     /*
-     *    Session woking on
+     * Session woking on
      */
     char        *session_id;
+
+    /*
+     * if reading a file
+     */
+    int         first_read;
 };
 typedef struct s_fbxapi     s_fbxapi;
 
