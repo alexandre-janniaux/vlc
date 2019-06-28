@@ -78,8 +78,8 @@ static int DeinterlaceCallback(vlc_object_t *object, char const *cmd,
     }
 
     /* */
-    char *old = var_CreateGetString(vout, "sout-deinterlace-mode");
-    var_SetString(vout, "sout-deinterlace-mode", mode);
+    //char *old = var_CreateGetString(vout, "sout-deinterlace-mode");
+    //var_SetString(vout, "sout-deinterlace-mode", mode);
 
     msg_Dbg(vout, "deinterlace %d, mode %s, is_needed %d", deinterlace_state, mode, is_needed);
     if (deinterlace_state == 0 || (deinterlace_state < 0 && !is_needed))
@@ -90,7 +90,7 @@ static int DeinterlaceCallback(vlc_object_t *object, char const *cmd,
                               VOUT_CONTROL_CHANGE_INTERLACE, true);
 
     /* */
-    free(old);
+    //free(old);
     free(mode);
     return VLC_SUCCESS;
 }
@@ -144,8 +144,8 @@ void vout_InitInterlacingSupport(vout_thread_t *vout)
 
     /* Override the initial value from filters if present */
     char *filter_mode = NULL;
-    if (vout->p->filter.has_deint)
-        filter_mode = var_CreateGetNonEmptyString(vout, "sout-deinterlace-mode");
+    //if (vout->p->filter.has_deint)
+    //    filter_mode = var_CreateGetNonEmptyString(vout, "sout-deinterlace-mode");
     if (filter_mode) {
         deinterlace_state = 1;
         free(deinterlace_mode);

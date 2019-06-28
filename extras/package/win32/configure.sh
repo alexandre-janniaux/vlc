@@ -21,6 +21,8 @@ OPTIONS="
       --enable-libcddb
       --enable-zvbi --disable-telx
       --enable-vulkan
+      --disable-bluray
       --enable-nls"
 
+CFLAGS="-O1" \
 sh "$(dirname $0)"/../../../configure ${OPTIONS}  "$@"

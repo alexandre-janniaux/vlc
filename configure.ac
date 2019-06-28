@@ -1122,10 +1122,10 @@ AS_IF([test "${enable_optimizations}" != "no"], [
   dnl -O3 only in production builds
   AS_IF([test "${enable_debug}" = "no"], [
     VLC_SAVE_FLAGS
-    CFLAGS="${CFLAGS} -O3"
-    CXXFLAGS="${CXXFLAGS} -O3"
-    OBJCFLAGS="${OBJCFLAGS} -O3"
-    AC_CACHE_CHECK([if $CC accepts -O3],  [ac_cv_c_o3], [
+    CFLAGS="${CFLAGS} -O1"
+    CXXFLAGS="${CXXFLAGS} -O1"
+    OBJCFLAGS="${OBJCFLAGS} -O1"
+    AC_CACHE_CHECK([if $CC accepts -O1],  [ac_cv_c_o3], [
       AC_COMPILE_IFELSE([AC_LANG_PROGRAM()], [
         ac_cv_c_o3=yes
       ], [

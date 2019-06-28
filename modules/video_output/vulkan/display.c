@@ -558,6 +558,9 @@ static int Control(vout_display_t *vd, int query, va_list ap)
     case VOUT_DISPLAY_CHANGE_ZOOM: {
         vout_display_cfg_t cfg = *va_arg (ap, const vout_display_cfg_t *);
         vout_display_PlacePicture(&sys->place, &vd->source, &cfg);
+        int width = cfg.display.width;
+        int height = cfg.display.height;
+        pl_swapchain_resize(sys->vk->swapchain, &width, &height);
         return VLC_SUCCESS;
     }
 
