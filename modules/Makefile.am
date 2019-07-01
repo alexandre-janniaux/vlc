@@ -89,3 +89,46 @@ SUFFIXES += -client-protocol.h -protocol.c .xml
 .xml-protocol.c:
 	$(AM_V_GEN)$(WAYLAND_SCANNER) private-code < "$^" > "$@.tmp"
 	$(AM_V_at)mv -f -- "$@.tmp" "$@"
+
+ALL_LIBS_VAR = \
+	$(access_LTLIBRARIES) \
+	$(neon_LTLIBRARIES) \
+	$(audio_filter_LTLIBRARIES) \
+	$(audio_mixer_LTLIBRARIES) \
+	$(aout_LTLIBRARIES) \
+	$(codec_LTLIBRARIES) \
+	$(control_LTLIBRARIES) \
+	$(demux_LTLIBRARIES) \
+	$(gui_LTLIBRARIES) \
+	$(hw_LTLIBRARIES) \
+	$(keystore_LTLIBRARIES) \
+	$(logger_LTLIBRARIES) \
+	$(lua_LTLIBRARIES) \
+	$(meta_engine_LTLIBRARIES) \
+	$(misc_LTLIBRARIES) \
+	$(mux_LTLIBRARIES) \
+	$(notify_LTLIBRARIES) \
+	$(packetizer_LTLIBRARIES) \
+	$(sd_LTLIBRARIES) \
+	$(spu_LTLIBRARIES) \
+	$(stream_extractor_LTLIBRARIES) \
+	$(stream_filter_LTLIBRARIES) \
+	$(sout_LTLIBRARIES) \
+	$(text_LTLIBRARIES) \
+	$(chroma_LTLIBRARIES) \
+	$(video_filter_LTLIBRARIES) \
+	$(vout_LTLIBRARIES) \
+	$(splitter_LTLIBRARIES) \
+	$(visu_LTLIBRARIES)
+
+
+libvlc_static_modules_la_SOURCES = libvlc_static_modules.c
+libvlc_static_modules_la_LIBADD = $(ALL_LIBS_VAR)
+
+MODULES_LIST := $(patsubst lib%_plugin.la,%,$(ALL_LIBS_VAR))
+
+libvlc_static_modules.c:
+	echo $(MODULES_LIST)
+	exit 1
+
+EXTRA_LTLIBRARIES += libvlc_static_modules.la
