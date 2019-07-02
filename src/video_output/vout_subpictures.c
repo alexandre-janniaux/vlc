@@ -1234,10 +1234,10 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
 
         /* FIXME aspect ratio ? */
         sys->text->fmt_out.video.i_width          =
-        sys->text->fmt_out.video.i_visible_width  = subpic->i_original_picture_width;
+        sys->text->fmt_out.video.i_visible_width  = fmt_dst->i_visible_width;
 
         sys->text->fmt_out.video.i_height         =
-        sys->text->fmt_out.video.i_visible_height = subpic->i_original_picture_height;
+        sys->text->fmt_out.video.i_visible_height = fmt_dst->i_visible_height;
 
         /* Render all regions
          * We always transform non absolute subtitle into absolute one on the
