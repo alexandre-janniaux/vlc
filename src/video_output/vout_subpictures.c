@@ -1275,16 +1275,13 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
             if (scale.w <= 0 || scale.h <= 0)
                 continue;
 
-            const bool do_external_scale = external_scale && !subpic->b_subtitle;
-            spu_scale_t virtual_scale = do_external_scale ? (spu_scale_t){ SCALE_UNIT, SCALE_UNIT } : scale;
-
             /* */
             SpuRenderRegion(spu, output_last_ptr, &area,
-                            entry, region, virtual_scale,
+                            entry, region, scale,
                             chroma_list, fmt_dst,
                             subtitle_area, subtitle_area_count,
                             subpic->b_subtitle ? render_subtitle_date : system_now,
-                            do_external_scale);
+                            external_scale);
             if (*output_last_ptr)
                 output_last_ptr = &(*output_last_ptr)->p_next;
 
