@@ -1200,12 +1200,18 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
             subpic->i_original_picture_height = fmt_src->i_visible_height;
         }
 
-        /* FIXME aspect ratio ? */
+        /* For the following computation of text rendering screen size, we
+         * render either at the original size or if the display is wider at
+         * the display size, according to direct rendering commits.
+         *
+         * FIXME aspect ratio ? */
         sys->text->fmt_out.video.i_width          =
-        sys->text->fmt_out.video.i_visible_width  = subpic->i_original_picture_width;
+        sys->text->fmt_out.video.i_visible_width  =
+            __MAX(fmt_dst->i_visible_width, subpic->i_original_picture_width);
 
         sys->text->fmt_out.video.i_height         =
-        sys->text->fmt_out.video.i_visible_height = subpic->i_original_picture_height;
+        sys->text->fmt_out.video.i_visible_height =
+            __MAX(fmt_dst->i_visible_height, subpic->i_original_picture_height);
 
         /* Render all regions
          * We always transform non absolute subtitle into absolute one on the
