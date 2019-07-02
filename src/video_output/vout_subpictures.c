@@ -1133,6 +1133,11 @@ static void SpuRenderRegion(spu_t *spu,
 
         dst->raster.i_width  = region->raster.i_width;
         dst->raster.i_height = region->raster.i_height;
+        if (external_scale)
+        {
+            dst->fmt.i_sar_num = region->fmt.i_sar_num;
+            dst->fmt.i_sar_den = region->fmt.i_sar_den;
+        }
     }
 
 exit:
