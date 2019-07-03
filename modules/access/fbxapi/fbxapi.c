@@ -11,6 +11,7 @@
 #include <vlc_common.h>
 #include <vlc_access.h>
 #include <vlc_stream.h>
+#include <vlc_memstream.h>
 #include <vlc_plugin.h>
 #include <vlc_input_item.h>
 #include <vlc_url.h>
@@ -19,6 +20,9 @@
 #include "../../misc/webservices/json.h"
 #include "../../misc/webservices/json_helper.h"
 #include "fbxapi_request.h"
+#include "fbxapi_fs.h"
+#include "fbxapi_app_register.h"
+#include "fbxapi_fileinfo.h"
 #include "fbxapi.h"
 
 
@@ -46,7 +50,7 @@ fbxapi_rest_connect( stream_t *access )
     const char    base_get_login[] = "/login/session";
 }*/
 
-static int        fbxapi_open_tls( vlc_object_t *self )
+int             fbxapi_open_tls( vlc_object_t *self )
 {
     stream_t    *access = (stream_t *)self;
     vlc_url_t   url;
@@ -74,24 +78,17 @@ static int        fbxapi_open_tls( vlc_object_t *self )
     return VLC_SUCCESS;
 }
 
-static char     *fbxapi_get_challenge(stream_t *access, s_fbxapi *fbx)
+static char     *fbxapi_get_challenge( stream_t *access, s_fbxapi *fbx )
 {
     json_value              *json_body;
-    json_value              *obj;
+    const json_value        *obj;
     int                     res;
     struct s_fbxapi_request request;
     char                    *challenge;
     char                    *cursor;
 
     /* In order to connect we first have to retrieve a challenge */
-    res = fbxapi_request(
-        fbx,
-        &request,
-        "GET",
-        "/api/v6/login",
-        NULL,
-        NULL
-    );
+    res = fbxapi_request(fbx, &request, "GET", "/api/v6/login", NULL, NULL);
     if ( res != VLC_SUCCESS )
     {
         msg_Err(access, "Could not send login request");
@@ -119,8 +116,6 @@ static char     *fbxapi_get_challenge(stream_t *access, s_fbxapi *fbx)
         return NULL;
     }
     json_body = json_parse(cursor);
-    printf("Parse %s gives %p\n", cursor, json_body);
-
     if ( json_body == NULL )
     {
         return NULL;
@@ -151,7 +146,7 @@ static char     *fbxapi_get_challenge(stream_t *access, s_fbxapi *fbx)
     return challenge;
 }
 
-static char     *encrypt_password(const char *app_token, const char *challenge)
+static char     *encrypt_password( const char *app_token, const char *challenge )
 {
     char                        password[SHA1_DIGEST_SIZE + 1] = {0}; // NULL terminated
     char                        *b64_password;
@@ -167,7 +162,7 @@ static char     *encrypt_password(const char *app_token, const char *challenge)
     b64_password = calloc(b64_length + 1, 1);
     if ( b64_password != NULL )
     {
-        base64_encode_raw(b64_password, b64_length, password);
+        base64_encode_raw(b64_password, b64_length, (uint8_t *)password);
     }
     return b64_password;
 }
@@ -186,11 +181,14 @@ static char     *fbxapi_get_token_session(
     char                        *password;
 
     password = encrypt_password(fbx->app_token, challenge);
+    if ( password == NULL )
+    {
+        return NULL;
+    }
     if (
         asprintf(
             &payload,
-            "{\"app_id\":\"%s\",\"password\":\"%s\", \"app_version\": \"%s\"}",
-            fbx->app_id,
+            "{\"app_id\":\"" FBXAPI_APP_ID "\",\"password\":\"%s\", \"app_version\": \"%s\"}",
             password,
             fbx->app_version
         ) == -1
@@ -198,8 +196,9 @@ static char     *fbxapi_get_token_session(
     {
         return NULL;
     }
+    free(password);
+    password = NULL;
     /* In order to connect we first have to retrieve a challenge */
-    printf("%s %s %d\n", __FILE__, __FUNCTION__, __LINE__);
     res = fbxapi_request(
         fbx,
         &request,
@@ -208,10 +207,8 @@ static char     *fbxapi_get_token_session(
         NULL,
         payload
     );
-    printf("payload == %s == payload \n", payload);
     free(payload);
     payload = NULL;
-    printf("request = %d %s %s\n", request.status_code, request.status_text, request.body);
 
     if ( res != VLC_SUCCESS )
     {
@@ -243,7 +240,6 @@ static int        fbxapi_connect( vlc_object_t *self )
 
     fbx->http.domain = strdup("k0bazxqu.fbxos.fr");
     fbx->http.port = 922;
-    fbx->app_token = strdup("oSxk06TlWAmTqzi9VGEI1q6U625Z68SjuAVcFw+pkTEHCQz968mH18F/wT3jbqJ5");
     fbx->app_version = strdup("0.0.1");
 
     /* \\ Hard coded settings to retrieve later */
@@ -261,14 +257,20 @@ static int        fbxapi_connect( vlc_object_t *self )
     access->pf_control = access_vaDirectoryControlHelper;
     access->pf_seek = fbxapi_seek;
 
-    printf("Going to require challenge...\n");
+    fbx->app_token = fbxapi_get_app_token(self);
+    if ( fbx->app_token == NULL )
+    {
+        vlc_tls_Close(fbx->http.tls);
+        free(fbx);
+        access->p_sys = fbx = NULL;
+        return VLC_EGENERIC;
+    }
+
     challenge = fbxapi_get_challenge(access, fbx);
-    printf("Challenge == %s\n", challenge);
     if (challenge == NULL)
     {
         return VLC_EGENERIC;
     }
-    printf("Token session == %s\n", fbxapi_get_token_session(access, fbx, challenge));
 
     return VLC_SUCCESS;
 }
@@ -291,37 +293,39 @@ static int        fbxapi_seek( stream_t *access, uint64_t u )
     return 1;
 }
 
-/*
 static int        fbxapi_readdir(
     stream_t *access,
     input_item_node_t *current_node
 )
 {
-    char    uri[] = "fbxapi://where:4545?/tmp/path9";
-    char    file_name[] = "/tmp/path4";
-
     struct vlc_readdir_helper   rdh;
+    s_fbxapi_fileinfo           **files;
 
-    printf(
-        "From %s -> '%s' %s\n",
-        __FUNCTION__,
-        access->psz_name,
-        access->psz_url
-    );
-
+    files = fbxapi_ls(access, access->p_sys, "/"); // FIXME
+    if ( files == NULL )
+    {
+        return -1;
+    }
 
     vlc_readdir_helper_init( &rdh, access, current_node );
 
-    for ( int i = 0; i < 5; i++ )
+    for ( int i = 0; files[i] != NULL; i++ )
     {
-        uri[sizeof(uri) - 2] = (char)('0' + i);
-        file_name[sizeof(file_name) - 2] = (char)('0' + i);
-        vlc_readdir_helper_additem( &rdh, (uri), "/tmp", (file_name), 1, ITEM_NET );
+        vlc_readdir_helper_additem(
+            &rdh,
+            "some uri",
+            files[i]->path,
+            files[i]->name,
+            1,
+            ITEM_NET
+        );
+        fbxapi_fileinfo_destroy(files[i]);
+        free(files[i]);
     }
+    free(files);
     vlc_readdir_helper_finish( &rdh, 1 );
     return VLC_SUCCESS;
 }
-*/
 
 static ssize_t    fbxapi_read(
     stream_t *access,
@@ -338,19 +342,20 @@ static ssize_t    fbxapi_read(
         char                    *url = NULL;
         char                    *path_encoded = NULL;
         struct vlc_memstream    stream;
+        const char *file_name = NULL; // FIXME
 
         url = NULL;
         path_encoded = path_encode(file_name);
         if ( path_encoded == NULL )
         {
-            return NULL;
+            return -1;
         }
         res = asprintf(&url, "/api/v6/dl/%s", path_encoded);
         free(path_encoded);
         path_encoded = NULL;
-        if ( res == -1 || url == NULL )
+        if ( res == -1 || url == NULL )
         {
-            return (NULL);
+            return -1;
         }
 
         /*
@@ -362,12 +367,32 @@ static ssize_t    fbxapi_read(
         free(url);
         if ( vlc_memstream_flush(&stream) || vlc_memstream_close(&stream) )
         {
-            return VLC_EGENERIC;
+            return -1;
         }
 
         vlc_tls_Write(fbx->http.tls, stream.ptr, stream.length);
+        free(stream.ptr);
+
+        /* Then read all the http stuff before the file itself */
+        {
+            int     status_code;
+            char    **headers;
+
+            if ( (res = fbxapi_get_http(fbx, &status_code, NULL)) != VLC_SUCCESS )
+            {
+                return -1;
+            }
+            if ( (headers = fbxapi_get_headers(fbx)) == NULL )
+            {
+                return -1;
+            }
+            for ( size_t i = 0; headers[i] != NULL; i++ )
+            {
+                free(headers[i]);
+            }
+            free(headers);
+        }
     }
 
-    vlc_tls_Read(fbx->http.tls, buffer, buffer_length);
-    url = NULL;
+    vlc_tls_Read(fbx->http.tls, buffer, buffer_length, false);
 }

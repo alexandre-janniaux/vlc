@@ -2,7 +2,7 @@
 # include "config.h"
 #endif
 
-#include <vlc_commonh.h>
+#include <vlc_common.h>
 #include <vlc_access.h>
 #include <vlc_url.h>
 #include <vlc_tls.h>
@@ -11,33 +11,26 @@
 #include "../../misc/webservices/json_helper.h"
 #include "fbxapi_fileinfo.h"
 #include "fbxapi_request.h"
+#include "fbxapi_fs.h"
 #include "fbxapi.h"
 
-static inline char *path_encode(path)
-{
-    size_t    encoded_length = BASE64_ENCODE_RAW_LENGTH(strlen(path));
-    char    *encoded;
-
-    encoded = calloc(encoded_length + 1, sizeof(char));
-    if ( encoded != NULL )
-    {
-        base_64_encode_raw(path, encoded_length, encoded);
-    }
-    return encoded;
-}
-
-s_fbxapi_fileinfo    *fbxapi_stat(stream_t *access, s_fbxapi *fbx, char *file_name)
+s_fbxapi_fileinfo    *fbxapi_stat(
+    stream_t *access,
+    s_fbxapi *fbx,
+    const char *file_name
+)
 {
     int                        res;
     struct s_fbxapi_request request;
 
     char                    *url;
     char                    *path_encoded;
-    json_value                *json_body;
+    json_value              *json_body;
     char                    *cursor;
-    s_fbxapi_fileinfo        *fileinfo;
+    s_fbxapi_fileinfo       *fileinfo;
 
     url = NULL;
+    fileinfo = NULL;
     path_encoded = path_encode(file_name);
     if ( path_encoded == NULL )
     {
@@ -45,7 +38,7 @@ s_fbxapi_fileinfo    *fbxapi_stat(stream_t *access, s_fbxapi *fbx, char *file_na
     }
     res = asprintf(&url, "/api/v6/fs/info/%s", path_encoded);
     free(path_encoded);
-    if ( res == -1 || path_encoded == NULL )
+    if ( res == -1 || path_encoded == NULL )
     {
         return (NULL);
     }
@@ -68,7 +61,7 @@ s_fbxapi_fileinfo    *fbxapi_stat(stream_t *access, s_fbxapi *fbx, char *file_na
             access,
             "Request /fs/info/ for file %s failed (http %d)",
             file_name,
-            status_code
+            request.status_code
         );
         goto release;
     }
@@ -82,7 +75,6 @@ s_fbxapi_fileinfo    *fbxapi_stat(stream_t *access, s_fbxapi *fbx, char *file_na
         goto release;
     }
     json_body = json_parse(cursor);
-    printf("Parse %s gives %p\n", cursor, json_body);
 
     if ( json_body == NULL )
     {
@@ -98,27 +90,24 @@ release:
         json_value_free(json_body);
     }
     fbxapi_request_destroy(&request);
-    if ( filesinfo != NULL )
+    if ( fileinfo != NULL )
     {
-        for ( size_t i = 0; filesinfo[i] != NULL; i++ )
-        {
-            fbxapi_fileinfo_destroy(filesinfo[i]);
-        }
+        fbxapi_fileinfo_destroy(fileinfo);
     }
     return NULL;
 }
 
-s_fbxapi_fileinfo    **fbxapi_ls(stream_t *access, s_fbxapi *fbx, char *file_name)
+s_fbxapi_fileinfo    **fbxapi_ls( stream_t *access, s_fbxapi *fbx, const char *file_name )
 {
     struct s_fbxapi_request request;
 
-    int                        res = 0;
+    int                     res = 0;
     char                    *url = NULL;
     char                    *path_encoded = NULL;
-    json_value                *json_body = NULL;
-    json_value                *object = NULL;
+    json_value              *json_body = NULL;
+    const json_value        *object = NULL;
     char                    *cursor = NULL;
-    s_fbxapi_fileinfo        **filesinfo = NULL;
+    s_fbxapi_fileinfo       **filesinfo = NULL;
 
     url = NULL;
     memset(&request, 0, sizeof(request));
@@ -130,7 +119,7 @@ s_fbxapi_fileinfo    **fbxapi_ls(stream_t *access, s_fbxapi *fbx, char *file_nam
     res = asprintf(&url, "/api/v6/fs/ls/%s", path_encoded);
     free(path_encoded);
     path_encoded = NULL;
-    if ( res == -1 || url == NULL )
+    if ( res == -1 || url == NULL )
     {
         return (NULL);
     }
@@ -152,10 +141,10 @@ s_fbxapi_fileinfo    **fbxapi_ls(stream_t *access, s_fbxapi *fbx, char *file_nam
     if ( request.status_code / 100 != 2 )
     {
         msg_Err(
-            access
-               "Request /fs/ls/ for file %s failed (http %d)",
+            access,
+           "Request /fs/ls/ for file %s failed (http %d)",
             file_name,
-            status_code
+            request.status_code
         );
         goto release;
     }
@@ -173,7 +162,7 @@ s_fbxapi_fileinfo    **fbxapi_ls(stream_t *access, s_fbxapi *fbx, char *file_nam
     {
         goto release;
     }
-    object = json_getbyname("result");
+    object = json_getbyname(json_body, "result");
     if ( object == NULL || object->type != json_array )
     {
         goto release;
@@ -186,11 +175,11 @@ s_fbxapi_fileinfo    **fbxapi_ls(stream_t *access, s_fbxapi *fbx, char *file_nam
     for ( unsigned int i = 0; i < object->u.array.length; i++ )
     {
         filesinfo[i] = json_to_fileinfo(
-            json_getbyname(object->u.array;values[i], "result")
+            json_getbyname(object->u.array.values[i], "result")
         );
     }
     json_value_free(json_body);
-    return fileinfo;
+    return filesinfo;
 
 release:
     if ( json_body != NULL )

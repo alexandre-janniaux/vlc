@@ -1,6 +1,8 @@
 #ifndef FBXAPI_REQUEST_H
 # define FBXAPI_REQUEST_H
 
+# include <vlc_memstream.h>
+
 # include "fbxapi.h"
 
 # define FBX_ACCEPTED_ENCODING "deflate"
@@ -24,7 +26,7 @@ typedef struct s_fbxapi_request     s_fbxapi_request;
  * \param headers an array of formed headers like {
  *                      "Authorization: gfdsgsfgv"
  *                  } or NULL
- *     \param body full formated request's body or NULL
+ * \param body full formated request's body or NULL
  */
 int        fbxapi_request(
     const s_fbxapi *fbx,
@@ -49,6 +51,27 @@ void                fbxapi_set_request_bases(
     const char *verb,
     const char *endpoint
 );
+
+/**
+ * Parse first line in an http stream
+ *
+ * \param fbx
+ * \param status_code A pointer to a valid area that will be filled by the http status
+ *      code
+ * \param A pointr to a pointer that will be assigned to a heap allocated string
+ *      containing http's text status
+ *
+ * \return VLC_SUCCESS on success, VLC_EGENERIC or VLC_ENOMEM otherwise. On error,
+ *      *status_text will not point to an allocated area
+*/
+int             fbxapi_get_http(
+    const s_fbxapi *fbx,
+    int *status_code,
+    char **status_text
+);
+
+char            **fbxapi_get_headers( const s_fbxapi *fbx );
+char            *fbxapi_get_body( const s_fbxapi *fbx );
 
 /**
  * Free all internal data ( all ), and memset it

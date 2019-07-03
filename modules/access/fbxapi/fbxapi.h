@@ -1,6 +1,8 @@
 #ifndef FBXAPI_H
 # define FBXAPI_H
 
+# include <vlc_common.h>
+
 struct        s_fbxapi
 {
     struct
@@ -35,5 +37,7 @@ struct        s_fbxapi
     int         first_read;
 };
 typedef struct s_fbxapi     s_fbxapi;
+
+int             fbxapi_open_tls( vlc_object_t *self );
 
 #endif /* FBXAPI_H */

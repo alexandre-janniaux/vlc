@@ -25,14 +25,14 @@ struct    s_fbxapi_fileinfo
 
     int        is_hidden;
     int        display_index;
-}
+};
 typedef struct s_fbxapi_fileinfo s_fbxapi_fileinfo;
 
 /*
  * Takes a json object formatted by the freebox fs api and converts it to a 
  * s_fbxapi_fileinfo ( data is dupplicated )
  */
-s_fbxapi_fileinfo    *json_to_fileinfo(json_value *as_json);
+s_fbxapi_fileinfo    *json_to_fileinfo(const json_value *as_json);
 
 /*
  * Free ressources contained in a s_fbxapi_fileinfo structure

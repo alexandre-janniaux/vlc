@@ -10,10 +10,10 @@
 
 #include "fbxapi_fileinfo.h"
 
-s_fbxapi_fileinfo    *json_to_fileinfo(json_value *as_json)
+s_fbxapi_fileinfo    *json_to_fileinfo(const json_value *as_json)
 {
-    json_value    *obj;
-    s_fbxapi_fileinfo    *file = NULL;
+    const json_value    *obj;
+    s_fbxapi_fileinfo   *file = NULL;
 
     file = calloc(1, sizeof(*file));
     if ( file == NULL )
@@ -26,7 +26,7 @@ s_fbxapi_fileinfo    *json_to_fileinfo(json_value *as_json)
         return NULL;
     }
 
-    obj = json_getbyname("path");
+    obj = json_getbyname(as_json, "path");
     if ( obj == NULL || obj->type != json_string )
     {
         goto release;
@@ -37,7 +37,7 @@ s_fbxapi_fileinfo    *json_to_fileinfo(json_value *as_json)
         goto release;
     }
 
-    obj = json_getbyname("name");
+    obj = json_getbyname(as_json, "name");
     if ( obj == NULL || obj->type != json_string )
     {
         goto release;
@@ -48,7 +48,7 @@ s_fbxapi_fileinfo    *json_to_fileinfo(json_value *as_json)
         goto release;
     }
 
-    obj = json_getbyname("mimetype");
+    obj = json_getbyname(as_json, "mimetype");
     if ( obj == NULL || obj->type != json_string )
     {
         goto release;
@@ -59,7 +59,7 @@ s_fbxapi_fileinfo    *json_to_fileinfo(json_value *as_json)
         goto release;
     }
 
-    obj = json_getbyname("type");
+    obj = json_getbyname(as_json, "type");
     if ( obj == NULL || obj->type != json_string )
     {
         goto release;
@@ -77,21 +77,21 @@ s_fbxapi_fileinfo    *json_to_fileinfo(json_value *as_json)
         goto release;
     }
 
-    obj = json_getbyname("size");
-    if ( obj == NULL || obj->type != json_int_t )
+    obj = json_getbyname(as_json, "size");
+    if ( obj == NULL || obj->type != json_integer )
     {
         goto release;
     }
     file->size = obj->u.integer;
 
-    obj = json_getbyname("modification");
-    if ( obj == NULL || obj->type != json_int_t )
+    obj = json_getbyname(as_json, "modification");
+    if ( obj == NULL || obj->type != json_integer )
     {
         goto release;
     }
     file->modification = obj->u.integer;
 
-    obj = json_getbyname("link");
+    obj = json_getbyname(as_json, "link");
     if ( obj == NULL || obj->type != json_boolean )
     {
         goto release;
@@ -99,7 +99,7 @@ s_fbxapi_fileinfo    *json_to_fileinfo(json_value *as_json)
     file->is_link = obj->u.boolean;
     if ( file->is_link != 0 )
     {
-        obj = json_getbyname("target");
+        obj = json_getbyname(as_json, "target");
         if ( obj == NULL || obj->type != json_string )
         {
             goto release;
@@ -111,15 +111,15 @@ s_fbxapi_fileinfo    *json_to_fileinfo(json_value *as_json)
         }
     }
 
-    obj = json_getbyname("hidden");
+    obj = json_getbyname(as_json, "hidden");
     if ( obj == NULL || obj->type != json_boolean )
     {
         goto release;
     }
     file->is_hidden = obj->u.boolean;
 
-    obj = json_getbyname("index");
-    if ( obj == NULL || obj->type != json_int_t )
+    obj = json_getbyname(as_json, "index");
+    if ( obj == NULL || obj->type != json_integer )
     {
         goto release;
     }
