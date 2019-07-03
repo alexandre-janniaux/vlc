@@ -178,8 +178,12 @@ extern vlc_plugin_cb vlc_static_modules[];
 
 static void module_InitStaticModules(void)
 {
+    fprintf(stderr, "LOADING STATIC MODULES\n");
     if (!vlc_static_modules)
+    {
+        fprintf(stderr, "STATIC MODULES LIST IS EMPTY\n");
         return;
+    }
 
     for (unsigned i = 0; vlc_static_modules[i]; i++)
     {
@@ -189,7 +193,7 @@ static void module_InitStaticModules(void)
     }
 }
 #else
-static void module_InitStaticModules(void) { }
+static void module_InitStaticModules(void) { fprintf(stderr, "STATIC MODULES ARE DISABLED\n" }
 #endif
 
 #ifdef HAVE_DYNAMIC_PLUGINS

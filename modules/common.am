@@ -24,15 +24,15 @@ AM_CPPFLAGS += -D__PLUGIN__
 else
 AM_CPPFLAGS += -DMODULE_NAME=$(MODULE_NAME)
 endif
-AM_CFLAGS =
-AM_CXXFLAGS =
+AM_CFLAGS = -fvisibility=hidden
+AM_CXXFLAGS = -fvisibility=hidden
 AM_OBJCFLAGS =
 AM_LDFLAGS = \
-	-avoid-version -module \
+	-fvisibility=hidden -avoid-version -module \
 	-export-symbols-regex ^vlc_entry \
 	-shrext $(LIBEXT) \
 	-no-undefined \
-	$(top_builddir)/compat/libcompat.la $(LTLIBVLCCORE) 
+	$(top_builddir)/compat/libcompat.la $(LTLIBVLCCORE)
 if HAVE_WIN32
 AM_LDFLAGS += $(top_builddir)/modules/module.rc.lo -Wc,-static
 endif

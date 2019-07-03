@@ -45,6 +45,11 @@ vlc_CPPFLAGS += -DHAVE_BREAKPAD
 endif
 endif
 
+#if !HAVE_DYNAMIC_PLUGINS
+vlc_SOURCES += ../modules/libvlc_static_modules.c
+vlc_LDADD += ../modules/libvlc_static_modules.la
+#endif
+
 vlc_osx_SOURCES = darwinvlc.m
 vlc_osx_LDFLAGS = $(LDFLAGS_vlc) -Wl,-framework,CoreFoundation,-framework,Cocoa
 vlc_osx_LDFLAGS += -Xlinker -rpath -Xlinker "$(libdir)"

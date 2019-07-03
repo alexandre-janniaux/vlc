@@ -72,6 +72,11 @@ if HAVE_DARWIN
 libvlc_la_LDFLAGS += -Xlinker -install_name -Xlinker @rpath/libvlc.dylib
 endif
 
+#if !HAVE_DYNAMIC_PLUGINS
+#libvlc_la_SOURCES += ../modules/libvlc_static_modules.c
+#libvlc_la_LIBADD += ../modules/libvlc_static_modules.lo
+#endif
+
 pkgconfig_DATA = libvlc.pc
 
 .pc.in.pc: $(top_builddir)/config.status
