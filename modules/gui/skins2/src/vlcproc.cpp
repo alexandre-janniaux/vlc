@@ -349,7 +349,7 @@ void VlcProc::init_equalizer()
                         VLC_VAR_FLOAT | VLC_VAR_DOINHERIT);
 
         // New Aout (addCallbacks)
-        var_AddCallback( pAout, "audio-filter", onAoutCallback, this );
+        //var_AddCallback( pAout, "audio-filter", onAoutCallback, this );
         var_AddCallback( pAout, "equalizer-bands",
                          onEqBandsChange, this );
         var_AddCallback( pAout, "equalizer-preamp",
