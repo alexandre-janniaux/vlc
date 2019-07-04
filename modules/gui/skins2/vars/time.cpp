@@ -33,9 +33,13 @@ inline bool StreamTime::havePosition() const {
 
 void StreamTime::set( float percentage, vlc_tick_t time, bool updateVLC )
 {
-    /* Assume we are locked when updating VLC time */
+    /* Assume we are not locked when updating VLC time */
     if(updateVLC)
+    {
+        vlc_player_Lock(m_player);
         vlc_player_SetPosition(m_player, percentage);
+        vlc_player_Unlock(m_player);
+    }
     else
         m_time = time;
 
