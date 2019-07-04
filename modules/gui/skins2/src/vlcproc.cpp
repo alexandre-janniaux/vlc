@@ -87,6 +87,11 @@ VlcProc::on_current_media_changed(vlc_player_t *player,
                                   void *data)
 {
     VlcProc *proc = static_cast<VlcProc *>(data);
+
+    CmdItemUpdate *pCmdTree = new CmdItemUpdate(proc, new_media);
+
+    AyncQueue *queue = AsyncQueue::instance(proc->getIntf());
+    queue->push(CmdGenericPtr { cmd_tree });
 }
 
 
@@ -95,6 +100,11 @@ VlcProc::on_state_changed(vlc_player_t *player,
                           vlc_player_state new_state,
                           void *data)
 {
+    VlcProc *proc = static_cast<VlcProc *>(data);
+
+    SET_BOOL( proc->m_cVarStopped, state == VLC_PLAYER_STATE_STOPPED );
+    SET_BOOL( proc->m_cVarPlaying, state == VLC_PLAYER_STATE_PLAYING );
+    SET_BOOL( proc->m_cVarPaused, state == VLC_PLAYER_STATE_PAUSED );
 }
 
 void
@@ -118,7 +128,15 @@ VlcProc::on_rate_changed(vlc_player_t *player,
                          float new_rate,
                          void *data)
 {
+    VlcProc *proc = static_cast<VlcProc *>(data);
 
+    /* TODO: why bothering with string at all ? */
+    char* buffer;
+    if(asprintf(&buffer, "%.3g", newrate) != -1)
+    {
+        SET_TEXT(proc->m_cVarSpeed, UString(getIntf(), buffer));
+        free(buffer);
+    }
 }
 
 void
@@ -126,6 +144,8 @@ VlcProc::on_capabilities_changed(vlc_player_t *player,
                                  int old_caps, int new_caps,
                                  void *data)
 {
+    VlcProc *proc = static_cast<VlcProc *>(data);
+    SET_BOOL(proc->m_cVarSeekable, new_caps & VLC_PLAYER_CAP_SEEK);
 }
 
 void
@@ -134,7 +154,7 @@ VlcProc::on_position_changed(vlc_player_t *player,
                              float new_pos,
                              void *data)
 {
-
+    SET_STREAMTIME( m_cVarTime, new_pos, false );
 }
 
 void
@@ -150,6 +170,7 @@ VlcProc::on_track_list_changed(vlc_player_t *player,
                                const vlc_player_track *track,
                                void *data)
 {
+    /* TODO: set m_cVarHasAudio ? */
 }
 
 void
@@ -201,6 +222,7 @@ VlcProc::on_chapter_selection_changed(vlc_player_t *player,
                                       size_t new_chapter_idx,
                                       void *data)
 {
+    /* TODO: m_cVarDvdActive */
 }
 
 void
@@ -264,6 +286,8 @@ VlcProc::on_recording_changed(vlc_player_t *player,
                               bool recording,
                               void *data)
 {
+    VlcProc *proc = static_cast<VlcProc *>(data);
+    SET_BOOL(proc->m_cVarRecording, recording);
 }
 
 void
@@ -316,6 +340,7 @@ VlcProc::on_vout_changed(vlc_player_t *player,
                          vout_thread_t *vout,
                          void *data)
 {
+    /* TODO: previous interface was adding callbacks */
 }
 
 void
@@ -374,6 +399,7 @@ VlcProc::on_volume_changed(vlc_player_t *player,
                            void *data)
 {
     VlcProc *proc = static_cast<VlcProc *>(data);
+    SET_VOLUME(proc->m_cVarVolume, volume, false);
 }
 
 const vlc_player_aout_cbs VlcProc::player_aout_cbs =
