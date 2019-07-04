@@ -88,9 +88,9 @@ VlcProc::on_current_media_changed(vlc_player_t *player,
 {
     VlcProc *proc = static_cast<VlcProc *>(data);
 
-    CmdItemUpdate *pCmdTree = new CmdItemUpdate(proc, new_media);
+    CmdItemUpdate *cmd_tree = new CmdItemUpdate(proc->getIntf(), new_media);
 
-    AyncQueue *queue = AsyncQueue::instance(proc->getIntf());
+    AsyncQueue *queue = AsyncQueue::instance(proc->getIntf());
     queue->push(CmdGenericPtr { cmd_tree });
 }
 
@@ -102,9 +102,9 @@ VlcProc::on_state_changed(vlc_player_t *player,
 {
     VlcProc *proc = static_cast<VlcProc *>(data);
 
-    SET_BOOL( proc->m_cVarStopped, state == VLC_PLAYER_STATE_STOPPED );
-    SET_BOOL( proc->m_cVarPlaying, state == VLC_PLAYER_STATE_PLAYING );
-    SET_BOOL( proc->m_cVarPaused, state == VLC_PLAYER_STATE_PAUSED );
+    SET_BOOL( proc->m_cVarStopped, new_state == VLC_PLAYER_STATE_STOPPED );
+    SET_BOOL( proc->m_cVarPlaying, new_state == VLC_PLAYER_STATE_PLAYING );
+    SET_BOOL( proc->m_cVarPaused, new_state == VLC_PLAYER_STATE_PAUSED );
 }
 
 void
@@ -132,9 +132,9 @@ VlcProc::on_rate_changed(vlc_player_t *player,
 
     /* TODO: why bothering with string at all ? */
     char* buffer;
-    if(asprintf(&buffer, "%.3g", newrate) != -1)
+    if(asprintf(&buffer, "%.3g", new_rate) != -1)
     {
-        SET_TEXT(proc->m_cVarSpeed, UString(getIntf(), buffer));
+        SET_TEXT(proc->m_cVarSpeed, UString(proc->getIntf(), buffer));
         free(buffer);
     }
 }
@@ -154,7 +154,8 @@ VlcProc::on_position_changed(vlc_player_t *player,
                              float new_pos,
                              void *data)
 {
-    SET_STREAMTIME( m_cVarTime, new_pos, false );
+    VlcProc *proc = static_cast<VlcProc *>(data);
+    SET_STREAMTIME(proc->m_cVarTime, new_pos, false);
 }
 
 void
@@ -254,14 +255,8 @@ VlcProc::on_teletext_transparency_changed(vlc_player_t *player,
 }
 
 void
-VlcProc::on_audio_delay_changed(vlc_player_t *player,
-                                vlc_tick_t new_delay,
-                                void *data)
-{
-}
-
-void
-VlcProc::on_subtitle_delay_changed(vlc_player_t *player,
+VlcProc::on_category_delay_changed(vlc_player_t *player,
+                                   es_format_category_e cat,
                                    vlc_tick_t new_delay,
                                    void *data)
 {
@@ -306,6 +301,14 @@ VlcProc::on_statistics_changed(vlc_player_t *player,
 }
 
 void
+VlcProc::on_atobloop_changed(vlc_player_t *player,
+                             vlc_player_abloop new_state,
+                             vlc_tick_t time, float pos,
+                             void *data)
+{
+}
+
+void
 VlcProc::on_media_stopped_action_changed(vlc_player_t *player,
                                          vlc_player_media_stopped_action action,
                                          void *data)
@@ -338,6 +341,8 @@ void
 VlcProc::on_vout_changed(vlc_player_t *player,
                          vlc_player_vout_action action,
                          vout_thread_t *vout,
+                         vlc_vout_order order,
+                         vlc_es_id_t *es,
                          void *data)
 {
     /* TODO: previous interface was adding callbacks */
@@ -362,6 +367,7 @@ const vlc_player_cbs VlcProc::player_cbs =
     VlcProc::on_length_changed,
     VlcProc::on_track_list_changed,
     VlcProc::on_track_selection_changed,
+    nullptr, /* track delay changed */
     VlcProc::on_program_list_changed,
     VlcProc::on_program_selection_changed,
     VlcProc::on_titles_changed,
@@ -371,8 +377,7 @@ const vlc_player_cbs VlcProc::player_cbs =
     VlcProc::on_teletext_enabled_changed,
     VlcProc::on_teletext_page_changed,
     VlcProc::on_teletext_transparency_changed,
-    VlcProc::on_audio_delay_changed,
-    VlcProc::on_subtitle_delay_changed,
+    VlcProc::on_category_delay_changed,
     VlcProc::on_associated_subs_fps_changed,
     VlcProc::on_renderer_changed,
     VlcProc::on_recording_changed,

@@ -206,12 +206,8 @@ private:
                                      void *data);
 
     static void
-    on_audio_delay_changed(vlc_player_t *player,
-                           vlc_tick_t new_delay,
-                           void *data);
-
-    static void
-    on_subtitle_delay_changed(vlc_player_t *player,
+    on_category_delay_changed(vlc_player_t *player,
+                              es_format_category_e cat,
                               vlc_tick_t new_delay,
                               void *data);
 
@@ -272,6 +268,8 @@ private:
     on_vout_changed(vlc_player_t *player,
                     vlc_player_vout_action action,
                     vout_thread_t *vout,
+                    vlc_vout_order order,
+                    vlc_es_id_t *es,
                     void *data);
 
     static void
