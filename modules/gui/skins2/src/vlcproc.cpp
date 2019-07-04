@@ -142,9 +142,11 @@ VlcProc::VlcProc( intf_thread_t *pIntf ): SkinObject( pIntf ),
     auto *playlist = vlc_intf_GetMainPlaylist(pIntf);
     auto *player = vlc_playlist_GetPlayer(playlist);
 
+    vlc_player_Lock(player);
     vlc_player_AddListener(player, &skins2_player_cbs, this);
     vlc_player_aout_AddListener(player, &skins2_player_aout_cbs, this);
     vlc_player_vout_AddListener(player, &skins2_player_vout_cbs, this);
+    vlc_player_Unlock(player);
 
     // Create and register VLC variables
     VarManager *pVarManager = VarManager::instance( getIntf() );
