@@ -143,9 +143,12 @@ VlcProc::VlcProc( intf_thread_t *pIntf ): SkinObject( pIntf ),
     auto *player = vlc_playlist_GetPlayer(playlist);
 
     vlc_player_Lock(player);
-    vlc_player_AddListener(player, &skins2_player_cbs, this);
-    vlc_player_aout_AddListener(player, &skins2_player_aout_cbs, this);
-    vlc_player_vout_AddListener(player, &skins2_player_vout_cbs, this);
+    m_playerListener =
+        vlc_player_AddListener(player, &skins2_player_cbs, this);
+    m_playerAoutListener =
+        vlc_player_aout_AddListener(player, &skins2_player_aout_cbs, this);
+    m_playerVoutListener =
+        vlc_player_vout_AddListener(player, &skins2_player_vout_cbs, this);
     vlc_player_Unlock(player);
 
     // Create and register VLC variables
@@ -224,6 +227,15 @@ VlcProc::VlcProc( intf_thread_t *pIntf ): SkinObject( pIntf ),
 
 VlcProc::~VlcProc()
 {
+    auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
+
+    vlc_player_Lock(player);
+    vlc_player_RemoveListener(player, m_playerListener);
+    vlc_player_aout_RemoveListener(player, m_playerAoutListener);
+    vlc_player_vout_RemoveListener(player, m_playerVoutListener);
+    vlc_player_Unlock(player);
+
     if( m_pVout )
     {
         vout_Release(m_pVout);
