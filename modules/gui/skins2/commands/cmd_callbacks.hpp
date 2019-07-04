@@ -57,30 +57,6 @@ private:
     void (VlcProc::*m_pfExecute)(vlc_object_t *,vlc_value_t);
 };
 
-class CmdInputCallback : public CmdCallback
-{
-public:
-    CmdInputCallback( intf_thread_t *pIntf, input_thread_t *pInput,
-                      vlc_value_t newVal,
-                      void (VlcProc::*func)(vlc_object_t *,vlc_value_t),
-                      std::string label )
-        : CmdCallback( pIntf, VLC_OBJECT(pInput), newVal, func, label ),
-          m_pInput( pInput )
-    {
-        if( m_pInput )
-            input_Hold( m_pInput );
-    }
-
-    virtual ~CmdInputCallback()
-    {
-        if( m_pInput )
-            input_Release( m_pInput );
-    }
-
-private:
-    input_thread_t *m_pInput;
-};
-
 class CmdVoutCallback : public CmdCallback
 {
 public:
