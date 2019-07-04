@@ -80,8 +80,6 @@ static int Open( vlc_object_t *p_this )
     if( p_intf->p_sys == NULL )
         return VLC_ENOMEM;
 
-    p_intf->p_sys->p_input = NULL;
-
     // Initialize "singleton" objects
     p_intf->p_sys->p_logger = NULL;
     p_intf->p_sys->p_queue = NULL;

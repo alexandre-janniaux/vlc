@@ -84,9 +84,6 @@ static inline std::string sFromWide( const std::wstring &rWide )
 //---------------------------------------------------------------------------
 struct intf_sys_t
 {
-    /// The input thread
-    input_thread_t *p_input;
-
     // "Singleton" objects: MUST be initialized to NULL !
     /// Logger
     Logger *p_logger;

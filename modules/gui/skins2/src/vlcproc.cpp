@@ -296,39 +296,39 @@ void VlcProc::init_variables()
 
 void VlcProc::update_current_input()
 {
-    input_thread_t* pInput = getIntf()->p_sys->p_input;
-    if( !pInput )
-        return;
+    //input_thread_t* pInput = getIntf()->p_sys->p_input;
+    //if( !pInput )
+    //    return;
 
-    input_item_t *pItem = input_GetItem( pInput );
-    if( pItem )
-    {
-        // Update short name (as defined by --input-title-format)
-        char *psz_fmt = var_InheritString( getIntf(), "input-title-format" );
-        char *psz_name = NULL;
-        if( psz_fmt != NULL )
-        {
-            psz_name = vlc_strfinput( pInput, NULL, psz_fmt );
-            free( psz_fmt );
-        }
+    //input_item_t *pItem = input_GetItem( pInput );
+    //if( pItem )
+    //{
+    //    // Update short name (as defined by --input-title-format)
+    //    char *psz_fmt = var_InheritString( getIntf(), "input-title-format" );
+    //    char *psz_name = NULL;
+    //    if( psz_fmt != NULL )
+    //    {
+    //        psz_name = vlc_strfinput( pInput, NULL, psz_fmt );
+    //        free( psz_fmt );
+    //    }
 
-        SET_TEXT( m_cVarStreamName, UString( getIntf(),
-                                             psz_name ? psz_name : "" ) );
-        free( psz_name );
+    //    SET_TEXT( m_cVarStreamName, UString( getIntf(),
+    //                                         psz_name ? psz_name : "" ) );
+    //    free( psz_name );
 
-        // Update local path (if possible) or full uri
-        char *psz_uri = input_item_GetURI( pItem );
-        char *psz_path = vlc_uri2path( psz_uri );
-        char *psz_save = psz_path ? psz_path : psz_uri;
-        SET_TEXT( m_cVarStreamURI, UString( getIntf(), psz_save ) );
-        free( psz_path );
-        free( psz_uri );
+    //    // Update local path (if possible) or full uri
+    //    char *psz_uri = input_item_GetURI( pItem );
+    //    char *psz_path = vlc_uri2path( psz_uri );
+    //    char *psz_save = psz_path ? psz_path : psz_uri;
+    //    SET_TEXT( m_cVarStreamURI, UString( getIntf(), psz_save ) );
+    //    free( psz_path );
+    //    free( psz_uri );
 
-        // Update art uri
-        char *psz_art = input_item_GetArtURL( pItem );
-        SET_STRING( m_cVarStreamArt, std::string( psz_art ? psz_art : "" ) );
-        free( psz_art );
-    }
+    //    // Update art uri
+    //    char *psz_art = input_item_GetArtURL( pItem );
+    //    SET_STRING( m_cVarStreamArt, std::string( psz_art ? psz_art : "" ) );
+    //    free( psz_art );
+    //}
 }
 
 void VlcProc::init_equalizer()
