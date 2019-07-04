@@ -23,21 +23,23 @@
 
 #include "time.hpp"
 
+#include <vlc_player.h>
 
 inline bool StreamTime::havePosition() const {
-    return false;
-    //input_thread_t *p_input = getIntf()->p_sys->p_input;
-    //return p_input && ( var_GetFloat( p_input, "position" ) != 0.0 );
+    // TODO
+    return true;
 }
 
 
-void StreamTime::set( float percentage, bool updateVLC )
+void StreamTime::set( float percentage, vlc_tick_t time, bool updateVLC )
 {
-    VarPercent::set( percentage );
+    /* Assume we are locked when updating VLC time */
+    if(updateVLC)
+        vlc_player_SetPosition(m_player, percentage);
+    else
+        m_time = time;
 
-    // Avoid looping forever...
-    //if( updateVLC && getIntf()->p_sys->p_input )
-    //    var_SetFloat( getIntf()->p_sys->p_input, "position", percentage );
+    VarPercent::set( percentage );
 }
 
 
@@ -76,8 +78,7 @@ std::string StreamTime::getAsStringCurrTime( bool bShortFormat ) const
     if( !havePosition() )
         return "-:--:--";
 
-    vlc_tick_t time = 0;//var_GetInteger( getIntf()->p_sys->p_input, "time" );
-    return formatTime( SEC_FROM_VLC_TICK(time), bShortFormat );
+    return formatTime( SEC_FROM_VLC_TICK(m_time), bShortFormat );
 }
 
 
@@ -86,10 +87,7 @@ std::string StreamTime::getAsStringTimeLeft( bool bShortFormat ) const
     if( !havePosition() )
         return "-:--:--";
 
-    vlc_tick_t time = 0,//var_GetInteger( getIntf()->p_sys->p_input, "time" ),
-        duration = 0;//var_GetInteger( getIntf()->p_sys->p_input, "length" );
-
-    return formatTime( SEC_FROM_VLC_TICK(duration - time), bShortFormat );
+    return formatTime( SEC_FROM_VLC_TICK(m_duration - m_time), bShortFormat );
 }
 
 
@@ -98,6 +96,5 @@ std::string StreamTime::getAsStringDuration( bool bShortFormat ) const
     if( !havePosition() )
         return "-:--:--";
 
-    vlc_tick_t time = 0;//var_GetInteger( getIntf()->p_sys->p_input, "length" );
-    return formatTime( SEC_FROM_VLC_TICK(time), bShortFormat );
+    return formatTime( SEC_FROM_VLC_TICK(m_duration), bShortFormat );
 }

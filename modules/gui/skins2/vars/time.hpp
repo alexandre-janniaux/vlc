@@ -27,16 +27,22 @@
 #include "../utils/var_percent.hpp"
 #include <string>
 
+struct vlc_player;
+
 /// Variable for VLC stream time
 class StreamTime: public VarPercent
 {
 public:
-    StreamTime( intf_thread_t *pIntf ): VarPercent( pIntf ) { }
+    StreamTime( vlc_player_t *player, intf_thread_t *pIntf )
+        : VarPercent( pIntf ), m_player( player ) { }
+
     virtual ~StreamTime() { }
 
-    virtual void set( float percentage, bool updateVLC );
+    virtual void set( float percentage, vlc_tick_t time, bool updateVLC );
 
-    virtual void set( float percentage ) { set( percentage, true ); }
+    virtual void set( float percentage ) { set( percentage, 0, true ); }
+
+    void set_duration( vlc_tick_t duration ) { m_duration = duration; }
 
     /// Return a string containing a value from 0 to 100
     virtual std::string getAsStringPercent() const;
@@ -52,6 +58,10 @@ private:
     std::string formatTime( int seconds, bool bShortFormat ) const;
     /// Return true when there is a non-null input and its position is not 0.0.
     bool havePosition() const;
+
+    vlc_player_t *m_player;
+    vlc_tick_t m_time = 0;
+    vlc_tick_t m_duration = 0;
 };
 
 #endif

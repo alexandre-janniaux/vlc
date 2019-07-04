@@ -76,7 +76,7 @@ void VlcProc::destroy( intf_thread_t *pIntf )
 }
 
 #define SET_BOOL(m,v)         ((VarBoolImpl*)(m).get())->set(v)
-#define SET_STREAMTIME(m,v,b) ((StreamTime*)(m).get())->set(v,b)
+#define SET_STREAMTIME(m,v,t,b) ((StreamTime*)(m).get())->set(v,t,b)
 #define SET_TEXT(m,v)         ((VarText*)(m).get())->set(v)
 #define SET_STRING(m,v)       ((VarString*)(m).get())->set(v)
 #define SET_VOLUME(m,v,b)     ((Volume*)(m).get())->setVolume(v,b)
@@ -155,7 +155,7 @@ VlcProc::on_position_changed(vlc_player_t *player,
                              void *data)
 {
     VlcProc *proc = static_cast<VlcProc *>(data);
-    SET_STREAMTIME(proc->m_cVarTime, new_pos, false);
+    SET_STREAMTIME(proc->m_cVarTime, new_pos, new_time, false);
 }
 
 void
@@ -163,6 +163,10 @@ VlcProc::on_length_changed(vlc_player_t *player,
                            vlc_tick_t new_length,
                            void *data)
 {
+    VlcProc *proc = static_cast<VlcProc *>(data);
+    ((StreamTime*)(proc->m_cVarTime).get())
+        ->set_duration(new_length);
+
 }
 
 void
@@ -450,7 +454,8 @@ VlcProc::VlcProc( intf_thread_t *pIntf ): SkinObject( pIntf ),
 
     /* Input variables */
     pVarManager->registerVar( m_cVarRepeat, "playtree.isRepeat" );
-    REGISTER_VAR( m_cVarTime, StreamTime, "time" )
+    m_cVarTime = VariablePtr( new StreamTime( player, getIntf() ) );
+    pVarManager->registerVar( m_cVarTime, "time" );
     REGISTER_VAR( m_cVarSeekable, VarBoolImpl, "vlc.isSeekable" )
     REGISTER_VAR( m_cVarDvdActive, VarBoolImpl, "dvd.isActive" )
 
@@ -570,7 +575,7 @@ void VlcProc::reset_input()
     SET_BOOL( m_cVarPlaying, false );
     SET_BOOL( m_cVarPaused, false );
 
-    SET_STREAMTIME( m_cVarTime, 0, false );
+    SET_STREAMTIME( m_cVarTime, 0.f, 0, false );
     SET_TEXT( m_cVarStreamName, UString( getIntf(), "") );
     SET_TEXT( m_cVarStreamURI, UString( getIntf(), "") );
     SET_TEXT( m_cVarStreamBitRate, UString( getIntf(), "") );
