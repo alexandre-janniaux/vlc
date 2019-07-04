@@ -28,11 +28,16 @@
 #include <vlc_media_source.h>
 #include <vlc_media_library.h>
 #include <vlc_threads.h>
+#include <vlc_keystore.h>
+#include <vlc_url.h>
+
 
 typedef struct
 {
     struct vlc_media_tree *tree;
 } intf_thread_sys_t;
+
+static void test_keystore(intf_thread_t *obj, const char *mrl);
 
 static void OnItemCleared(
     struct vlc_media_tree *tree,
@@ -64,6 +69,7 @@ static void OnItemAdded(
         if (!strncmp(mrl, "fbxapi", scheme_length))
         {
             msg_Info(intf, "Found freebox, asking usage");
+            test_keystore(intf, mrl);
             vlc_media_tree_Preparse(tree, vlc_object_instance(intf), children[i]->p_item);
         }
     }
@@ -81,6 +87,46 @@ void OnItemRemoved(
     msg_Err(intf, "Children removed");
 }
 
+static void test_keystore(intf_thread_t *obj, const char *mrl)
+{
+    vlc_url_t url;
+    vlc_UrlParse(&url, mrl);
+
+    vlc_keystore *store = vlc_keystore_create(obj);
+    if (store == NULL)
+    {
+        msg_Err(obj, "No keystore available");
+        return VLC_EGENERIC;
+    }
+
+    const char * const      values[KEY_MAX] = {
+        [KEY_PROTOCOL] = "fbxapi",
+        [KEY_USER] = "VLC_FBXAPI",
+        [KEY_SERVER] = url.psz_host,
+        [KEY_PATH] = NULL,
+        [KEY_PORT] = "922",
+        [KEY_REALM] = NULL,
+        [KEY_AUTHTYPE] = NULL,
+    };
+
+
+    vlc_keystore_entry *entries;
+    unsigned int entries_number = vlc_keystore_find(store, values, &entries);
+
+    msg_Info(obj, "There are %u entries", entries_number);
+
+    if (entries_number < 1)
+    {
+        char *app_token = strdup("fHknH11EcmMYGt9lmghirzDRUvtb+OTn1Q7lKDU+nhdZ5yQPUj51HDb2WMgOZmUj"); // FIXME
+        vlc_keystore_store(store, values, app_token, strlen(app_token), "app_token");
+    }
+    else
+    {
+        vlc_keystore_release_entries(entries, entries_number);
+    }
+
+    vlc_keystore_release(store);
+}
 
 static int Open(vlc_object_t *obj)
 {
