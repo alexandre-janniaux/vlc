@@ -64,6 +64,7 @@ static void OnItemAdded(
         if (!strncmp(mrl, "fbxapi", scheme_length))
         {
             msg_Info(intf, "Found freebox, asking usage");
+            vlc_media_tree_Preparse(tree, vlc_object_instance(intf), children[i]->p_item);
         }
     }
 }
