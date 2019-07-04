@@ -37,9 +37,7 @@ void CmdPlay::execute()
     if (vlc_playlist_GetCurrentIndex(playlist) != -1)
     {
         // if already playing an input, reset rate to normal speed
-        vlc_player_Lock(player);
         vlc_player_ChangeRate(player, 1.f);
-        vlc_player_Unlock(player);
     }
 
     if (vlc_playlist_Count(playlist) > 0)
