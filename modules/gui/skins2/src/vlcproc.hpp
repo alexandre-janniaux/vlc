@@ -310,6 +310,66 @@ private:
 
     static const vlc_player_aout_cbs player_aout_cbs;
 
+    static void
+    on_items_reset(vlc_playlist_t *playlist,
+                   vlc_playlist_item_t *const items[],
+                   size_t count,
+                   void *data);
+
+    static void
+    on_items_added(vlc_playlist_t *playlist,
+                   size_t index,
+                   vlc_playlist_item_t *const items[],
+                   size_t count,
+                   void *data);
+
+    static void
+    on_items_moved(vlc_playlist_t *playlist,
+                   size_t index,
+                   size_t count,
+                   size_t target,
+                   void *userdata);
+
+    static void
+    on_items_removed(vlc_playlist_t *playlist,
+                     size_t index,
+                     size_t count,
+                     void *data);
+
+    static void
+    on_items_updated(vlc_playlist_t *playlist,
+                     size_t index,
+                     vlc_playlist_item_t *const items[],
+                     size_t count,
+                     void *data);
+
+    static void
+    on_playback_repeat_changed(vlc_playlist_t *playlist,
+                               vlc_playlist_playback_repeat repeat,
+                               void *data);
+
+    static void
+    on_playback_order_changed(vlc_playlist_t *playlist,
+                              vlc_playlist_playback_order order,
+                              void *data);
+
+    static void
+    on_current_index_changed(vlc_playlist_t *playlist,
+                             ssize_t index,
+                             void *data);
+
+    static void
+    on_has_prev_changed(vlc_playlist_t *playlist,
+                        bool has_prev,
+                        void *data);
+
+    static void
+    on_has_next_changed(vlc_playlist_t *playlist,
+                        bool has_next,
+                        void *data);
+
+    static const vlc_playlist_callbacks playlist_cbs;
+
 protected:
     // Protected because it is a singleton
     VlcProc( intf_thread_t *pIntf );
@@ -358,6 +418,9 @@ private:
     VariablePtr m_cVarEqualizer;
     /// Variable for DVD detection
     VariablePtr m_cVarDvdActive;
+
+    VariablePtr m_cVarHasPrevious;
+    VariablePtr m_cVarHasNext;
 
     /// Vout thread
     vout_thread_t *m_pVout;

@@ -427,6 +427,132 @@ const vlc_player_aout_cbs VlcProc::player_aout_cbs =
     nullptr  /* on_device_changed */
 };
 
+void
+VlcProc::on_items_reset(vlc_playlist_t *playlist,
+                        vlc_playlist_item_t *const items[],
+                        size_t count,
+                        void *data)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    auto *cmd_tree = new CmdPlaytreeAppend(proc->getIntf(), /* TODO */);
+    auto *queue = AsyncQueue::instance(proc->getIntf());
+    queue->push(CmdGenericPtr(cmd_tree));
+}
+
+void
+VlcProc::on_items_added(vlc_playlist_t *playlist,
+                        size_t index,
+                        vlc_playlist_item_t *const items[],
+                        size_t count,
+                        void *data)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    auto *cmd_tree = new CmdPlaytreeAppend(proc->getIntf(), /* TODO */);
+    auto *queue = AsyncQueue::instance(proc->getIntf());
+    queue->push(CmdGenericPtr(cmd_tree));
+}
+
+void
+VlcProc::on_items_moved(vlc_playlist_t *playlist,
+                        size_t index,
+                        size_t count,
+                        size_t target,
+                        void *userdata)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    auto *cmd_tree = new CmdPlaytreeAppend(proc->getIntf(), /* TODO */);
+    auto *queue = AsyncQueue::instance(proc->getIntf());
+    queue->push(CmdGenericPtr(cmd_tree));
+}
+
+void
+VlcProc::on_items_removed(vlc_playlist_t *playlist,
+                          size_t index,
+                          size_t count,
+                          void *data)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    auto *cmd_tree = new CmdPlaytreeDelete(proc->getIntf(), /* TODO */);
+    auto *queue = AsyncQueue::instance(proc->getIntf());
+    queue->push(CmdGenericPtr(cmd_tree));
+}
+
+void
+VlcProc::on_items_updated(vlc_playlist_t *playlist,
+                          size_t index,
+                          vlc_playlist_item_t *const items[],
+                          size_t count,
+                          void *data)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    // TODO: loop over all items ?
+    auto *cmd_tree = new CmdPlaytreeUpdate(proc->getIntf(), /* TODO */);
+    auto *queue = AsyncQueue::instance(proc->getIntf());
+    queue->push(CmdGenericPtr(cmd_tree));
+}
+
+void
+VlcProc::on_playback_repeat_changed(vlc_playlist_t *playlist,
+                                    vlc_playlist_playback_repeat repeat,
+                                    void *data)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    SET_BOOL(proc->m_cVarRepeat, repeat == VLC_PLAYLIST_PLAYBACK_REPEAT_CURRENT);
+    SET_BOOL(proc->m_cVarLoop, repeat == VLC_PLAYLIST_PLAYBACK_REPEAT_ALL);
+}
+
+void
+VlcProc::on_playback_order_changed(vlc_playlist_t *playlist,
+                                   vlc_playlist_playback_order order,
+                                   void *data)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    SET_BOOL(proc->m_cVarRandom, order == VLC_PLAYLIST_PLAYBACK_ORDER_RANDOM);
+}
+
+void
+VlcProc::on_current_index_changed(vlc_playlist_t *playlist,
+                                  ssize_t index,
+                                  void *data)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    auto *cmd_tree = new CmdPlaytreeAppend(proc->getIntf(), /* TODO */);
+    auto *queue = AsyncQueue::instance(proc->getIntf());
+    queue->push(CmdGenericPtr(cmd_tree));
+}
+
+void
+VlcProc::on_has_prev_changed(vlc_playlist_t *playlist,
+                             bool has_prev,
+                             void *data)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    SET_BOOL(proc->m_cVarHasPrevious, has_prev);
+}
+
+void
+VlcProc::on_has_next_changed(vlc_playlist_t *playlist,
+                             bool has_next,
+                             void *data)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    SET_BOOL(proc->m_cVarHasNext, has_next);
+}
+
+const vlc_playlist_callbacks VlcProc::playlist_cbs =
+{
+    VlcProc::on_items_reset,
+    VlcProc::on_items_added,
+    VlcProc::on_items_moved,
+    VlcProc::on_items_removed,
+    VlcProc::on_items_updated,
+    VlcProc::on_playback_repeat_changed,
+    VlcProc::on_playback_order_changed,
+    VlcProc::on_current_index_changed,
+    VlcProc::on_has_prev_changed,
+    VlcProc::on_has_next_changed
+};
+
 VlcProc::VlcProc( intf_thread_t *pIntf ): SkinObject( pIntf ),
     m_varEqBands( pIntf ), m_pVout( NULL )
 {
@@ -460,6 +586,9 @@ VlcProc::VlcProc( intf_thread_t *pIntf ): SkinObject( pIntf ),
     REGISTER_VAR( m_cVarPlaying, VarBoolImpl, "vlc.isPlaying" )
     REGISTER_VAR( m_cVarStopped, VarBoolImpl, "vlc.isStopped" )
     REGISTER_VAR( m_cVarPaused, VarBoolImpl, "vlc.isPaused" )
+
+    REGISTER_VAR( m_cVarHasNext, VarBoolImpl, "vlc.hasNext" )
+    REGISTER_VAR( m_cVarHasPrevious, VarBoolImpl, "vlc.hasPrevious" )
 
     /* Input variables */
     pVarManager->registerVar( m_cVarRepeat, "playtree.isRepeat" );
