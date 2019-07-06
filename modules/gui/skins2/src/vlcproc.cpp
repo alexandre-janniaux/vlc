@@ -411,10 +411,19 @@ VlcProc::on_volume_changed(vlc_player_t *player,
     SET_VOLUME(proc->m_cVarVolume, volume, false);
 }
 
+void
+VlcProc::on_mute_changed(vlc_player_t *player,
+                         bool mute,
+                         void *data)
+{
+    auto *proc = static_cast<VlcProc*>(data);
+    SET_BOOL(proc->m_cVarMute, mute);
+}
+
 const vlc_player_aout_cbs VlcProc::player_aout_cbs =
 {
-    VlcProc::on_volume_changed, /* on_volume_changed */
-    nullptr, /* on_mute_changed */
+    VlcProc::on_volume_changed,
+    VlcProc::on_mute_changed,
     nullptr  /* on_device_changed */
 };
 
