@@ -80,22 +80,20 @@ void CmdSlower::execute()
     auto *playlist = getPL();
     auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vlc_playlist_Lock(playlist);
-    // TODO: how to call rate-slower ?
-    //vlc_player_ChangeRate(playlist);
-    vlc_playlist_Unlock(playlist);
-    //var_TriggerCallback( getPL(), "rate-slower" );
+    vlc_player_Lock(player);
+    vlc_player_DecrementRate(player);
+    vlc_player_Unlock(player);
 }
 
 
 void CmdFaster::execute()
 {
     auto *playlist = getPL();
+    auto *player = vlc_playlist_GetPlayer(playlist);
 
-    // TODO: how to call rate-faster ?
-    vlc_playlist_Lock(playlist);
-    vlc_playlist_Unlock(playlist);
-    //var_TriggerCallback( getPL(), "rate-faster" );
+    vlc_player_Lock(player);
+    vlc_player_IncrementRate(player);
+    vlc_player_Unlock(player);
 }
 
 
@@ -116,9 +114,7 @@ void CmdVolumeUp::execute()
     auto *player = vlc_playlist_GetPlayer(playlist);
 
     vlc_player_Lock(player);
-    auto volume = vlc_player_aout_GetVolume(player);
-    // TODO: increase volume
-    vlc_player_aout_SetVolume(player, volume);
+    vlc_player_aout_IncrementVolume(player, 1, NULL);
     vlc_player_Unlock(player);
 }
 
@@ -129,8 +125,6 @@ void CmdVolumeDown::execute()
     auto *player = vlc_playlist_GetPlayer(playlist);
 
     vlc_player_Lock(player);
-    auto volume = vlc_player_aout_GetVolume(player);
-    // TODO: decrease volume
-    vlc_player_aout_SetVolume(player, volume);
+    vlc_player_aout_DecrementVolume(player, 1, NULL);
     vlc_player_Unlock(player);
 }
