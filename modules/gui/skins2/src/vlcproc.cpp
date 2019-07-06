@@ -559,15 +559,6 @@ VlcProc::VlcProc( intf_thread_t *pIntf ): SkinObject( pIntf ),
     auto *playlist = vlc_intf_GetMainPlaylist(pIntf);
     auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vlc_player_Lock(player);
-    m_playerListener =
-        vlc_player_AddListener(player, &player_cbs, this);
-    m_playerAoutListener =
-        vlc_player_aout_AddListener(player, &player_aout_cbs, this);
-    m_playerVoutListener =
-        vlc_player_vout_AddListener(player, &player_vout_cbs, this);
-    vlc_player_Unlock(player);
-
     // Create and register VLC variables
     VarManager *pVarManager = VarManager::instance( getIntf() );
 
@@ -643,6 +634,18 @@ VlcProc::VlcProc( intf_thread_t *pIntf ): SkinObject( pIntf ),
 
     // initialize variables refering to libvlc and playlist objects
     init_variables();
+
+    /* Register listener when everything has been setup. */
+    vlc_playlist_Lock(playlist);
+    m_playerListener =
+        vlc_player_AddListener(player, &player_cbs, this);
+    m_playerAoutListener =
+        vlc_player_aout_AddListener(player, &player_aout_cbs, this);
+    m_playerVoutListener =
+        vlc_player_vout_AddListener(player, &player_vout_cbs, this);
+    m_playlistListener =
+        vlc_playlist_AddListener(playlist, &playlist_cbs, this, true);
+    vlc_playlist_Unlock(playlist);
 }
 
 
@@ -651,11 +654,12 @@ VlcProc::~VlcProc()
     auto *playlist = getPL();
     auto *player = vlc_playlist_GetPlayer(playlist);
 
-    vlc_player_Lock(player);
+    vlc_playlist_Lock(playlist);
     vlc_player_RemoveListener(player, m_playerListener);
     vlc_player_aout_RemoveListener(player, m_playerAoutListener);
     vlc_player_vout_RemoveListener(player, m_playerVoutListener);
-    vlc_player_Unlock(player);
+    vlc_playlist_RemoveListener(playlist, m_playlistListener);
+    vlc_playlist_Unlock(playlist);
 
     if( m_pVout )
     {

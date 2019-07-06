@@ -376,10 +376,11 @@ protected:
     virtual ~VlcProc();
 
 private:
-    // Player listeners
+    /// VLC listeners
     vlc_player_listener_id *m_playerListener;
     vlc_player_aout_listener_id *m_playerAoutListener;
     vlc_player_vout_listener_id *m_playerVoutListener;
+    vlc_playlist_listener_id *m_playlistListener;
 
     /// Playtree variable
     VariablePtr m_cPlaytree;
