@@ -86,7 +86,7 @@ VlcProc::on_current_media_changed(vlc_player_t *player,
                                   input_item_t *new_media,
                                   void *data)
 {
-    VlcProc *proc = static_cast<VlcProc *>(data);
+    VlcProc *proc = static_cast<VlcProc*>(data);
 
     CmdItemUpdate *cmd_tree = new CmdItemUpdate(proc->getIntf(), new_media);
 
@@ -100,7 +100,7 @@ VlcProc::on_state_changed(vlc_player_t *player,
                           vlc_player_state new_state,
                           void *data)
 {
-    VlcProc *proc = static_cast<VlcProc *>(data);
+    VlcProc *proc = static_cast<VlcProc*>(data);
 
     SET_BOOL( proc->m_cVarStopped, new_state == VLC_PLAYER_STATE_STOPPED );
     SET_BOOL( proc->m_cVarPlaying, new_state == VLC_PLAYER_STATE_PLAYING );
@@ -128,7 +128,7 @@ VlcProc::on_rate_changed(vlc_player_t *player,
                          float new_rate,
                          void *data)
 {
-    VlcProc *proc = static_cast<VlcProc *>(data);
+    VlcProc *proc = static_cast<VlcProc*>(data);
 
     /* TODO: why bothering with string at all ? */
     char* buffer;
@@ -144,7 +144,7 @@ VlcProc::on_capabilities_changed(vlc_player_t *player,
                                  int old_caps, int new_caps,
                                  void *data)
 {
-    VlcProc *proc = static_cast<VlcProc *>(data);
+    VlcProc *proc = static_cast<VlcProc*>(data);
     SET_BOOL(proc->m_cVarSeekable, new_caps & VLC_PLAYER_CAP_SEEK);
 }
 
@@ -154,7 +154,7 @@ VlcProc::on_position_changed(vlc_player_t *player,
                              float new_pos,
                              void *data)
 {
-    VlcProc *proc = static_cast<VlcProc *>(data);
+    VlcProc *proc = static_cast<VlcProc*>(data);
     SET_STREAMTIME(proc->m_cVarTime, new_pos, new_time, false);
 }
 
@@ -163,7 +163,7 @@ VlcProc::on_length_changed(vlc_player_t *player,
                            vlc_tick_t new_length,
                            void *data)
 {
-    VlcProc *proc = static_cast<VlcProc *>(data);
+    VlcProc *proc = static_cast<VlcProc*>(data);
     ((StreamTime*)(proc->m_cVarTime).get())
         ->set_duration(new_length);
 
@@ -285,7 +285,7 @@ VlcProc::on_recording_changed(vlc_player_t *player,
                               bool recording,
                               void *data)
 {
-    VlcProc *proc = static_cast<VlcProc *>(data);
+    VlcProc *proc = static_cast<VlcProc*>(data);
     SET_BOOL(proc->m_cVarRecording, recording);
 }
 
@@ -407,7 +407,7 @@ VlcProc::on_volume_changed(vlc_player_t *player,
                            float volume,
                            void *data)
 {
-    VlcProc *proc = static_cast<VlcProc *>(data);
+    VlcProc *proc = static_cast<VlcProc*>(data);
     SET_VOLUME(proc->m_cVarVolume, volume, false);
 }
 
