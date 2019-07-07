@@ -698,12 +698,15 @@ void MainInterface::setVideoSize(unsigned int w, unsigned int h)
          */
         if (b_autoresize)
         {
-            QRect screen = QApplication::desktop()->availableGeometry();
+            QScreen *screen = windowHandle()->screen();
+            assert(screen != nullptr);
+
+            QSize screen_size = screen->availableSize();
             float factor = devicePixelRatioF();
-            if( (float)h / factor > screen.height() )
+            if( (float)h / factor > screen_size.height() )
             {
-                w = screen.width();
-                h = screen.height();
+                w = screen_size.width();
+                h = screen_size.height();
             }
             else
             {
