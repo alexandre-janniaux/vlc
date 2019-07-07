@@ -251,7 +251,7 @@ public:
     void fullscreenChanged( vout_thread_t *, bool b_fs, int i_timeout );
     void mouseChanged( vout_thread_t *, int i_mousex, int i_mousey );
     void toggleFullwidth();
-    void updateFullwidthGeometry( int number );
+    void updateFullwidthGeometry( QScreen *screen );
     int targetScreen();
     void setTargetScreen( int );
 

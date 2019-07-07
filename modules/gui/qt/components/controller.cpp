@@ -841,19 +841,20 @@ void FullscreenControllerWidget::restoreFSC()
         setMinimumWidth( FSC_WIDTH );
         adjustSize();
 
-        if ( targetScreen() < 0 )
+        QScreen *screen = targetScreen();
+        if ( screen == nullptr )
             return;
 
-        QRect currentRes = QApplication::desktop()->screenGeometry( targetScreen() );
+        QRect currentRes = screen->availableGeometry();
         QWindow *wh = windowHandle();
         if ( wh != Q_NULLPTR )
         {
 #ifdef QT5_HAS_WAYLAND
             if ( !b_hasWayland )
-                wh->setScreen(QGuiApplication::screens()[targetScreen()]);
-#else
-            wh->setScreen(QGuiApplication::screens()[targetScreen()]);
 #endif
+            {
+                wh->setScreen(screen);
+            }
         }
 
         if( currentRes == screenRes &&
@@ -866,7 +867,7 @@ void FullscreenControllerWidget::restoreFSC()
         {
             /* FSC is out of screen or screen resolution changed */
             msg_Dbg( p_intf, "Recentering the Fullscreen Controller" );
-            centerFSC( targetScreen() );
+            centerFSC( screen );
             screenRes = currentRes;
             previousPosition = pos();
         }
@@ -874,7 +875,10 @@ void FullscreenControllerWidget::restoreFSC()
     else
     {
         /* Dock at the bottom of the screen */
-        updateFullwidthGeometry( targetScreen() );
+        QScreen *screen = targetScreen();
+        if ( screen == nullptr )
+            return;
+        updateFullwidthGeometry( screen );
     }
 }
 
@@ -950,10 +954,10 @@ void FullscreenControllerWidget::slowHideFSC()
     }
 }
 
-void FullscreenControllerWidget::updateFullwidthGeometry( int number )
+void FullscreenControllerWidget::updateFullwidthGeometry( QScreen *screen )
 {
-    QRect screenGeometry = QApplication::desktop()->screenGeometry( number );
-    setMinimumWidth( screenGeometry.width() );
+    QRect screenGeometry = screen->availableGeometry();
+    setMinimumWidth( screenGeometry.width() )QScreen *screen;
     setGeometry( screenGeometry.x(), screenGeometry.y() + screenGeometry.height() - height(), screenGeometry.width(), height() );
     adjustSize();
 }
@@ -973,11 +977,13 @@ void FullscreenControllerWidget::setTargetScreen(int screennumber)
 }
 
 
-int FullscreenControllerWidget::targetScreen()
+QScreen* FullscreenControllerWidget::targetScreen()
 {
-    if( i_screennumber < 0 || i_screennumber >= QApplication::desktop()->screenCount() )
-        return QApplication::desktop()->screenNumber( p_intf->p_sys->p_mi );
-    return i_screennumber;
+    QList<QScreen*> screens = QApplication::screens();
+    if( i_screennumber < 0 || i_screennumber >= screens.count() )
+        return p_intf->p_sys->p_mi->windowHandle()->screen();
+
+    return screens[i_screennumber];
 }
 
 /**
