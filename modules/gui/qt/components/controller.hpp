@@ -251,9 +251,9 @@ public:
     void fullscreenChanged( vout_thread_t *, bool b_fs, int i_timeout );
     void mouseChanged( vout_thread_t *, int i_mousex, int i_mousey );
     void toggleFullwidth();
-    void updateFullwidthGeometry( int number );
-    int targetScreen();
-    void setTargetScreen( int );
+    void updateFullwidthGeometry( QScreen *screen );
+    QScreen *targetScreen();
+    void setTargetScreen( QString screen );
 
 private:
     static int FullscreenChanged( vlc_object_t *obj,
@@ -284,7 +284,8 @@ private slots:
     void hideFSC() { hide(); }
     void slowHideFSC();
     void restoreFSC();
-    void centerFSC( int );
+    void centerFSC( QString );
+    void centerFSC( QScreen * );
 
 private:
     QTimer *p_hideTimer;
@@ -295,7 +296,7 @@ private:
 
     int i_mouse_last_x, i_mouse_last_y;
     bool b_mouse_over;
-    int i_screennumber;
+    QString fullscreenName;
     QRect screenRes;
     QRect previousScreenRes;
     QPoint previousPosition;
