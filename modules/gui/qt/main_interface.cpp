@@ -468,9 +468,11 @@ void MainInterface::setVideoFullScreen( bool fs )
     {
         int numscreen = var_InheritInteger( p_intf, "qt-fullscreen-screennumber" );
 
-        if ( numscreen >= 0 && numscreen < QApplication::desktop()->screenCount() )
+        auto screens = QApplication::screens();
+
+        if ( numscreen >= 0 && numscreen < screens.count() )
         {
-            QRect screenres = QApplication::desktop()->screenGeometry( numscreen );
+            QRect screenres = screens[numscreen]->geometry();
             lastWinScreen = windowHandle()->screen();
 #ifdef QT5_HAS_WAYLAND
             if( !b_hasWayland )
