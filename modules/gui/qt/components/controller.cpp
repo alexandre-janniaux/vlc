@@ -880,7 +880,11 @@ void FullscreenControllerWidget::restoreFSC()
 
 void FullscreenControllerWidget::centerFSC( int number )
 {
-    QRect currentRes = QApplication::desktop()->screenGeometry( number );
+    QList<QScreen*> screens = QApplication::screens();
+    if( number < 0 || number > screens.count() )
+        return;
+
+    QRect currentRes = screens[number]->availableGeometry();
 
     /* screen has changed, calculate new position */
     QPoint pos = QPoint( currentRes.x() + (currentRes.width() / 2) - (width() / 2),
