@@ -478,17 +478,30 @@ void MainInterface::setVideoFullScreen( bool fs )
     b_videoFullScreen = fs;
     if( fs )
     {
-        int numscreen = var_InheritInteger( p_intf, "qt-fullscreen-screennumber" );
-
-        if ( numscreen >= 0 && numscreen < QApplication::desktop()->screenCount() )
+        char *var_target_name = var_InheritString( p_intf, "qt-fullscreen-to" );
+        if( var_target_name == nullptr )
         {
-            QRect screenres = QApplication::desktop()->screenGeometry( numscreen );
+            setFullScreen( true );
+            return;
+        }
+
+        QString target_name(var_target_name);
+        free(var_target_name);
+
+        auto screens = QApplication::screens();
+        auto screen_it = std::find_if(std::begin(screens), std::end(screens),
+            [&](QScreen *screen) { return target_name == screen->name(); });
+
+        if( screen_it != std::end(screens) )
+        {
+            QScreen *target = *screen_it;
+            QRect screenres = target->geometry();
             lastWinScreen = windowHandle()->screen();
 #ifdef QT5_HAS_WAYLAND
             if( !b_hasWayland )
-                windowHandle()->setScreen(QGuiApplication::screens()[numscreen]);
+                windowHandle()->setScreen(target);
 #else
-            windowHandle()->setScreen(QGuiApplication::screens()[numscreen]);
+            windowHandle()->setScreen(target);
 #endif
 
             /* To be sure window is on proper-screen in xinerama */
