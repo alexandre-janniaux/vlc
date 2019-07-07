@@ -32,6 +32,7 @@
 #include <QDesktopWidget>
 #include <QSettings>
 #include <QStyle>
+#include <QScreen>
 
 #include "qt.hpp"
 
@@ -74,7 +75,11 @@ class QVLCTools
             widget->resize(defSize);
 
             if(defPos.x() == 0 && defPos.y()==0)
-               widget->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, widget->size(), qApp->desktop()->availableGeometry()));
+            {
+              auto geometry = qApp->primaryScreen()->availableGeometry();
+              widget->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter,
+                                                      widget->size(), geometry));
+            }
             return true;
           }
           return false;
