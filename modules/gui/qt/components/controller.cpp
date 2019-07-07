@@ -771,7 +771,6 @@ FullscreenControllerWidget::FullscreenControllerWidget( intf_thread_t *_p_i, QWi
     i_slow_hide_timeout = 1;
     b_fullscreen        = false;
     i_hide_timeout      = 1;
-    i_screennumber      = -1;
 #ifdef QT5_HAS_WAYLAND
     b_hasWayland = QGuiApplication::platformName()
            .startsWith(QLatin1String("wayland"), Qt::CaseInsensitive);
@@ -841,19 +840,20 @@ void FullscreenControllerWidget::restoreFSC()
         setMinimumWidth( FSC_WIDTH );
         adjustSize();
 
-        if ( targetScreen() < 0 )
+        QScreen *screen = targetScreen();
+        if ( screen == nullptr )
             return;
 
-        QRect currentRes = QApplication::desktop()->screenGeometry( targetScreen() );
+        QRect currentRes = screen->availableGeometry();
         QWindow *wh = windowHandle();
         if ( wh != Q_NULLPTR )
         {
 #ifdef QT5_HAS_WAYLAND
             if ( !b_hasWayland )
-                wh->setScreen(QGuiApplication::screens()[targetScreen()]);
-#else
-            wh->setScreen(QGuiApplication::screens()[targetScreen()]);
 #endif
+            {
+                wh->setScreen(screen);
+            }
         }
 
         if( currentRes == screenRes &&
@@ -866,7 +866,7 @@ void FullscreenControllerWidget::restoreFSC()
         {
             /* FSC is out of screen or screen resolution changed */
             msg_Dbg( p_intf, "Recentering the Fullscreen Controller" );
-            centerFSC( targetScreen() );
+            centerFSC( screen );
             screenRes = currentRes;
             previousPosition = pos();
         }
@@ -874,13 +874,29 @@ void FullscreenControllerWidget::restoreFSC()
     else
     {
         /* Dock at the bottom of the screen */
-        updateFullwidthGeometry( targetScreen() );
+        QScreen *screen = targetScreen();
+        if ( screen == nullptr )
+            return;
+        updateFullwidthGeometry( screen );
     }
 }
 
-void FullscreenControllerWidget::centerFSC( int number )
+void FullscreenControllerWidget::centerFSC( QString screenName )
 {
-    QRect currentRes = QApplication::desktop()->screenGeometry( number );
+    QList<QScreen*> screens = QApplication::screens();
+    auto target_screen = std::find_if(std::begin(screens), std::end(screens),
+        [&](QScreen *screen){ return screenName == screen->name(); });
+
+    /* we can't center a screen that doesn't exist */
+    if( target_screen == std::end(screens) )
+        return;
+
+    centerFSC( *target_screen );
+}
+
+void FullscreenControllerWidget::centerFSC( QScreen *screen )
+{
+    QRect currentRes = screen->availableGeometry();
 
     /* screen has changed, calculate new position */
     QPoint pos = QPoint( currentRes.x() + (currentRes.width() / 2) - (width() / 2),
@@ -946,9 +962,9 @@ void FullscreenControllerWidget::slowHideFSC()
     }
 }
 
-void FullscreenControllerWidget::updateFullwidthGeometry( int number )
+void FullscreenControllerWidget::updateFullwidthGeometry( QScreen *screen )
 {
-    QRect screenGeometry = QApplication::desktop()->screenGeometry( number );
+    QRect screenGeometry = screen->availableGeometry();
     setMinimumWidth( screenGeometry.width() );
     setGeometry( screenGeometry.x(), screenGeometry.y() + screenGeometry.height() - height(), screenGeometry.width(), height() );
     adjustSize();
@@ -963,17 +979,21 @@ void FullscreenControllerWidget::toggleFullwidth()
 }
 
 
-void FullscreenControllerWidget::setTargetScreen(int screennumber)
+void FullscreenControllerWidget::setTargetScreen(QString screenName)
 {
-    i_screennumber = screennumber;
+    fullscreenName = std::move(screenName);
 }
 
 
-int FullscreenControllerWidget::targetScreen()
+QScreen* FullscreenControllerWidget::targetScreen()
 {
-    if( i_screennumber < 0 || i_screennumber >= QApplication::desktop()->screenCount() )
-        return QApplication::desktop()->screenNumber( p_intf->p_sys->p_mi );
-    return i_screennumber;
+    QList<QScreen*> screens = QApplication::screens();
+
+    for( auto screen: screens )
+        if( screen->name() == fullscreenName )
+            return screen;
+
+    return p_intf->p_sys->p_mi->windowHandle()->screen();
 }
 
 /**
