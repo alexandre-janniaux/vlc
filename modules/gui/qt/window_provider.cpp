@@ -111,13 +111,13 @@ static int SubwindowActivate(void *func, bool forced, va_list args)
 
 vout_window_t *
 WaylandWindowProvider::GetWindow(vlc_window_provider_t *provider,
-                                 vlc_object_t *parent)
+                                 vout_thread_t *vout)
 {
     printf("WINDOW PROVIDER\n");
     WaylandWindowProvider *qtprovider =
         static_cast<WaylandWindowProvider*>(provider->sys);
 
-    qtprovider->window = static_cast<vout_window_t*>(vlc_object_create(parent, sizeof(*window)));
+    qtprovider->window = vout_display_window_NewCustom(vout);
 
     QPlatformNativeInterface *platform =
         QGuiApplication::platformNativeInterface();
@@ -133,7 +133,7 @@ WaylandWindowProvider::GetWindow(vlc_window_provider_t *provider,
     //    goto end;
 
     /* TODO: write helper */
-    qtprovider->module = vlc_module_load(vlc_object_logger(parent),
+    qtprovider->module = vlc_module_load(vlc_object_logger(vout),
                                          "vout subwindow", nullptr, false,
                                          SubwindowActivate,
                                          qtprovider->window,

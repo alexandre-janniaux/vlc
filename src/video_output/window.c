@@ -79,12 +79,15 @@ vout_window_t *vout_window_New(vlc_object_t *obj, const char *module,
     w->fullscreen = false;
     vlc_mutex_init(&w->lock);
 
-    w->module = vlc_module_load(window, "vout window", module, false,
-                                vout_window_start, window);
-    if (!w->module) {
-        vlc_mutex_destroy(&w->lock);
-        vlc_object_delete(window);
-        return NULL;
+    if (module)
+    {
+        w->module = vlc_module_load(window, "vout window", module, false,
+                                    vout_window_start, window);
+        if (!w->module) {
+            vlc_mutex_destroy(&w->lock);
+            vlc_object_delete(window);
+            return NULL;
+        }
     }
 
     /* Hook for screensaver inhibition */
@@ -402,6 +405,32 @@ vout_window_t *vout_display_window_New(vout_thread_t *vout)
     return window;
 }
 
+// TODO: add load function
+vout_window_t *vout_display_window_NewCustom(vout_thread_t *vout)
+{
+    vout_display_window_t *state = malloc(sizeof (*state));
+    if (state == NULL)
+        return NULL;
+
+    vlc_mouse_Init(&state->mouse);
+    state->last_left_press = INT64_MIN;
+    state->vout = vout;
+
+    vout_window_owner_t owner = {
+        .cbs = &vout_display_window_cbs,
+        .sys = state,
+    };
+    vout_window_t *window;
+
+    var_Create(vout, "window-state", VLC_VAR_INTEGER);
+    var_Create(vout, "window-fullscreen", VLC_VAR_BOOL);
+    var_Create(vout, "window-fullscreen-output", VLC_VAR_STRING);
+
+    window = vout_window_New((vlc_object_t *)vout, NULL, &owner);
+    if (window == NULL)
+        free(state);
+    return window;
+}
 /**
  * Destroys a video window.
  * \note The window must be detached.

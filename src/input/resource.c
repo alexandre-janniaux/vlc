@@ -282,7 +282,7 @@ input_resource_t *input_resource_New( vlc_object_t *p_parent )
 
     p_resource->window_provider = NULL;
     // TODO: can't change window provider after this
-    p_resource->p_vout_dummy = vout_CreateDummy(p_parent, NULL);
+    p_resource->p_vout_dummy = vout_CreateDummy(p_parent);
     if( !p_resource->p_vout_dummy )
     {
         free( p_resource );
@@ -396,7 +396,7 @@ vout_thread_t *input_resource_GetVout(input_resource_t *p_resource,
              * pre-configured on this dummy vout. */
             vlc_object_t *parent = p_resource->i_vout == 0 ?
                 VLC_OBJECT(p_resource->p_vout_dummy) : p_resource->p_parent;
-            cfg_buf.vout = vout = vout_Create(parent, NULL);
+            cfg_buf.vout = vout = vout_Create(parent, p_resource->window_provider);
             if (vout == NULL)
                 goto out;
 

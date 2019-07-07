@@ -424,13 +424,14 @@ struct vlc_window_provider_ops
      * Used to create a window
      */
     vout_window_t* (*get_window)(vlc_window_provider_t *provider,
-                                 struct vlc_object_t *parent);
+                                 vout_thread_t *vout);
 };
 
 static inline vout_window_t *
-vlc_window_provider_GetWindow(vlc_window_provider_t *provider, struct vlc_object_t *parent)
+vlc_window_provider_GetWindow(vlc_window_provider_t *provider,
+                              vout_thread_t *vout)
 {
-    return provider->ops->get_window(provider, parent);
+    return provider->ops->get_window(provider, vout);
 }
 
 /**
@@ -447,6 +448,8 @@ vlc_window_provider_GetWindow(vlc_window_provider_t *provider, struct vlc_object
 VLC_API vout_window_t *vout_window_New(vlc_object_t *obj,
                                        const char *module,
                                        const vout_window_owner_t *owner);
+
+VLC_API vout_window_t *vout_display_window_NewCustom(vout_thread_t *vout);
 
 /**
  * Deletes a window.

@@ -120,6 +120,7 @@ static void Resize(vout_window_t *wnd, unsigned width, unsigned height)
     vout_window_sys_t *sys = wnd->sys;
 
     msg_Err(wnd, "Resizing vout window to %ux%u", width, height);
+    return;
 
     vlc_mutex_lock(&sys->lock);
     sys->surface.width  = width;

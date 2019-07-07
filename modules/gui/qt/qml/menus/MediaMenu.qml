@@ -54,7 +54,7 @@ Utils.MenuExt {
             Utils.MenuItemExt {
                 text: mrl
                 onTriggered:{
-                    mainDropdownMenu.close() //needed since menuItem isn't a direct child of a menu
+                    //mainMenu.close() //needed since menuItem isn't a direct child of a menu
                     mainPlaylistController.append([mrl], true)
                 }
 

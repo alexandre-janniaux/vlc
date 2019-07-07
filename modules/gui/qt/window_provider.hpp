@@ -45,7 +45,7 @@ public:
 
     static vout_window_t *
     GetWindow(vlc_window_provider_t *opaque_provider,
-              vlc_object_t *parent);
+              vout_thread_t *vout);
 
     const vlc_window_provider_t *GetProvider();
 

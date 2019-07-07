@@ -1743,8 +1743,7 @@ void vout_Release(vout_thread_t *vout)
     vlc_object_delete(VLC_OBJECT(vout));
 }
 
-static vout_thread_t *vout_CreateCommon(vlc_object_t *object,
-                                        vlc_window_provider_t *window_provider)
+static vout_thread_t *vout_CreateCommon(vlc_object_t *object)
 {
     /* Allocate descriptor */
     vout_thread_t *vout = vlc_custom_create(object,
@@ -1761,10 +1760,9 @@ static vout_thread_t *vout_CreateCommon(vlc_object_t *object,
     return vout;
 }
 
-vout_thread_t *vout_CreateDummy(vlc_object_t *object,
-                                vlc_window_provider_t *window_provider)
+vout_thread_t *vout_CreateDummy(vlc_object_t *object)
 {
-    vout_thread_t *vout = vout_CreateCommon(object, window_provider);
+    vout_thread_t *vout = vout_CreateCommon(object);
     if (!vout)
         return NULL;
 
@@ -1776,7 +1774,7 @@ vout_thread_t *vout_CreateDummy(vlc_object_t *object,
 vout_thread_t *vout_Create(vlc_object_t *object,
                            vlc_window_provider_t *window_provider)
 {
-    vout_thread_t *vout = vout_CreateCommon(object, window_provider);
+    vout_thread_t *vout = vout_CreateCommon(object);
     if (!vout)
         return NULL;
     vout_thread_sys_t *sys = vout->p;
@@ -1830,10 +1828,7 @@ vout_thread_t *vout_Create(vlc_object_t *object,
     if (window_provider != NULL)
     {
         sys->display_cfg.window =
-            vlc_window_provider_GetWindow(window_provider,
-                                          VLC_OBJECT(vout));
-        if (sys->display_cfg.window)
-            vout_display_window_InitOwner(&sys->display_cfg.window->owner, vout);
+            vlc_window_provider_GetWindow(window_provider, vout);
     }
 
     if (sys->display_cfg.window == NULL)
