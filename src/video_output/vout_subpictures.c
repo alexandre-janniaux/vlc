@@ -1013,24 +1013,6 @@ exit:
         }
         region->fmt = fmt_original;
     }
-
-exit:
-    if (restore_text) {
-        /* Some forms of subtitles need to be re-rendered more than
-         * once, eg. karaoke. We therefore restore the region to its
-         * pre-rendered state, so the next time through everything is
-         * calculated again.
-         */
-        if (region->p_picture) {
-            picture_Release(region->p_picture);
-            region->p_picture = NULL;
-        }
-        if (region->p_private) {
-            subpicture_region_private_Delete(region->p_private);
-            region->p_private = NULL;
-        }
-        region->fmt = fmt_original;
-    }
 }
 
 /**
@@ -1159,7 +1141,7 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
 
             /* */
             SpuRenderRegion(spu, output_last_ptr, &area,
-                            subpic, region, virtual_scale,
+                            subpic, region, scale,
                             chroma_list, fmt_dst,
                             subtitle_area, subtitle_area_count,
                             subpic->b_subtitle ? render_subtitle_date : render_osd_date,
