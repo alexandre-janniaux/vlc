@@ -45,7 +45,7 @@ struct vout_display_sys_t
 {
     vlc_vk_t *vk;
     const struct pl_tex *plane_tex[4];
-    const struct pl_tex *pass_texture;
+    const struct pl_tex *pass_texture[3];
     struct pl_renderer *renderer;
     picture_pool_t *pool;
 
@@ -258,12 +258,12 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
         ravu_data.component_size[0] = 8;
         ravu_data.pixels = pic->ravu_passes[i].p_pixels;
         ravu_data.buf = NULL;
-        if (!pl_upload_plane(gpu, ravu_plane, &sys->pass_texture, &ravu_data)) {
+        if (!pl_upload_plane(gpu, ravu_plane, &sys->pass_texture[i], &ravu_data)) {
             msg_Err(vd, "Failed uploading ravu pass image data!");
             failed = true;
             goto done;
         }
-        img.ravu_passes[i].texture = sys->pass_texture;
+        img.ravu_passes[i].texture = sys->pass_texture[i];
     }
     img.num_ravu_passes = num_passes;
 
