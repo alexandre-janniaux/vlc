@@ -2014,7 +2014,7 @@ Filter(filter_t *filter, picture_t *ipic)
     struct timeval tv_start;
     gettimeofday(&tv_start, NULL);
 #endif
-    if (!opic || !opic->ravu_passes[0].p_pixels)
+    if (!opic)
         return NULL;
 
     Filter_prepare(sys->input, ipic->Y_PIXELS,
