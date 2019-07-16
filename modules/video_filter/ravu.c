@@ -22,6 +22,10 @@
 
 struct filter_sys
 {
+    // parameters:
+    bool do_final_render;
+    int number_of_pass;
+
     uint8_t *input;
     uint8_t *pass_0[MAX_PASS_STORAGE];
     uint8_t *pass_1[MAX_PASS_STORAGE];
@@ -1965,30 +1969,39 @@ Filter(filter_t *filter, picture_t *ipic)
 
     picture_t *opic = filter_NewPicture(filter);
     picture_CopyProperties(opic, ipic);
-    if (opic->i_ravu_passes == 0)
+    if (opic->i_ravu_passes == 0 && !sys->do_final_render)
     {
-        opic->i_ravu_passes = 3;
-        opic->ravu_passes[0].p_pixels = sys->pass_0[sys->current_pass_0] + 3 * sys->stride + 2;
-        opic->ravu_passes[0].i_lines = h;
-        opic->ravu_passes[0].i_pitch = stride;
-        opic->ravu_passes[0].i_visible_pitch = w;
-        opic->ravu_passes[0].i_visible_lines = h;
-        opic->ravu_passes[0].i_pixel_pitch = 1;
+        opic->i_ravu_passes = sys->number_of_pass;
 
-        opic->ravu_passes[1].p_pixels = sys->pass_1[sys->current_pass_1];
-        opic->ravu_passes[1].i_lines = h;
-        opic->ravu_passes[1].i_pitch = w;
-        opic->ravu_passes[1].i_visible_pitch = w;
-        opic->ravu_passes[1].i_visible_lines = h;
-        opic->ravu_passes[1].i_pixel_pitch = 1;
+        if (opic->i_ravu_passes > 0)
+        {
+            opic->ravu_passes[0].p_pixels = sys->pass_0[sys->current_pass_0] + 3 * sys->stride + 2;
+            opic->ravu_passes[0].i_lines = h;
+            opic->ravu_passes[0].i_pitch = stride;
+            opic->ravu_passes[0].i_visible_pitch = w;
+            opic->ravu_passes[0].i_visible_lines = h;
+            opic->ravu_passes[0].i_pixel_pitch = 1;
+        }
 
-        opic->ravu_passes[2].p_pixels = sys->pass_2[sys->current_pass_2];
-        opic->ravu_passes[2].i_lines = h;
-        opic->ravu_passes[2].i_pitch = w;
-        opic->ravu_passes[2].i_visible_pitch = w;
-        opic->ravu_passes[2].i_visible_lines = h;
-        opic->ravu_passes[2].i_pixel_pitch = 1;
+        if (opic->i_ravu_passes > 1)
+        {
+            opic->ravu_passes[1].p_pixels = sys->pass_1[sys->current_pass_1];
+            opic->ravu_passes[1].i_lines = h;
+            opic->ravu_passes[1].i_pitch = w;
+            opic->ravu_passes[1].i_visible_pitch = w;
+            opic->ravu_passes[1].i_visible_lines = h;
+            opic->ravu_passes[1].i_pixel_pitch = 1;
+        }
 
+        if (opic->i_ravu_passes > 2)
+        {
+            opic->ravu_passes[2].p_pixels = sys->pass_2[sys->current_pass_2];
+            opic->ravu_passes[2].i_lines = h;
+            opic->ravu_passes[2].i_pitch = w;
+            opic->ravu_passes[2].i_visible_pitch = w;
+            opic->ravu_passes[2].i_visible_lines = h;
+            opic->ravu_passes[2].i_pixel_pitch = 1;
+        }
     }
 
     uint8_t *input  = sys->input + 3 * sys->stride + 2;
@@ -2007,31 +2020,33 @@ Filter(filter_t *filter, picture_t *ipic)
                    sys->width, sys->height,
                    sys->stride, ipic->Y_PITCH);
 
-    if (Filter_pass_0(pass_0, input, sys->weights, sys->shuf_weights,
-                      sys->width, sys->height, sys->stride))
-        goto error;
-    if (Filter_pass_1_and_2(pass_1, pass_2, input, pass_0,
-                            sys->width, sys->height, sys->stride))
-        goto error;
+    if (sys->do_final_render || sys->number_of_pass > 0)
+    {
+        if (Filter_pass_0(pass_0, input, sys->weights, sys->shuf_weights,
+                          sys->width, sys->height, sys->stride))
+            goto error;
+    }
+    if (sys->do_final_render || sys->number_of_pass > 1)
+    {
+        if (Filter_pass_1_and_2(pass_1, pass_2, input, pass_0,
+                                sys->width, sys->height, sys->stride))
+            goto error;
+    }
 
     // TODO: return previous image
-    //Filter_pass_final(opic->Y_PIXELS, input, pass_0, pass_1, pass_2,
-    //                  sys->width, sys->height, sys->stride, opic->Y_PITCH);
+    if (sys->do_final_render)
+    {
+        Filter_pass_final(opic->Y_PIXELS, input, pass_0, pass_1, pass_2,
+                          sys->width, sys->height, sys->stride, opic->Y_PITCH);
+    }
+    else
+    {
+        picture_CopyPixels(opic, ipic);
+    }
 
     sys->current_pass_0 = (sys->current_pass_0+1) % MAX_PASS_STORAGE;
     sys->current_pass_1 = (sys->current_pass_1+1) % MAX_PASS_STORAGE;
     sys->current_pass_2 = (sys->current_pass_2+1) % MAX_PASS_STORAGE;
-
-    picture_CopyPixels(opic, ipic);
-    //for (unsigned i = 0; i < sys->height; ++i)
-    //    memcpy(opic->Y_PIXELS + i * opic->Y_PITCH,
-    //           ipic->Y_PIXELS + i * ipic->Y_PITCH,
-    //           sys->width);
-
-    //for (unsigned i = 0; i < sys->height; ++i)
-    //    memcpy(opic->Y_PIXELS + i * opic->Y_PITCH,
-    //           opic->ravu_passes[0].p_pixels + i * sys->stride,
-    //           sys->width);
 
 #if 0
     msg_Warn(filter, "nearest neighbor chroma upscaling");
@@ -2137,7 +2152,12 @@ Open(vlc_object_t *obj)
         goto error;
     filter->p_sys = sys;
 
+    sys->do_final_render = var_InheritBool(filter, "ravu-render");
+    sys->number_of_pass = var_InheritInteger(filter, "ravu-pass");
+
     sys->current_pass_0 = 0;
+    sys->current_pass_1 = 0;
+    sys->current_pass_2 = 0;
 
     int ret = VLC_SUCCESS;
 
@@ -2151,21 +2171,22 @@ Open(vlc_object_t *obj)
     for (int i=0; i<MAX_PASS_STORAGE; ++i)
     {
         sys->pass_0[i] = malloc(exth * stride); if (!sys->pass_0) goto error;
-	sys->pass_1[i] = malloc(h * stride);    if (!sys->pass_1[i]) goto error;
-	sys->pass_2[i] = malloc(h * stride);    if (!sys->pass_2[i]) goto error;
+        sys->pass_1[i] = malloc(h * stride);    if (!sys->pass_1[i]) goto error;
+        sys->pass_2[i] = malloc(h * stride);    if (!sys->pass_2[i]) goto error;
     }
     sys->weights = malloc(18 * stride * h * sizeof(int16_t)); if (!sys->weights) goto error;
     sys->shuf_weights = malloc(18 * stride * h * sizeof(int16_t)); if (!sys->shuf_weights) goto error;
 
-#if 1
-    video_format_t *vfmt = &filter->fmt_out.video;
-    int const padding_x = vfmt->i_width - vfmt->i_visible_width;
-    int const padding_y = vfmt->i_height - vfmt->i_visible_height;
-    vfmt->i_visible_width *= scale_factor;
-    vfmt->i_visible_height *= scale_factor;
-    vfmt->i_width = vfmt->i_visible_width + padding_x;
-    vfmt->i_height = vfmt->i_visible_height + padding_y;
-#endif
+    if (sys->do_final_render)
+    {
+        video_format_t *vfmt = &filter->fmt_out.video;
+        int const padding_x = vfmt->i_width - vfmt->i_visible_width;
+        int const padding_y = vfmt->i_height - vfmt->i_visible_height;
+        vfmt->i_visible_width *= scale_factor;
+        vfmt->i_visible_height *= scale_factor;
+        vfmt->i_width = vfmt->i_visible_width + padding_x;
+        vfmt->i_height = vfmt->i_visible_height + padding_y;
+    }
 
     sys->width = w;
     sys->height = h;
@@ -2196,5 +2217,12 @@ vlc_module_begin()
     set_capability("video filter", 200)
     add_shortcut("ravu")
     set_callbacks(Open, Close)
+
+    add_bool("ravu-render", false, "Enable final rendering pass",
+             "Do the final rendering pass in smart upscaler CPU filter", false)
+
+    add_integer("ravu-pass", 3, "Number of enabled pass",
+                "Number of enabled pass to run on CPU", false)
+        change_integer_range(0, 3)
 
 vlc_module_end()
