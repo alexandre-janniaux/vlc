@@ -243,8 +243,10 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
     }
 
     struct pl_plane_data ravu_data;
-    for (int i=0; pic->i_ravu_passes > i; ++i) {
+    int num_passes = pic->i_ravu_passes;
+    msg_Info(vd, "RAVU VK is using %d pass from CPU", num_passes);
 
+    for (int i=0; i < num_passes; ++i) {
 	memset(&ravu_data, 0, sizeof(ravu_data));
         struct pl_plane *ravu_plane = &img.ravu_passes[i];
 
@@ -263,7 +265,7 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
         }
         img.ravu_passes[i].texture = sys->pass_texture;
     }
-    img.num_ravu_passes = pic->i_ravu_passes;
+    img.num_ravu_passes = num_passes;
 
     struct pl_render_target target;
     pl_render_target_from_swapchain(&target, &frame);
