@@ -1987,7 +1987,7 @@ Filter(filter_t *filter, picture_t *ipic)
         {
             opic->ravu_passes[1].p_pixels = sys->pass_1[sys->current_pass_1];
             opic->ravu_passes[1].i_lines = h;
-            opic->ravu_passes[1].i_pitch = w;
+            opic->ravu_passes[1].i_pitch = stride;
             opic->ravu_passes[1].i_visible_pitch = w;
             opic->ravu_passes[1].i_visible_lines = h;
             opic->ravu_passes[1].i_pixel_pitch = 1;
@@ -1997,7 +1997,7 @@ Filter(filter_t *filter, picture_t *ipic)
         {
             opic->ravu_passes[2].p_pixels = sys->pass_2[sys->current_pass_2];
             opic->ravu_passes[2].i_lines = h;
-            opic->ravu_passes[2].i_pitch = w;
+            opic->ravu_passes[2].i_pitch = stride;
             opic->ravu_passes[2].i_visible_pitch = w;
             opic->ravu_passes[2].i_visible_lines = h;
             opic->ravu_passes[2].i_pixel_pitch = 1;
