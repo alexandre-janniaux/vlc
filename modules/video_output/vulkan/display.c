@@ -242,30 +242,33 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
                                       &plane->shift_y);
     }
 
-    struct pl_plane_data ravu_data;
-    int num_passes = pic->i_ravu_passes;
-    msg_Info(vd, "RAVU VK is using %d pass from CPU", num_passes);
+    if (sys->params.enable_luma_ravu_hack_r3)
+    {
+        struct pl_plane_data ravu_data;
+        int num_passes = pic->i_ravu_passes;
+        msg_Info(vd, "RAVU VK is using %d pass from CPU", num_passes);
 
-    for (int i=0; i < num_passes; ++i) {
-	memset(&ravu_data, 0, sizeof(ravu_data));
-        struct pl_plane *ravu_plane = &img.ravu_passes[i];
+        for (int i=0; i < num_passes; ++i) {
+            memset(&ravu_data, 0, sizeof(ravu_data));
+            struct pl_plane *ravu_plane = &img.ravu_passes[i];
 
-        ravu_data.width = pic->ravu_passes[i].i_visible_pitch;
-        ravu_data.height = pic->ravu_passes[i].i_visible_lines;
-        ravu_data.row_stride = pic->ravu_passes[i].i_pitch;
-        ravu_data.type = PL_FMT_UNORM;
-        ravu_data.pixel_stride = 1;
-        ravu_data.component_size[0] = 8;
-        ravu_data.pixels = pic->ravu_passes[i].p_pixels;
-        ravu_data.buf = NULL;
-        if (!pl_upload_plane(gpu, ravu_plane, &sys->pass_texture[i], &ravu_data)) {
-            msg_Err(vd, "Failed uploading ravu pass image data!");
-            failed = true;
-            goto done;
+            ravu_data.width = pic->ravu_passes[i].i_visible_pitch;
+            ravu_data.height = pic->ravu_passes[i].i_visible_lines;
+            ravu_data.row_stride = pic->ravu_passes[i].i_pitch;
+            ravu_data.type = PL_FMT_UNORM;
+            ravu_data.pixel_stride = 1;
+            ravu_data.component_size[0] = 8;
+            ravu_data.pixels = pic->ravu_passes[i].p_pixels;
+            ravu_data.buf = NULL;
+            if (!pl_upload_plane(gpu, ravu_plane, &sys->pass_texture[i], &ravu_data)) {
+                msg_Err(vd, "Failed uploading ravu pass image data!");
+                failed = true;
+                goto done;
+            }
+            img.ravu_passes[i].texture = sys->pass_texture[i];
         }
-        img.ravu_passes[i].texture = sys->pass_texture[i];
+        img.num_ravu_passes = num_passes;
     }
-    img.num_ravu_passes = num_passes;
 
     struct pl_render_target target;
     pl_render_target_from_swapchain(&target, &frame);
@@ -563,6 +566,9 @@ vlc_module_begin () set_shortname ("Vulkan")
     add_bool("delayed-peak", false, DELAYED_PEAK_TEXT, DELAYED_PEAK_LONGTEXT, false)
 #endif
 
+    add_bool("vk-ravu", false, "Enable RAVU smart upscaling algorithm",
+             "Enable RAVU smart upscaling algorithm", false)
+
 vlc_module_end ()
 
 // Update the renderer settings based on the current configuration.
@@ -624,7 +630,7 @@ static void UpdateParams(vout_display_t *vd)
     sys->params.disable_overlay_sampling = var_InheritBool(vd, "overlay-direct");
     sys->params.disable_linear_scaling = var_InheritBool(vd, "disable-linear");
     sys->params.disable_builtin_scalers = var_InheritBool(vd, "force-general");
-    sys->params.enable_luma_ravu_hack_r3 = true;
+    sys->params.enable_luma_ravu_hack_r3 = var_InheritBool(vd, "vk-ravu");
 
 #if PL_API_VER >= 13
     sys->peak_detect.smoothing_period = var_InheritFloat(vd, "peak-period");
