@@ -72,6 +72,8 @@ struct vout_display_sys_t
 #endif
     enum pl_chroma_location yuv_chroma_loc;
     int dither_depth;
+
+    unsigned scale;
 };
 
 // Display callbacks
@@ -89,6 +91,8 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
         vlc_obj_calloc(VLC_OBJECT(vd), 1, sizeof (*sys));
     if (unlikely(sys == NULL))
         return VLC_ENOMEM;
+
+    sys->scale = var_CreateGetFloat(vd, "scale");
 
     vout_window_t *window = vd->cfg->window;
     if (window == NULL)
@@ -208,15 +212,15 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
     struct pl_image img = {
         .signature  = sys->counter++,
         .num_planes = pic->i_planes,
-        .width      = pic->format.i_visible_width,
-        .height     = pic->format.i_visible_height,
+        .width      = pic->format.i_visible_width * sys->scale,
+        .height     = pic->format.i_visible_height * sys->scale,
         .color      = vlc_placebo_ColorSpace(&vd->source),
         .repr       = vlc_placebo_ColorRepr(&vd->source),
         .src_rect = {
             .x0 = pic->format.i_x_offset,
             .y0 = pic->format.i_y_offset,
-            .x1 = pic->format.i_x_offset + pic->format.i_visible_width,
-            .y1 = pic->format.i_y_offset + pic->format.i_visible_height,
+            .x1 = pic->format.i_x_offset + pic->format.i_visible_width * sys->scale,
+            .y1 = pic->format.i_y_offset + pic->format.i_visible_height * sys->scale,
         },
     };
 
