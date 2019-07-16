@@ -371,20 +371,30 @@ SPrefsPanel::SPrefsPanel( intf_thread_t *_p_intf, QWidget *_parent,
             optionWidgets["fullscreenScreenB"] = ui.fullscreenScreenBox;
             ui.fullscreenScreenBox->addItem( qtr("Automatic"), -1 );
             int i_screenCount = 0;
-            foreach( QScreen* screen, QGuiApplication::screens() )
+            p_config = config_FindConfig( "qt-fullscreen-to" );
+            QList<QScreen*> screens = QGuiApplication::screens();
+            foreach( QScreen* screen, screens )
             {
                 ui.fullscreenScreenBox->addItem( screen->name(), i_screenCount );
                 i_screenCount++;
             }
-            p_config =  config_FindConfig( "qt-fullscreen-screennumber" );
-            if( p_config )
+
+            int targetScreenIndex = 0;
+            if( p_config != nullptr && p_config->value.psz != nullptr )
             {
-                int i_defaultScreen = p_config->value.i + 1;
-                if ( i_defaultScreen < 0 || i_defaultScreen > ( ui.fullscreenScreenBox->count() - 1 ) )
-                    ui.fullscreenScreenBox->setCurrentIndex( 0 );
-                else
-                    ui.fullscreenScreenBox->setCurrentIndex(p_config->value.i + 1);
+                QString targetScreen = qfu( p_config->value.psz );
+                foreach( QScreen *screen, screens )
+                {
+                    if( screen->name() == targetScreen )
+                        break;
+                    targetScreenIndex++;
+                }
             }
+
+            if( targetScreenIndex == i_screenCount )
+                ui.fullscreenScreenBox->setCurrentIndex( 0 );
+            else
+                ui.fullscreenScreenBox->setCurrentIndex(targetScreenIndex+1);
 
 #ifdef _WIN32
             CONFIG_BOOL( "directx-hw-yuv", hwYUVBox );
@@ -1064,8 +1074,10 @@ void SPrefsPanel::apply()
 
     case SPrefsVideo:
     {
-        int i_fullscreenScreen =  qobject_cast<QComboBox *>(optionWidgets["fullscreenScreenB"])->currentData().toInt();
+        int i_fullscreenScreen = qobject_cast<QComboBox *>(optionWidgets["fullscreenScreenB"])->currentData().toInt();
+        QString fullscreenScreenName = optionWidgets["fullscreenScreenB"]->currentText();
         config_PutInt( "qt-fullscreen-screennumber", i_fullscreenScreen );
+        config_PutPsz( "qt-fullscreen-to", fullscreenScreenName.toUtf8().data() )
         break;
     }
 
