@@ -188,9 +188,14 @@ static void ShowDialog   ( intf_thread_t *, int, int, intf_dialog_args_t * );
 #define QT_FULLSCREEN_TEXT N_( "Show a controller in fullscreen mode" )
 #define QT_NATIVEOPEN_TEXT N_( "Embed the file browser in open dialog" )
 
+
 #define FULLSCREEN_NUMBER_TEXT N_( "Define which screen fullscreen goes" )
 #define FULLSCREEN_NUMBER_LONGTEXT N_( "Screennumber of fullscreen, instead of " \
                                        "same screen where interface is." )
+
+#define FULLSCREEN_NAME_TEXT N_( "Define which screen fullscreen goes" )
+#define FULLSCREEN_NAME_LONGTEXT N_( "Target screen name for fullscreen video, " \
+                                     "instead of the screen where interface is." )
 
 #define QT_AUTOLOAD_EXTENSIONS_TEXT N_( "Load extensions on startup" )
 #define QT_AUTOLOAD_EXTENSIONS_LONGTEXT N_( "Automatically load the "\
@@ -331,7 +336,10 @@ vlc_module_begin ()
         change_private ()
 
     add_integer( "qt-fullscreen-screennumber", -1, FULLSCREEN_NUMBER_TEXT,
-               FULLSCREEN_NUMBER_LONGTEXT, false );
+                 FULLSCREEN_NUMBER_LONGTEXT, false );
+
+    add_string( "qt-fullscreen-to", nullptr, FULLSCREEN_NAME_TEXT,
+               FULLSCREEN_NAME_LONGTEXT, false );
 
     add_bool( "qt-autoload-extensions", true,
               QT_AUTOLOAD_EXTENSIONS_TEXT, QT_AUTOLOAD_EXTENSIONS_LONGTEXT,
