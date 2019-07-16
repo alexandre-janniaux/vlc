@@ -265,19 +265,6 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
     }
     img.num_ravu_passes = pic->i_ravu_passes;
 
-    // If this was a mapped buffer, mark it as in use by the GPU
-    if (picsys) {
-        unsigned index = picsys->index;
-        if (sys->pics[index] == NULL) {
-            sys->list |= 1ULL << index;
-            sys->pics[index] = pic;
-            picture_Hold(pic);
-        }
-    }
-
-    // Garbage collect all previously used mapped buffers
-    PollBuffers(vd);
-
     struct pl_render_target target;
     pl_render_target_from_swapchain(&target, &frame);
     target.dst_rect = (struct pl_rect2d) {
