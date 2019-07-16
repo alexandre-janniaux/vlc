@@ -1969,7 +1969,8 @@ Filter(filter_t *filter, picture_t *ipic)
 
     picture_t *opic = filter_NewPicture(filter);
     picture_CopyProperties(opic, ipic);
-    if (opic->i_ravu_passes == 0 && !sys->do_final_render)
+    opic->i_ravu_passes = 0;
+    if (!sys->do_final_render)
     {
         opic->i_ravu_passes = sys->number_of_pass;
 
