@@ -50,6 +50,7 @@ typedef struct
 static block_t *FileRead(stream_t *access, bool *restrict eof)
 {
     access_sys_t *sys = access->p_sys;
+    assert(!sys->live);
 
     block_t *b = vlc_http_file_read(sys->resource);
     if (b == NULL)
@@ -60,6 +61,7 @@ static block_t *FileRead(stream_t *access, bool *restrict eof)
 static int FileSeek(stream_t *access, uint64_t pos)
 {
     access_sys_t *sys = access->p_sys;
+    assert(!sys->live);
 
     if (vlc_http_file_seek(sys->resource, pos))
         return VLC_EGENERIC;
@@ -69,6 +71,7 @@ static int FileSeek(stream_t *access, uint64_t pos)
 static int FileControl(stream_t *access, int query, va_list args)
 {
     access_sys_t *sys = access->p_sys;
+    assert(!sys->live);
 
     switch (query)
     {
@@ -116,6 +119,7 @@ static int FileControl(stream_t *access, int query, va_list args)
 static block_t *LiveRead(stream_t *access, bool *restrict eof)
 {
     access_sys_t *sys = access->p_sys;
+    assert(sys->live);
 
     block_t *b = vlc_http_live_read(sys->resource);
     if (b == NULL) /* TODO: loop instead of EOF, see vlc_http_live_read() */

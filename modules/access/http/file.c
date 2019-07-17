@@ -75,7 +75,7 @@ static int vlc_http_file_req(const struct vlc_http_resource *res,
     return 0;
 }
 
-static int vlc_http_file_resp(const struct vlc_http_resource *res,
+static int vlc_http_file_resp(const struct vlc_http_file *file,
                               const struct vlc_http_msg *resp, void *opaque)
 {
     const uintmax_t *offset = opaque;
@@ -96,7 +96,7 @@ static int vlc_http_file_resp(const struct vlc_http_resource *res,
             goto fail;
     }
 
-    (void) res;
+    (void) file;
     return 0;
 
 fail:
@@ -175,8 +175,9 @@ static bool vlc_http_msg_can_seek(const struct vlc_http_msg *resp)
     return vlc_http_msg_get_token(resp, "Accept-Ranges", "bytes") != NULL;
 }
 
-uintmax_t vlc_http_file_get_size(struct vlc_http_resource *res)
+uintmax_t vlc_http_file_get_size(struct vlc_http_file *file)
 {
+    struct vlc_http_resource *res = &file->resource;
     int status = vlc_http_res_get_status(res);
     if (status < 0)
         return -1;
@@ -193,21 +194,21 @@ uintmax_t vlc_http_file_get_size(struct vlc_http_resource *res)
     return vlc_http_msg_get_size(res->response);
 }
 
-bool vlc_http_file_can_seek(struct vlc_http_resource *res)
+bool vlc_http_file_can_seek(struct vlc_http_file *file)
 {   /* See IETF RFC7233 */
+    struct vlc_http_resource *res = &file->resource;
     int status = vlc_http_res_get_status(res);
     if (status < 0)
         return false;
     return vlc_http_msg_can_seek(res->response);
 }
 
-int vlc_http_file_seek(struct vlc_http_resource *res, uintmax_t offset)
+int vlc_http_file_seek(struct vlc_http_file *file, uintmax_t offset)
 {
+    struct vlc_http_resource *res = &file->resource;
     struct vlc_http_msg *resp = vlc_http_res_open(res, &offset);
     if (resp == NULL)
         return -1;
-
-    struct vlc_http_file *file = (struct vlc_http_file *)res;
 
     int status = vlc_http_msg_get_status(resp);
     if (res->response != NULL)
@@ -229,9 +230,9 @@ int vlc_http_file_seek(struct vlc_http_resource *res, uintmax_t offset)
     return 0;
 }
 
-block_t *vlc_http_file_read(struct vlc_http_resource *res)
+block_t *vlc_http_file_read(struct vlc_http_file *file)
 {
-    struct vlc_http_file *file = (struct vlc_http_file *)res;
+    struct vlc_http_resource *res = &file->resource;
     block_t *block = vlc_http_res_read(res);
 
     if (block == vlc_http_error)
