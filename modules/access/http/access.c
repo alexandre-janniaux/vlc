@@ -52,7 +52,7 @@ static block_t *FileRead(stream_t *access, bool *restrict eof)
     access_sys_t *sys = access->p_sys;
     assert(!sys->live);
 
-    block_t *b = vlc_http_file_read(sys->resource);
+    block_t *b = vlc_http_file_read(sys->resource.file);
     if (b == NULL)
         *eof = true;
     return b;
@@ -121,7 +121,7 @@ static block_t *LiveRead(stream_t *access, bool *restrict eof)
     access_sys_t *sys = access->p_sys;
     assert(sys->live);
 
-    block_t *b = vlc_http_live_read(sys->resource);
+    block_t *b = vlc_http_live_read(sys->resource.live);
     if (b == NULL) /* TODO: loop instead of EOF, see vlc_http_live_read() */
         *eof = true;
     return b;
