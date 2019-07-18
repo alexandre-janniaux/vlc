@@ -73,7 +73,7 @@ int main(void)
     assert(!vlc_http_file_can_seek(f));
     assert(vlc_http_file_get_type(f) == NULL);
     assert(vlc_http_file_read(f) == NULL);
-    vlc_http_res_destroy(f);
+    vlc_http_file_destroy(f);
 
     /* Non-seekable stream test */
     replies[0] = "HTTP/1.1 200 OK\r\n"
