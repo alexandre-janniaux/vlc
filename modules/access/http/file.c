@@ -75,9 +75,10 @@ static int vlc_http_file_req(const struct vlc_http_resource *res,
     return 0;
 }
 
-static int vlc_http_file_resp(const struct vlc_http_file *file,
+static int vlc_http_file_resp(const struct vlc_http_resource *res,
                               const struct vlc_http_msg *resp, void *opaque)
 {
+    struct vlc_http_file *file = (struct vlc_http_file *)res;
     const uintmax_t *offset = opaque;
 
     if (vlc_http_msg_get_status(resp) == 206)
@@ -96,7 +97,6 @@ static int vlc_http_file_resp(const struct vlc_http_file *file,
             goto fail;
     }
 
-    (void) file;
     return 0;
 
 fail:
@@ -110,7 +110,7 @@ static const struct vlc_http_resource_cbs vlc_http_file_callbacks =
     vlc_http_file_resp,
 };
 
-struct vlc_http_resource *vlc_http_file_create(struct vlc_http_mgr *mgr,
+struct vlc_http_file *vlc_http_file_create(struct vlc_http_mgr *mgr,
                                                const char *uri, const char *ua,
                                                const char *ref)
 {
@@ -126,7 +126,7 @@ struct vlc_http_resource *vlc_http_file_create(struct vlc_http_mgr *mgr,
     }
 
     file->offset = 0;
-    return &file->resource;
+    return file;
 }
 
 static uintmax_t vlc_http_msg_get_file_size(const struct vlc_http_msg *resp)
@@ -240,7 +240,7 @@ block_t *vlc_http_file_read(struct vlc_http_file *file)
         if (res->response != NULL
          && vlc_http_msg_can_seek(res->response)
          && file->offset < vlc_http_msg_get_file_size(res->response)
-         && vlc_http_file_seek(res, file->offset) == 0)
+         && vlc_http_file_seek(file, file->offset) == 0)
             block = vlc_http_res_read(res);
 
         if (block == vlc_http_error)
@@ -252,4 +252,9 @@ block_t *vlc_http_file_read(struct vlc_http_file *file)
 
     file->offset += block->i_buffer;
     return block;
+}
+
+struct vlc_http_resource *vlc_http_file_resource(struct vlc_http_file *file)
+{
+    return &file->resource;
 }

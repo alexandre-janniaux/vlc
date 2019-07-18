@@ -40,11 +40,11 @@ struct block_t;
  * @param ua user agent string (or NULL to ignore)
  * @param ref referral URL (or NULL to ignore)
  *
- * @return an HTTP resource object pointer, or NULL on error
+ * @return an HTTP file resource object pointer, or NULL on error
  */
-struct vlc_http_resource *vlc_http_file_create(struct vlc_http_mgr *mgr,
-                                               const char *url, const char *ua,
-                                               const char *ref);
+struct vlc_http_file *vlc_http_file_create(struct vlc_http_mgr *mgr,
+                                           const char *url, const char *ua,
+                                           const char *ref);
 
 /**
  * Gets file size.
@@ -53,7 +53,7 @@ struct vlc_http_resource *vlc_http_file_create(struct vlc_http_mgr *mgr,
  *
  * @return Bytes count or (uintmax_t)-1 if unknown.
  */
-uintmax_t vlc_http_file_get_size(struct vlc_http_resource *);
+uintmax_t vlc_http_file_get_size(struct vlc_http_file *);
 
 /**
  * Checks seeking support.
@@ -61,7 +61,7 @@ uintmax_t vlc_http_file_get_size(struct vlc_http_resource *);
  * @retval true if file supports seeking
  * @retval false if file does not support seeking
  */
-bool vlc_http_file_can_seek(struct vlc_http_resource *);
+bool vlc_http_file_can_seek(struct vlc_http_file *);
 
 /**
  * Sets the read offset.
@@ -70,14 +70,19 @@ bool vlc_http_file_can_seek(struct vlc_http_resource *);
  * @retval 0 if seek succeeded
  * @retval -1 if seek failed
  */
-int vlc_http_file_seek(struct vlc_http_resource *, uintmax_t offset);
+int vlc_http_file_seek(struct vlc_http_file *, uintmax_t offset);
 
 /**
  * Reads data.
  *
  * Reads data from a file and update the file offset.
  */
-struct block_t *vlc_http_file_read(struct vlc_http_resource *);
+struct block_t *vlc_http_file_read(struct vlc_http_file *);
+
+/**
+ * Get the underlying resource object.
+ */
+struct vlc_http_resource *vlc_http_file_resource(struct vlc_http_file *);
 
 #define vlc_http_file_get_status vlc_http_res_get_status
 #define vlc_http_file_get_redirect vlc_http_res_get_redirect

@@ -45,14 +45,19 @@ typedef struct
 {
     struct vlc_http_mgr *manager;
     struct vlc_http_resource *resource;
+    bool is_live;
+    union
+    {
+        struct vlc_http_live *live;
+        struct vlc_http_file *file;
+    };
 } access_sys_t;
 
 static block_t *FileRead(stream_t *access, bool *restrict eof)
 {
     access_sys_t *sys = access->p_sys;
-    assert(!sys->live);
 
-    block_t *b = vlc_http_file_read(sys->resource.file);
+    block_t *b = vlc_http_file_read(sys->file);
     if (b == NULL)
         *eof = true;
     return b;
@@ -61,9 +66,8 @@ static block_t *FileRead(stream_t *access, bool *restrict eof)
 static int FileSeek(stream_t *access, uint64_t pos)
 {
     access_sys_t *sys = access->p_sys;
-    assert(!sys->live);
 
-    if (vlc_http_file_seek(sys->resource, pos))
+    if (vlc_http_file_seek(sys->file, pos))
         return VLC_EGENERIC;
     return VLC_SUCCESS;
 }
@@ -71,12 +75,11 @@ static int FileSeek(stream_t *access, uint64_t pos)
 static int FileControl(stream_t *access, int query, va_list args)
 {
     access_sys_t *sys = access->p_sys;
-    assert(!sys->live);
 
     switch (query)
     {
         case STREAM_CAN_SEEK:
-            *va_arg(args, bool *) = vlc_http_file_can_seek(sys->resource);
+            *va_arg(args, bool *) = vlc_http_file_can_seek(sys->file);
             break;
 
         case STREAM_CAN_FASTSEEK:
@@ -90,7 +93,7 @@ static int FileControl(stream_t *access, int query, va_list args)
 
         case STREAM_GET_SIZE:
         {
-            uintmax_t val = vlc_http_file_get_size(sys->resource);
+            uintmax_t val = vlc_http_file_get_size(sys->file);
             if (val >= UINT64_MAX)
                 return VLC_EGENERIC;
 
@@ -104,7 +107,7 @@ static int FileControl(stream_t *access, int query, va_list args)
             break;
 
         case STREAM_GET_CONTENT_TYPE:
-            *va_arg(args, char **) = vlc_http_file_get_type(sys->resource);
+            *va_arg(args, char **) = vlc_http_file_get_type(sys->file);
             break;
 
         case STREAM_SET_PAUSE_STATE:
@@ -119,9 +122,8 @@ static int FileControl(stream_t *access, int query, va_list args)
 static block_t *LiveRead(stream_t *access, bool *restrict eof)
 {
     access_sys_t *sys = access->p_sys;
-    assert(sys->live);
 
-    block_t *b = vlc_http_live_read(sys->resource.live);
+    block_t *b = vlc_http_live_read(sys->live);
     if (b == NULL) /* TODO: loop instead of EOF, see vlc_http_live_read() */
         *eof = true;
     return b;
@@ -146,7 +148,7 @@ static int LiveControl(stream_t *access, int query, va_list args)
             break;
 
         case STREAM_GET_CONTENT_TYPE:
-            *va_arg(args, char **) = vlc_http_live_get_type(sys->resource);
+            *va_arg(args, char **) = vlc_http_live_get_type(sys->live);
             break;
 
         default:
@@ -158,9 +160,9 @@ static int LiveControl(stream_t *access, int query, va_list args)
 static int Open(vlc_object_t *obj)
 {
     stream_t *access = (stream_t *)obj;
-    access_sys_t *sys = malloc(sizeof (*sys));
     int ret = VLC_ENOMEM;
 
+    access_sys_t *sys = malloc(sizeof (*sys));
     if (unlikely(sys == NULL))
         return VLC_ENOMEM;
 
@@ -184,15 +186,27 @@ static int Open(vlc_object_t *obj)
 
     char *ua = var_InheritString(obj, "http-user-agent");
     char *referer = var_InheritString(obj, "http-referrer");
-    bool live = var_InheritBool(obj, "http-continuous");
+    sys->is_live = var_InheritBool(obj, "http-continuous");
 
-    sys->resource = (live ? vlc_http_live_create : vlc_http_file_create)(
-        sys->manager, access->psz_url, ua, referer);
+    if (sys->is_live)
+        sys->live = vlc_http_live_create(sys->manager, access->psz_url,
+                                         ua, referer);
+    else
+        sys->file = vlc_http_file_create(sys->manager, access->psz_url,
+                                         ua, referer);
     free(referer);
     free(ua);
 
-    if (sys->resource == NULL)
-        goto error;
+    if (sys->is_live)
+    {
+        if (sys->live == NULL) goto error;
+        sys->resource = (struct vlc_http_resource *)sys->live;
+    }
+    else
+    {
+        if (sys->file == NULL) goto error;
+        sys->resource = vlc_http_file_resource(sys->file);
+    }
 
     if (vlc_credential_get(&crd, obj, NULL, NULL, NULL, NULL))
         vlc_http_res_set_login(sys->resource,
@@ -247,7 +261,7 @@ static int Open(vlc_object_t *obj)
     vlc_UrlClean(&crd_url);
 
     access->pf_read = NULL;
-    if (live)
+    if (sys->is_live)
     {
         access->pf_block = LiveRead;
         access->pf_seek = NULL;
