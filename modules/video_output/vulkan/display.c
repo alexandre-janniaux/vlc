@@ -219,8 +219,8 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
         .src_rect = {
             .x0 = pic->format.i_x_offset,
             .y0 = pic->format.i_y_offset,
-            .x1 = pic->format.i_x_offset + pic->format.i_visible_width * sys->scale,
-            .y1 = pic->format.i_y_offset + pic->format.i_visible_height * sys->scale,
+            .x1 = pic->format.i_x_offset + pic->format.i_visible_width,
+            .y1 = pic->format.i_y_offset + pic->format.i_visible_height,
         },
     };
 
