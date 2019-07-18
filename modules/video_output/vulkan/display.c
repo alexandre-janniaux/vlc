@@ -212,8 +212,8 @@ static void PictureRender(vout_display_t *vd, picture_t *pic,
     struct pl_image img = {
         .signature  = sys->counter++,
         .num_planes = pic->i_planes,
-        .width      = pic->format.i_visible_width * sys->scale,
-        .height     = pic->format.i_visible_height * sys->scale,
+        .width      = pic->format.i_visible_width,
+        .height     = pic->format.i_visible_height,
         .color      = vlc_placebo_ColorSpace(&vd->source),
         .repr       = vlc_placebo_ColorRepr(&vd->source),
         .src_rect = {
