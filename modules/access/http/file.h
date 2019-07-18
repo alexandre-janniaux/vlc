@@ -84,9 +84,15 @@ struct block_t *vlc_http_file_read(struct vlc_http_file *);
  */
 struct vlc_http_resource *vlc_http_file_resource(struct vlc_http_file *);
 
-#define vlc_http_file_get_status vlc_http_res_get_status
-#define vlc_http_file_get_redirect vlc_http_res_get_redirect
-#define vlc_http_file_get_type vlc_http_res_get_type
-#define vlc_http_file_destroy vlc_http_res_destroy
+void vlc_http_file_destroy(struct vlc_http_file *);
+
+#define vlc_http_file_get_status(f) \
+    vlc_http_res_get_status(vlc_http_file_resource(f))
+
+#define vlc_http_file_get_redirect(f) \
+    vlc_http_res_get_redirect(vlc_http_file_resource(f))
+
+#define vlc_http_file_get_type(f) \
+    vlc_http_res_get_type(vlc_http_file_resource(f))
 
 /** @} */

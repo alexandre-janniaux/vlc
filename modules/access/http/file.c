@@ -258,3 +258,8 @@ struct vlc_http_resource *vlc_http_file_resource(struct vlc_http_file *file)
 {
     return &file->resource;
 }
+
+void vlc_http_file_destroy(struct vlc_http_file *file)
+{
+    vlc_http_res_destroy(&file->resource);
+}
