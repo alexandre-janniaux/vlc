@@ -2049,7 +2049,7 @@ Filter(filter_t *filter, picture_t *ipic)
     sys->current_pass_1 = (sys->current_pass_1+1) % MAX_PASS_STORAGE;
     sys->current_pass_2 = (sys->current_pass_2+1) % MAX_PASS_STORAGE;
 
-#if 0
+#if 1
     msg_Warn(filter, "nearest neighbor chroma upscaling");
     upscale_chroma(opic->p + U_PLANE, ipic->p + U_PLANE);
     upscale_chroma(opic->p + V_PLANE, ipic->p + V_PLANE);
