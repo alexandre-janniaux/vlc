@@ -53,19 +53,21 @@ static vlc_http_cookie_jar_t *jar;
 
 int main(void)
 {
-    struct vlc_http_resource *f;
+    struct vlc_http_file *f;
+    struct vlc_http_resource *r;
     char *str;
 
     jar = vlc_http_cookies_new();
 
     /* Request failure test */
     f = vlc_http_file_create(NULL, url, ua, NULL);
-    assert(f != NULL);
-    vlc_http_res_set_login(f, NULL, NULL);
-    vlc_http_res_set_login(f, "john", NULL);
-    vlc_http_res_set_login(f, NULL, NULL);
-    vlc_http_res_set_login(f, "john", "secret");
-    vlc_http_res_set_login(f, NULL, NULL);
+    r = vlc_http_file_resource(f);
+    assert(f != NULL); assert(r != NULL);
+    vlc_http_res_set_login(r, NULL, NULL);
+    vlc_http_res_set_login(r, "john", NULL);
+    vlc_http_res_set_login(r, NULL, NULL);
+    vlc_http_res_set_login(r, "john", "secret");
+    vlc_http_res_set_login(r, NULL, NULL);
     vlc_http_file_seek(f, 0);
     assert(vlc_http_file_get_status(f) < 0);
     assert(vlc_http_file_get_redirect(f) == NULL);
