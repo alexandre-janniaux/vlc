@@ -1114,6 +1114,18 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
             sys->text->fmt_out.video.i_visible_height =
                 __MAX(fmt_dst->i_visible_height, subpic->i_original_picture_height);
 
+            if (spu_max_width && !spu_max_height)
+            {
+                spu_max_height = spu_max_width * fmt_dst->i_visible_height / fmt_dst->i_visible_width;
+                var_SetInteger(sys->text, "spu-surface-max-height", spu_max_height);
+            }
+
+            if (!spu_max_width && spu_max_height)
+            {
+                spu_max_width = spu_max_height * fmt_dst->i_visible_width / fmt_dst->i_visible_height;
+                var_SetInteger(sys->text, "spu-surface-max-width", spu_max_width);
+            }
+
             if (spu_max_width && spu_max_height)
             {
                 sys->text->fmt_out.video.i_width          =
