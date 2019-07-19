@@ -282,8 +282,18 @@ static void SpuRenderText(spu_t *spu, bool *rerender_text,
     {
         /* We will render the text into the output format of the text
          * filter by default. It is used as a scaling information. */
+        int spu_max_width = var_InheritInteger(text, "spu-surface-max-width");
+        int spu_max_height = var_InheritInteger(text, "spu-surface-max-height");
         region->screen.i_width  = text->fmt_out.video.i_width;
         region->screen.i_height = text->fmt_out.video.i_height;
+
+        if ( spu_max_width && spu_max_height )
+        {
+            region->screen.i_width = __MIN(region->screen.i_width,
+                                           spu_max_width);
+            region->screen.i_height = __MIN(region->screen.i_height,
+                                            spu_max_height);
+        }
 
         text->pf_render(text, region, region, chroma_list);
     }
@@ -1094,6 +1104,8 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
          *
          * FIXME aspect ratio ? */
         if (sys->text) {
+            int spu_max_width = var_InheritInteger(sys->text, "spu-surface-max-width");
+            int spu_max_height = var_InheritInteger(sys->text, "spu-surface-max-height");
             sys->text->fmt_out.video.i_width          =
             sys->text->fmt_out.video.i_visible_width  =
                 __MAX(fmt_dst->i_visible_width, subpic->i_original_picture_width);
@@ -1101,6 +1113,16 @@ static subpicture_t *SpuRenderSubpictures(spu_t *spu,
             sys->text->fmt_out.video.i_height         =
             sys->text->fmt_out.video.i_visible_height =
                 __MAX(fmt_dst->i_visible_height, subpic->i_original_picture_height);
+
+            if (spu_max_width && spu_max_height)
+            {
+                sys->text->fmt_out.video.i_width          =
+                sys->text->fmt_out.video.i_visible_width  =
+                    __MIN(sys->text->fmt_out.video.i_visible_width, spu_max_width);
+                sys->text->fmt_out.video.i_height         =
+                sys->text->fmt_out.video.i_visible_height =
+                    __MIN(sys->text->fmt_out.video.i_visible_height, spu_max_height);
+            }
         }
 
         /* Render all regions

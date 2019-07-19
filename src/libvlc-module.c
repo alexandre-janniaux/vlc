@@ -1652,7 +1652,6 @@ vlc_module_begin ()
                 DEINTERLACE_MODE_TEXT, DEINTERLACE_MODE_LONGTEXT, false )
         change_string_list( ppsz_deinterlace_mode, ppsz_deinterlace_mode_text )
         change_safe()
-
     set_subcategory( SUBCAT_VIDEO_VOUT )
     add_module( "vout", "vout display", NULL, VOUT_TEXT, VOUT_LONGTEXT, true )
         change_short('V')
@@ -2812,6 +2811,10 @@ vlc_module_begin ()
         change_volatile ()
     add_string( "config", NULL, CONFIG_TEXT, "", false )
         change_volatile ()
+
+    add_integer( "spu-surface-max-width", 0, "Surface max width when rendering text", "", false )
+    add_integer( "spu-surface-max-height", 0, "Surface max height when rendering text", "", false )
+
 
    /* Usage (mainly useful for cmd line stuff) */
     /* add_usage_hint( PLAYLIST_USAGE ) */
