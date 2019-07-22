@@ -43,6 +43,9 @@ struct vlc_http_file
 {
     struct vlc_http_resource resource;
     uintmax_t offset;
+
+    void *opaque;
+    const struct vlc_http_file_cbs *cbs;
 };
 
 static int vlc_http_file_req(const struct vlc_http_resource *res,
@@ -72,6 +75,10 @@ static int vlc_http_file_req(const struct vlc_http_resource *res,
     if (vlc_http_msg_add_header(req, "Range", "bytes=%" PRIuMAX "-", *offset)
      && *offset != 0)
         return -1;
+
+    if (file->cbs != NULL && file->cbs->request_format != NULL)
+        return file->cbs->request_format(file, req, file->opaque);
+
     return 0;
 }
 
@@ -110,9 +117,10 @@ static const struct vlc_http_resource_cbs vlc_http_file_callbacks =
     vlc_http_file_resp,
 };
 
-struct vlc_http_file *vlc_http_file_create(struct vlc_http_mgr *mgr,
-                                               const char *uri, const char *ua,
-                                               const char *ref)
+struct vlc_http_file *vlc_http_file_extend(struct vlc_http_mgr *mgr,
+                                           const char *uri, const char *ua,
+                                           const char *ref, void *opaque,
+                                           const struct vlc_http_file_cbs *cbs)
 {
     struct vlc_http_file *file = malloc(sizeof (*file));
     if (unlikely(file == NULL))
@@ -127,6 +135,13 @@ struct vlc_http_file *vlc_http_file_create(struct vlc_http_mgr *mgr,
 
     file->offset = 0;
     return file;
+}
+
+struct vlc_http_file *vlc_http_file_create(struct vlc_http_mgr *mgr,
+                                           const char *uri, const char *ua,
+                                           const char *ref)
+{
+    return vlc_http_file_extend(mgr, uri, ua, ref, NULL, NULL);
 }
 
 static uintmax_t vlc_http_msg_get_file_size(const struct vlc_http_msg *resp)

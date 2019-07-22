@@ -32,6 +32,26 @@ struct vlc_http_resource;
 struct block_t;
 
 /**
+ * \see vlc_http_resource_cbs */
+struct vlc_http_file_cbs
+{
+    /* Request the vlc_http_file user to finish the formatting of the request.
+     *
+     * During the execution of this callback, the user can finish adding
+     * headers before the request is sent.
+     *
+     * \param res the file resource being processed
+     * \param req the request that the user must complete
+     * \param opaque userdata filled by the user
+     * \ret TODO
+     */
+    int (*request_format)(const struct vlc_http_file *file,
+                          struct vlc_http_msg *req,
+                          void *opaque);
+};
+
+
+/**
  * Creates an HTTP file.
  *
  * Allocates a structure for a remote HTTP-served read-only file.
@@ -45,6 +65,24 @@ struct block_t;
 struct vlc_http_file *vlc_http_file_create(struct vlc_http_mgr *mgr,
                                            const char *url, const char *ua,
                                            const char *ref);
+/**
+ * Creates an HTTP file with additional callbacks.
+ *
+ * Allocates a structure for a remote HTTP-served read-only file.
+ *
+ * @param url URL of the file to read
+ * @param ua user agent string (or NULL to ignore)
+ * @param ref referral URL (or NULL to ignore)
+ * @param opaque user data to be given to callbacks
+ * @param cbs callbacks called when request is being written
+ *
+ * @return an HTTP file resource object pointer, or NULL on error
+ */
+
+struct vlc_http_file *vlc_http_file_extend(struct vlc_http_mgr *mgr,
+                                           const char *uri, const char *ua,
+                                           const char *ref, void *opaque,
+                                           const struct vlc_http_file_cbs *cbs);
 
 /**
  * Gets file size.
