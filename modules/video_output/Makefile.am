@@ -164,6 +164,11 @@ endif
 ### X11 ###
 include video_output/xcb/Makefile.am
 
+libegl_gbm_plugin_la_SOURCES = video_output/opengl/egl.c
+libegl_gbm_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_PLATFORM_GBM=1
+libegl_gbm_plugin_la_CFLAGS = $(AM_CFLAGS) $(EGL_CFLAGS)
+libegl_gbm_plugin_la_LIBADD = $(EGL_LIBS) -lEGL -lGLESv2 -lgbm
+vout_LTLIBRARIES += libegl_gbm_plugin.la
 
 ### Wayland ###
 include video_output/wayland/Makefile.am
