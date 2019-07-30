@@ -1075,7 +1075,11 @@ void SPrefsPanel::apply()
     case SPrefsVideo:
     {
         int i_fullscreenScreen = qobject_cast<QComboBox *>(optionWidgets["fullscreenScreenB"])->currentData().toInt();
-        QString fullscreenScreenName = optionWidgets["fullscreenScreenB"]->currentText();
+
+        QString fullscreenScreenName =
+            qobject_cast<QComboBox *>(optionWidgets["fullscreenScreenB"])
+                ->currentText();
+
         config_PutInt( "qt-fullscreen-screennumber", i_fullscreenScreen );
         config_PutPsz( "qt-fullscreen-to", fullscreenScreenName.toUtf8().data() )
         break;
