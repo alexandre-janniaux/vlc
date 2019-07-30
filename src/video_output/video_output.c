@@ -152,7 +152,6 @@ static void vout_SizeWindow(vout_thread_t *vout,
                             unsigned *restrict height)
 {
     vout_thread_sys_t *sys = vout->p;
-    // TODO float scale = 1.f; was here
     float scale = var_GetFloat(vout, "scale");
     unsigned w = roundf(original->i_visible_width * scale);
     unsigned h = roundf(original->i_visible_height * scale);
@@ -879,7 +878,7 @@ static void ThreadChangeFilters(vout_thread_t *vout,
              fmt_target.video.i_visible_width, fmt_target.video.i_visible_height,
              (char const *)&fmt_target.video.i_chroma);
 
-    if (false && !es_format_IsSimilar(p_fmt_current, &fmt_target)) {
+    if (!es_format_IsSimilar(p_fmt_current, &fmt_target)) {
         msg_Dbg(vout, "Adding a filter to compensate for format changes");
         if (filter_chain_AppendConverter(vout->p->filter.chain_interactive,
                                          &fmt_target) != 0) {
