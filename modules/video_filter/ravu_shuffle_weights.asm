@@ -3,7 +3,7 @@
 SECTION .text
 
 INIT_ZMM avx512
-cglobal ravu_shuffle_weights, 4, 5, 0, swt, wt, w, h, x
+cglobal ravu_shuffle_weights, 4, 5, 32, swt, wt, w, h, x
     mov            r4d, 0xC
     kmovb           k1, r4d
 .loop_y:
