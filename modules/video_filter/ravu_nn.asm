@@ -7,8 +7,9 @@ pd_0x4000: times 16 dd 0x4000
 SECTION .text
 
 INIT_ZMM avx512
-cglobal ravu_compute_pixels, 4, 13, 0, dst, src, wt, w, h, stride, wstride, \
-                                       dst_base, src_base, wt_base, x, stride3, stride5
+cglobal ravu_compute_pixels, 4, 13, 32, dst, src, wt, w, h, stride, wstride, \
+                                        dst_base, src_base, wt_base, \
+                                        x, stride3, stride5
     movifnidn       hd, hm
 %if WIN64
     mov        strideq, stridem

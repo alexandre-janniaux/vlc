@@ -27,7 +27,7 @@ dq_0x80020000: dq 0x80020000
 SECTION .text
 
 INIT_ZMM avx512
-cglobal ravu_compute_abd, 4, 6, 0, src, a, b, d
+cglobal ravu_compute_abd, 4, 6, 32, src, a, b, d
 %define base r5-vperm
     lea                 r5, [vperm]
     mov                r4d, 0x6666
