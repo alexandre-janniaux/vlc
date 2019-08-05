@@ -1,0 +1,32 @@
+# VLC with RAVU smart upscaler CLI guide
+
+# Options descriptions:
+# --vout vk             => use Vulkan video output
+# --vk-ravu             => use RAVU GPU version (default=false)
+# --video-filter=ravu   => use RAVU CPU version (with VNNI instructions)
+# --ravu-pass=[0-3]     => how many passes of the RAVU algorithm will be run on the CPU (default=3, all but the final stage)
+# --ravu-render         => the final stage of the algorithm will be run on the CPU (default=false)
+# --scale=2             => this option must be passed along --ravu-render
+
+# You can have a customized RAVU pipeline made of both CPU and GPU parts
+# (in this order only)
+
+# Here are examples of usage:
+
+# RAVU not used, standard GPU upscaling in the Vulkan video output
+vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk
+
+# CPU (full) with Vulkan video output
+vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk --video-filter=ravu --ravu-render --scale 2 
+
+# CPU (full) with Direct3D11 video output
+vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout direct3d11 --video-filter=ravu --ravu-render --scale 2
+
+# GPU (full) with Vulkan video output
+vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk --vk-ravu
+
+# CPU (1 pass) + GPU (2 pass + last stage) with Vulkan video output
+vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk --vk-ravu --video-filter=ravu --ravu-pass=1
+
+# CPU (3 pass) + GPU (last stage) with Vulkan video output
+vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk --vk-ravu --video-filter=ravu
