@@ -402,6 +402,10 @@
 #define VLC_CODEC_VAAPI_420 VLC_FOURCC('V','A','O','P') /* 4:2:0  8 bpc */
 #define VLC_CODEC_VAAPI_420_10BPP VLC_FOURCC('V','A','O','0') /* 4:2:0 10 bpc */
 
+/* GBM opaque surface */
+/* Opaque, defined in the gbm_bo format */
+#define VLC_CODEC_GBM_BUFFER     VLC_FOURCC('G','B', 'M', '0')
+
 /* MediaCodec/IOMX opaque buffer type */
 #define VLC_CODEC_ANDROID_OPAQUE  VLC_FOURCC('A','N','O','P')
 
