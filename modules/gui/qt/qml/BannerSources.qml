@@ -65,6 +65,14 @@ Utils.NavigableFocusScope {
         color: VLCStyle.colors.banner
         property alias model: buttonView.model
 
+        Utils.BrandLogo {
+            anchors {
+                top: parent.top
+                leftMargin: parent.left + 100
+            }
+            height: parent.height / 2
+        }
+
         Column
         {
             id: col
@@ -74,6 +82,7 @@ Utils.NavigableFocusScope {
             }
 
             spacing: VLCStyle.margin_xxsmall
+
 
             /* Button for the sources */
             TabBar {
