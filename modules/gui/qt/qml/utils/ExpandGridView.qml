@@ -100,6 +100,8 @@ NavigableFocusScope {
 
         property variant model
         property Item expandItem: root.expandDelegate.createObject(contentItem, {"height": 0})
+        Component.onDestruction: { flickable.expandItem.destroy() }
+
         anchors.fill: parent
         onWidthChanged: { layout() }
         onHeightChanged: { layout() }
