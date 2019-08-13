@@ -1381,17 +1381,116 @@ static void* Get( vlc_medialibrary_module_t* module, int query, va_list args )
     return ml->Get( query, args );
 }
 
+#define CASE(X) case X: return #X
+static const char * list_op_to_string(int query)
+{
+    switch( query )
+    {
+        CASE(VLC_ML_LIST_VIDEOS);
+        CASE(VLC_ML_COUNT_VIDEOS);
+        CASE(VLC_ML_LIST_AUDIOS);
+        CASE(VLC_ML_COUNT_AUDIOS);
+        CASE(VLC_ML_LIST_ALBUMS);
+        CASE(VLC_ML_COUNT_ALBUMS);
+        CASE(VLC_ML_LIST_GENRES);
+        CASE(VLC_ML_COUNT_GENRES);
+        CASE(VLC_ML_LIST_ARTISTS);
+        CASE(VLC_ML_COUNT_ARTISTS);
+        CASE(VLC_ML_LIST_SHOWS);
+        CASE(VLC_ML_COUNT_SHOWS);
+        CASE(VLC_ML_LIST_PLAYLISTS);
+        CASE(VLC_ML_COUNT_PLAYLISTS);
+        CASE(VLC_ML_LIST_HISTORY);
+        CASE(VLC_ML_LIST_STREAM_HISTORY);
+
+        CASE(VLC_ML_LIST_ALBUM_TRACKS);
+        CASE(VLC_ML_COUNT_ALBUM_TRACKS);
+        CASE(VLC_ML_LIST_ALBUM_ARTISTS);
+        CASE(VLC_ML_COUNT_ALBUM_ARTISTS);
+
+        CASE(VLC_ML_LIST_ARTIST_ALBUMS);
+        CASE(VLC_ML_COUNT_ARTIST_ALBUMS);
+        CASE(VLC_ML_LIST_ARTIST_TRACKS);
+        CASE(VLC_ML_COUNT_ARTIST_TRACKS);
+
+        CASE(VLC_ML_LIST_GENRE_ARTISTS);
+        CASE(VLC_ML_COUNT_GENRE_ARTISTS);
+        CASE(VLC_ML_LIST_GENRE_TRACKS);
+        CASE(VLC_ML_COUNT_GENRE_TRACKS);
+        CASE(VLC_ML_LIST_GENRE_ALBUMS);
+        CASE(VLC_ML_COUNT_GENRE_ALBUMS);
+
+        CASE(VLC_ML_LIST_SHOW_EPISODES);
+        CASE(VLC_ML_COUNT_SHOW_EPISODES);
+
+        CASE(VLC_ML_LIST_MEDIA_LABELS);
+        CASE(VLC_ML_COUNT_MEDIA_LABELS);
+
+        CASE(VLC_ML_LIST_PLAYLIST_MEDIA);
+        CASE(VLC_ML_COUNT_PLAYLIST_MEDIA);
+
+        CASE(VLC_ML_LIST_MEDIA_OF);
+        CASE(VLC_ML_COUNT_MEDIA_OF);
+        CASE(VLC_ML_LIST_ARTISTS_OF);
+        CASE(VLC_ML_COUNT_ARTISTS_OF);
+        CASE(VLC_ML_LIST_ALBUMS_OF);
+        CASE(VLC_ML_COUNT_ALBUMS_OF);
+        default: return "UNKOWN_LIST_OP";
+    }
+}
+
+static const char * control_op_to_string(int query)
+{
+    switch( query )
+    {
+        CASE(VLC_ML_ADD_FOLDER);
+        CASE(VLC_ML_REMOVE_FOLDER);
+        CASE(VLC_ML_BAN_FOLDER);
+        CASE(VLC_ML_UNBAN_FOLDER);
+        CASE(VLC_ML_LIST_FOLDERS);
+        CASE(VLC_ML_IS_INDEXED);
+        CASE(VLC_ML_RELOAD_FOLDER);
+        CASE(VLC_ML_PAUSE_BACKGROUND);
+        CASE(VLC_ML_RESUME_BACKGROUND);
+        CASE(VLC_ML_CLEAR_HISTORY);
+        CASE(VLC_ML_NEW_EXTERNAL_MEDIA);
+        CASE(VLC_ML_NEW_STREAM);
+        CASE(VLC_ML_MEDIA_INCREASE_PLAY_COUNT);
+        CASE(VLC_ML_MEDIA_GET_MEDIA_PLAYBACK_PREF);
+        CASE(VLC_ML_MEDIA_SET_MEDIA_PLAYBACK_PREF);
+        CASE(VLC_ML_MEDIA_SET_THUMBNAIL);
+        CASE(VLC_ML_MEDIA_GENERATE_THUMBNAIL);
+        CASE(VLC_ML_MEDIA_ADD_EXTERNAL_MRL);
+        default: return "UNKNOWN_CONTROL_OP";
+    }
+}
+#undef CASE
+
 static int List( vlc_medialibrary_module_t* module, int query,
                    const vlc_ml_query_params_t* params, va_list args )
 {
     auto ml = static_cast<MediaLibrary*>( module->p_sys );
-    return ml->List( query, params, args );
+    vlc_tick_t current_time = vlc_tick_now();
+    auto result = ml->List( query, params, args );
+    vlc_tick_t elapsed_time = vlc_tick_now() - current_time;
+
+    msg_Info(module, "List operation \"%s\" took %" PRId64 " ms",
+             list_op_to_string(query), MS_FROM_VLC_TICK(elapsed_time));
+
+    return result;
 }
 
 static int Control( vlc_medialibrary_module_t* module, int query, va_list args )
 {
     auto ml = static_cast<MediaLibrary*>( module->p_sys );
-    return ml->Control( query, args );
+    vlc_tick_t current_time = vlc_tick_now();
+    auto result = ml->Control( query, args );
+    vlc_tick_t elapsed_time = vlc_tick_now() - current_time;
+
+    msg_Info(module, "Control operation \"%s\" took %" PRId64 " ms",
+             control_op_to_string(query), MS_FROM_VLC_TICK(elapsed_time));
+
+    return result;
 }
 
 static int Open( vlc_object_t* obj )
