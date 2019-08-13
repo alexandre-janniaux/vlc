@@ -178,6 +178,6 @@ Utils.NavigableFocusScope {
         visible: delegateModel.items.count === 0
         font.pixelSize: VLCStyle.fontHeight_xxlarge
         color: root.activeFocus ? VLCStyle.colors.accent : VLCStyle.colors.text
-        text: qsTr("No artists found")
+        text: qsTr("No artists found.\nPlease try adding sources, by going to the Network tab\nand using the (+) button.")
     }
 }

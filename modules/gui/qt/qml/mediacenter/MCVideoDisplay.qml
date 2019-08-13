@@ -426,8 +426,9 @@ Utils.NavigableFocusScope {
     Label {
         anchors.centerIn: parent
         visible: videosDelegate.items.count === 0
-        font.pixelSize: VLCStyle.fontHeight_xxlarge
+        font.pixelSize: VLCStyle.fontHeight_xlarge
+        horizontalAlignment: Text.AlignHCenter
         color: root.activeFocus ? VLCStyle.colors.accent : VLCStyle.colors.text
-        text: qsTr("No tracks found")
+        text: qsTr("No videos found.\nPlease try adding sources, by going to the Network tab\nand using the (+) button.")
     }
 }
