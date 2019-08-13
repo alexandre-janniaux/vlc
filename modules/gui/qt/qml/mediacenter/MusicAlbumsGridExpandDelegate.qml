@@ -170,51 +170,63 @@ Utils.NavigableFocusScope {
             }
 
             /* The list of the tracks available */
-            MusicTrackListDisplay {
-                id: expand_track_id
+            Component {
+                id: expand_track_id_component
+                MusicTrackListDisplay {
+                    id: expand_track_id
 
-                section.property: ""
+                    section.property: ""
 
-                height: expand_track_id.contentHeight
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    topMargin: VLCStyle.margin_xxsmall
-                    leftMargin: VLCStyle.margin_small
-                    rightMargin: VLCStyle.margin_small
-                    bottomMargin: VLCStyle.margin_small
-                }
-
-                interactive: false
-
-                headerColor: VLCStyle.colors.bgAlt
-
-                parentId : root.model.id
-                onParentIdChanged: {
-                    currentIndex = 0
-                    focus = true
-                }
-
-                onCurrentItemChanged: {
-                    if (currentItem != undefined) {
-                        root.currentItemY = expand_infos_id.y + expand_track_id.y + headerItem.height + currentItem.y
-                        root.currentItemHeight = currentItem.height
+                    height: expand_track_id.contentHeight
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        topMargin: VLCStyle.margin_xxsmall
+                        leftMargin: VLCStyle.margin_small
+                        rightMargin: VLCStyle.margin_small
+                        bottomMargin: VLCStyle.margin_small
                     }
-                }
 
-                sortModel: ListModel {
-                    ListElement{ criteria: "track_number";  width:0.10; visible: true; text: qsTr("#"); showSection: "" }
-                    ListElement{ criteria: "title";         width:0.70; visible: true; text: qsTr("Title"); showSection: "" }
-                    ListElement{ criteria: "duration";      width:0.20; visible: true; text: qsTr("Duration"); showSection: "" }
-                }
-                focus: true
+                    interactive: false
 
-                onActionLeft:  playButton.forceActiveFocus()
-                onActionRight: root.actionRight(index)
-                onActionUp: root.actionUp(index)
-                onActionDown: root.actionDown(index)
-                onActionCancel: root.actionCancel(index)
+                    headerColor: VLCStyle.colors.bgAlt
+
+                    parentId : root.model.id
+                    onParentIdChanged: {
+                        currentIndex = 0
+                        focus = true
+                    }
+
+                    onCurrentItemChanged: {
+                        if (currentItem != undefined) {
+                            root.currentItemY = expand_infos_id.y + expand_track_id.y + headerItem.height + currentItem.y
+                            root.currentItemHeight = currentItem.height
+                        }
+                    }
+
+                    sortModel: ListModel {
+                        ListElement{ criteria: "track_number";  width:0.10; visible: true; text: qsTr("#"); showSection: "" }
+                        ListElement{ criteria: "title";         width:0.70; visible: true; text: qsTr("Title"); showSection: "" }
+                        ListElement{ criteria: "duration";      width:0.20; visible: true; text: qsTr("Duration"); showSection: "" }
+                    }
+                    focus: true
+
+                    onActionLeft:  playButton.forceActiveFocus()
+                    onActionRight: root.actionRight(index)
+                    onActionUp: root.actionUp(index)
+                    onActionDown: root.actionDown(index)
+                    onActionCancel: root.actionCancel(index)
+                }
             }
+
+            /* Loader for the list of tracks */
+            Loader {
+                id: expand_track_id_loader
+                sourceComponent: expand_track_id_component
+            }
+
+            /* re-export expand_track_id for size computation */
+            property alias expand_track_id: expand_track_id_loader.item
 
             Item {
                 //dummy item for margins
