@@ -64,6 +64,7 @@ Utils.NavigableFocusScope {
                     fillMode: Image.PreserveAspectFit
                     source: model.cover || VLCStyle.noArtAlbum
                     sourceSize: Qt.size(width, height)
+                    asynchronous: true
                 }
                 line1: (model.title || qsTr("Unknown title"))+" ["+model.duration+"]"
                 line2: model.main_artist || qsTr("Unknown artist")

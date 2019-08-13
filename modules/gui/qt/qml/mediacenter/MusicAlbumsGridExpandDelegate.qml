@@ -67,6 +67,7 @@ Utils.NavigableFocusScope {
                     width: VLCStyle.cover_large
                     source: model.cover || VLCStyle.noArtAlbum
                     sourceSize: Qt.size(width, height)
+                    asynchronous: true
                 }
 
                 RowLayout {

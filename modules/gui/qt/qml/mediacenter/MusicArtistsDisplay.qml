@@ -60,6 +60,7 @@ Utils.NavigableFocusScope {
 
                     fillMode: Image.PreserveAspectFit
                     source: model.cover || VLCStyle.noArtArtistSmall
+                    asynchronous: true
                 }
             }
             line1: model.name || qsTr("Unknown artist")

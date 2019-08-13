@@ -103,6 +103,7 @@ Utils.NavigableFocusScope {
                     id: cover_obj
                     fillMode: Image.PreserveAspectCrop
                     source: model.thumbnail || VLCStyle.noArtCover
+                    asynchronous: true
                 }
                 line1: (model.title || qsTr("Unknown title"))+" ["+model.duration+"]"
 
