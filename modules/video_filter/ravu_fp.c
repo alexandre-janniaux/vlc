@@ -21,6 +21,12 @@ struct filter_sys
 
     unsigned width;
     unsigned height;
+
+#ifdef WIN32
+    uint64_t perf_freq;
+    uint64_t perf_delta;
+    uint64_t num_frames;
+#endif
 };
 
 struct vec3f { float a; float b; float c; };
@@ -2367,8 +2373,8 @@ Filter_pass_0(float *omtx, float const *imtx,
             gy = (g8.a - g7.a) / 2.f;
             calc_abd(&abd, gx, gy, 0.04792235409415088);
 
-            float T = abd.a + d;
-            float D = abd.a * abd.d - abd.b * abd.b;
+            float T = abd.a + abd.c;
+            float D = abd.a * abd.c - abd.b * abd.b;
             float delta = sqrtf(fmaxf(T * T / 4.0 - D, .0f));
             float L1 = T / 2.f + delta;
             float L2 = T / 2.f - delta;
@@ -2511,8 +2517,8 @@ Filter_pass_1(float *omtx, float const *imtx, float const *pass_0,
             gy = (sample29 - g4.b) / 2.f;
             calc_abd(&abd, gx, gy, 0.04792235409415088);
 
-            float T = abd.a + abd.d;
-            float D = abd.a * abd.d - abd.b * abd.b;
+            float T = abd.a + abd.c;
+            float D = abd.a * abd.c - abd.b * abd.b;
             float delta = sqrtf(fmaxf(T * T / 4.f - D, .0f));
             float L1 = T / 2.f + delta;
             float L2 = T / 2.f - delta;
@@ -2656,8 +2662,8 @@ Filter_pass_2(float *omtx, float const *imtx, float const *pass_0,
             gy = (sample29 - g1.b) / 2.f;
             calc_abd(&abd, gx, gy, 0.04792235409415088);
 
-            float T = abd.a + abd.d;
-            float D = abd.a * abd.d - abd.b * abd.b;
+            float T = abd.a + abd.c;
+            float D = abd.a * abd.c - abd.b * abd.b;
             float delta = sqrtf(fmaxf(T * T / 4.f - D, .0f));
             float L1 = T / 2.f + delta;
             float L2 = T / 2.f - delta;
@@ -2799,6 +2805,11 @@ Filter(filter_t *filter, picture_t *ipic)
     float *pass_1 = sys->pass_1 + 3 * extw + 2;
     float *pass_2 = sys->pass_2 + 3 * extw + 2;
 
+#ifdef WIN32
+    LARGE_INTEGER perf_start;
+    QueryPerformanceCounter(&perf_start);
+#endif
+
     Filter_prepare(sys->input, ipic->Y_PIXELS, sys->width, sys->height,
                    extw * sizeof(float), ipic->Y_PITCH);
     Filter_pass_0(pass_0, input, sys->width, sys->height, extw * sizeof(float));
@@ -2811,8 +2822,14 @@ Filter(filter_t *filter, picture_t *ipic)
     upscale_chroma(opic->p + U_PLANE, ipic->p + U_PLANE);
     upscale_chroma(opic->p + V_PLANE, ipic->p + V_PLANE);
 
+#ifdef WIN32
+    LARGE_INTEGER perf_end;
+    QueryPerformanceCounter(&perf_end);
+    sys->perf_delta += perf_end.QuadPart - perf_start.QuadPart;
+    sys->num_frames++;
+#endif
+
     msg_Info(filter, "RAVU is alive and well my friend");
- 
     picture_Release(ipic);
     return opic;
 }
@@ -2822,6 +2839,14 @@ Close(vlc_object_t *obj)
 {
     filter_t *filter = (filter_t *)obj;
     struct filter_sys *sys = (struct filter_sys *)filter->p_sys;
+#ifdef WIN32
+    if (sys->num_frames != 0)
+    {
+        uint64_t const uspf =
+            roundf(1000000.f * sys->perf_delta / (sys->perf_freq * sys->num_frames));
+        msg_Info(filter, "%lu micro-seconds per frame on average", uspf);
+    }
+#endif
     free(sys->pass_2);
     free(sys->pass_1);
     free(sys->pass_0);
@@ -2871,7 +2896,15 @@ Open(vlc_object_t *obj)
 
     sys->width = w;
     sys->height = h;
+#ifdef WIN32
+    LARGE_INTEGER perf_freq;
+    QueryPerformanceFrequency(&perf_freq);
+    sys->perf_freq = perf_freq.QuadPart;
+    sys->perf_delta = 0;
+    sys->num_frames = 0;
+#endif
     filter->pf_video_filter = Filter;
+
     goto ret;
 
 error:
