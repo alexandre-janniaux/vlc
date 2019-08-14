@@ -14,6 +14,10 @@
 #include <vlc_plugin.h>
 #include <vlc_fourcc.h>
 
+#ifdef WIN32
+# include <windows.h>
+#endif
+
 #define ENABLE_BENCH 0
 #define NUM_THREADS 8
 #define MAX_PASS_STORAGE 15
@@ -37,13 +41,15 @@ struct filter_sys
     unsigned height;
     ptrdiff_t stride;
 
-#if ENABLE_BENCH
-    struct timeval *tv_delta;
-    size_t num_tv_delta;
-#endif
     int current_pass_0;
     int current_pass_1;
     int current_pass_2;
+
+#ifdef WIN32
+    uint64_t perf_freq;
+    uint64_t perf_delta;
+    uint64_t num_frames;
+#endif
 };
 
 struct vec3f  { float   a; float   b; float   c;            };
@@ -2010,12 +2016,13 @@ Filter(filter_t *filter, picture_t *ipic)
     uint8_t *pass_1 = sys->pass_1[sys->current_pass_1];
     uint8_t *pass_2 = sys->pass_2[sys->current_pass_2];
 
-#if ENABLE_BENCH
-    struct timeval tv_start;
-    gettimeofday(&tv_start, NULL);
-#endif
     if (!opic)
         return NULL;
+
+#ifdef WIN32
+    LARGE_INTEGER perf_start;
+    QueryPerformanceCounter(&perf_start);
+#endif
 
     Filter_prepare(sys->input, ipic->Y_PIXELS,
                    sys->width, sys->height,
@@ -2049,55 +2056,23 @@ Filter(filter_t *filter, picture_t *ipic)
     sys->current_pass_1 = (sys->current_pass_1+1) % MAX_PASS_STORAGE;
     sys->current_pass_2 = (sys->current_pass_2+1) % MAX_PASS_STORAGE;
 
-#if 1
     if (sys->do_final_render)
     {
         msg_Warn(filter, "nearest neighbor chroma upscaling");
         upscale_chroma(opic->p + U_PLANE, ipic->p + U_PLANE);
         upscale_chroma(opic->p + V_PLANE, ipic->p + V_PLANE);
     }
-#else
-  #if 0
-    memset(opic->U_PIXELS, 0x80, opic->U_PITCH * opic->p[U_PLANE].i_visible_lines);
-    memset(opic->V_PIXELS, 0x80, opic->V_PITCH * opic->p[V_PLANE].i_visible_lines);
-  #endif
+
+#ifdef WIN32
+    LARGE_INTEGER perf_end;
+    QueryPerformanceCounter(&perf_end);
+    sys->perf_delta += perf_end.QuadPart - perf_start.QuadPart;
+    sys->num_frames++;
 #endif
 
-#if 0
-    msg_Info(filter, "--------------------- START ------------------");
-    Filter_debug(pass_0, pass_1, pass_2, sys->width, sys->height, sys->stride,
-                 ipic->Y_PIXELS, ipic->Y_PITCH, opic->Y_PIXELS, opic->Y_PITCH);
-    msg_Info(filter, "---------------------- END -------------------");
-#else
     msg_Info(filter, "RAVU is alive and well my friend");
-#endif
-
-#if ENABLE_BENCH
-    struct timeval tv_end;
-    gettimeofday(&tv_end, NULL);
-
-    if ((sys->num_tv_delta & 4095) == 0)
-    {
-        size_t const new_size =
-            (sys->num_tv_delta + 4096) * sizeof(struct timeval);
-        struct timeval *new_tv_delta = realloc(sys->tv_delta, new_size);
-        if (!new_tv_delta)
-            goto bench_error;
-        sys->tv_delta = new_tv_delta;
-    }
-
-    struct timeval tmp;
-    timersub(&tv_end, &tv_start, &tmp);
-    sys->tv_delta[sys->num_tv_delta++] = tmp;
-#endif
-
     goto ret;
 
-#if ENABLE_BENCH
-bench_error:
-    msg_Err(filter, "benchmark allocation error");
-    goto ret;
-#endif
 error:
     picture_Release(opic);
     opic = NULL;
@@ -2112,18 +2087,13 @@ Close(vlc_object_t *obj)
     filter_t *filter = (filter_t *)obj;
     struct filter_sys *sys = (struct filter_sys *)filter->p_sys;
 
-#if ENABLE_BENCH
-    uint64_t total_delta = 0;
-    for (size_t i = 0; i < sys->num_tv_delta; ++i)
-        total_delta += (uint64_t)sys->tv_delta[i].tv_sec * 1000000
-            + sys->tv_delta[i].tv_usec;
-    if (total_delta > 0)
-        msg_Info(filter, "%lu micro-seconds per frame on average",
-                 total_delta / sys->num_tv_delta);
-    else
-        msg_Err(filter, "no benchmark record");
-
-    free(sys->tv_delta);
+#ifdef WIN32
+    if (sys->num_frames != 0)
+    {
+        uint64_t const uspf =
+            roundf(1000000.f * sys->perf_delta / (sys->perf_freq * sys->num_frames));
+        msg_Info(filter, "%lu micro-seconds per frame on average", uspf);
+    }
 #endif
     free(sys->shuf_weights);
     free(sys->weights);
@@ -2195,6 +2165,13 @@ Open(vlc_object_t *obj)
     sys->width = w;
     sys->height = h;
     sys->stride = stride;
+#ifdef WIN32
+    LARGE_INTEGER perf_freq;
+    QueryPerformanceFrequency(&perf_freq);
+    sys->perf_freq = perf_freq.QuadPart;
+    sys->perf_delta = 0;
+    sys->num_frames = 0;
+#endif
     filter->pf_video_filter = Filter;
 
     goto ret;
