@@ -211,6 +211,7 @@ void MCMediaLib::addAndPlay(const QVariantList& itemIdList)
     }
 }
 
+
 vlc_medialibrary_t* MCMediaLib::vlcMl()
 {
     return vlc_ml_instance_get( m_intf );

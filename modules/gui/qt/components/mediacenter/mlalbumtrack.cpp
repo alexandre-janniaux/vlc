@@ -20,7 +20,7 @@
 #include "mlalbumtrack.hpp"
 #include "mlhelper.hpp"
 
-MLAlbumTrack::MLAlbumTrack(vlc_medialibrary_t* _ml, const vlc_ml_media_t *_data, QObject *_parent )
+MLAlbumTrack::MLAlbumTrack(MCMediaLibrary *_ml, const vlc_ml_media_t *_data, QObject *_parent )
     : QObject( _parent )
     , m_id         ( _data->i_id, VLC_ML_PARENT_UNKNOWN )
     , m_title      ( QString::fromUtf8( _data->psz_title ) )
@@ -54,9 +54,15 @@ MLAlbumTrack::MLAlbumTrack(vlc_medialibrary_t* _ml, const vlc_ml_media_t *_data,
 
     if ( _data->album_track.i_album_id != 0 )
     {
-        ml_unique_ptr<vlc_ml_album_t> album(vlc_ml_get_album(_ml, _data->album_track.i_album_id));
-        if (album)
-             m_albumTitle =  album->psz_title;
+        m_ml->callAsync(
+            [](vlc_medialibrary_t *ml) {
+                ml_unique_ptr<vlc_ml_album_t> album(vlc_ml_get_album(_ml, _data->album_track.i_album_id));
+                return album;
+            },
+            [](ml_unique_ptr<vlc_ml_album_t> album) {
+                if (album)
+                     m_albumTitle =  album->psz_title;
+            });
     }
 
     if ( _data->album_track.i_artist_id != 0 )
@@ -130,4 +136,3 @@ MLAlbumTrack *MLAlbumTrack::clone(QObject *parent) const
 {
     return new MLAlbumTrack(*this, parent);
 }
-

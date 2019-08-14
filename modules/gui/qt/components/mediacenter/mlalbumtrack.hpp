@@ -35,6 +35,11 @@ class MLAlbumTrack : public QObject
 {
     Q_OBJECT
 
+signals:
+    void albumTitleChanged();
+    void artistTitleChanged();
+
+public:
     Q_PROPERTY(MLParentId id READ getId CONSTANT)
     Q_PROPERTY(QString title READ getTitle CONSTANT)
     Q_PROPERTY(QString album_title READ getAlbumTitle CONSTANT)

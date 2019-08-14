@@ -323,6 +323,9 @@ Utils.NavigableFocusScope {
                         expandDelegateImplicitHeight: view.height/3
                         expandDelegateWidth: view.width
 
+                        Keys.onMenuPressed: {
+                            root.currentGridView.switchExpandItem(contextMenu.model.index, root.currentGridView.currentItem)
+                        }
 
                         onGridItemClicked: {
                             if (key == Qt.RightButton){

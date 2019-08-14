@@ -52,7 +52,32 @@ public:
     Q_INVOKABLE void addAndPlay(const QString& mrl);
     Q_INVOKABLE void addAndPlay(const QUrl& mrl);
     Q_INVOKABLE void addAndPlay(const QVariantList&itemIdList);
-
+QtConcurrent::run
+    /**
+     * Helper func to run medialibrary requests in a dedicated thread and update
+     * the UI with the result from the UI thread
+     *
+     * @params io_func {
+     *  the function to run in the medialibrary request thread. The return value
+     *  of this function is forwarded to the ui_func. }
+     * @param ui_func {
+     *  the function to run in the UI thread after the request has been fullfilled.
+     *  The parameter from this function is the result from the medialibrary
+     *  request. }
+     **/
+    template <typename T, typename U>
+    void callAsync( T&& io_func, U&& ui_func )
+    {
+        vlc_medialibrary_t *instance = vlc_ml_instance_get( m_intf );
+        QMetaObject::invokeMethod(m_IOContext,
+            [this, instance, ui_func {std::move(ui_func)}, io_func {std::move(io_func)}](){
+                QMetaObject::invokeMethod(this,
+                        [return_value = io_func(instance), ui_func {std::move(ui_func)}]() {
+                            ui_func(std::move(return_value));
+                });
+            };
+        });
+    }
 
     vlc_medialibrary_t* vlcMl();
 
@@ -81,4 +106,6 @@ private:
     vlc_medialibrary_t* m_ml;
     std::unique_ptr<vlc_ml_event_callback_t, std::function<void(vlc_ml_event_callback_t*)>> m_event_cb;
 
+    QObject *m_IOContext;
+    QThread *m_IOThread;
 };

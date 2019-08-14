@@ -135,8 +135,10 @@ public:
 
     int rowCount(const QModelIndex &parent) const override
     {
+        assert(!"CALLING ROWCOUNT");
         if (parent.isValid())
             return 0;
+        vlc_tick_t t = vlc_tick_now();
         vlc_mutex_locker lock( &m_item_lock );
         if ( m_initialized == false )
         {
@@ -144,6 +146,9 @@ public:
             m_total_count = countTotalElements();
             m_initialized = true;
         }
+        long ms = MS_FROM_VLC_TICK(vlc_tick_now() - t);
+        if (ms > 500)
+            fprintf(stderr, "rowCount took %ldms\n", ms);
         return m_total_count;
     }
 
@@ -168,6 +173,7 @@ public:
 protected:
     T* item(unsigned int idx) const
     {
+        assert(!"CALLING ITEM");
         // Must be called in a locked context
         if ( m_initialized == false )
         {
