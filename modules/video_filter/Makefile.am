@@ -55,6 +55,8 @@ libravu_plugin_la_SOURCES = \
 	video_filter/ravu_shuffle_weights.asm \
 	video_filter/ravu_nn.asm
 libravu_plugin_la_LIBADD = $(LIBM)
+libravufp_plugin_la_SOURCES = video_filter/ravu_fp.c
+libravufp_plugin_la_LIBADD = $(LIBM)
 libripple_plugin_la_SOURCES = video_filter/ripple.c
 libripple_plugin_la_LIBADD = $(LIBM)
 librotate_plugin_la_SOURCES = video_filter/rotate.c
@@ -96,6 +98,7 @@ video_filter_LTLIBRARIES = \
 	libposterize_plugin.la \
 	libpsychedelic_plugin.la \
 	libravu_plugin.la \
+	libravufp_plugin.la \
 	libripple_plugin.la \
 	libscale_plugin.la \
 	libscene_plugin.la \
