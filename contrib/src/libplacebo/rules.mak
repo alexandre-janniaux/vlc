@@ -4,9 +4,9 @@ PLACEBO_VERSION := 1.8.0
 PLACEBO_ARCHIVE = libplacebo-v$(PLACEBO_VERSION).tar.xz
 #PLACEBO_URL := https://code.videolan.org/videolan/libplacebo/-/archive/v$(PLACEBO_VERSION)/$(PLACEBO_ARCHIVE)
 
-PLACEBO_HASH := 7770752be7a1574a5388109779d2815a69a086f1
-PLACEBO_BRANCH := hack_branch-2
-PLACEBO_GITURL := https://github.com/alexandre-janniaux/libplacebo.git
+PLACEBO_HASH := 9ad38ee5cf391fb9a57a66f897e9fd86f96b002d
+PLACEBO_BRANCH := hack_branch-bench
+PLACEBO_GITURL := https://github.com/Psilokos/libplacebo.git
 
 DEPS_libplacebo = glslang $(DEPS_glslang)
 
