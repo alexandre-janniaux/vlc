@@ -168,6 +168,10 @@ static void Close(vout_display_t *vd)
     vout_display_sys_t *sys = vd->sys;
     const struct pl_gpu *gpu = sys->vk->vulkan->gpu;
 
+    uint64_t const uspf = pl_ravu_mean_delta(sys->renderer);
+    if ((int64_t)uspf != -1)
+        msg_Info(vd, "%lu micro-seconds per frame on average", uspf);
+
     for (int i = 0; i < 4; i++)
         pl_tex_destroy(gpu, &sys->plane_tex[i]);
     //pl_tex_destroy(gpu, &sys->pass_texture);
