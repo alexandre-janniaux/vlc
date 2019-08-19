@@ -151,8 +151,7 @@ if HAVE_XCB
 vout_LTLIBRARIES += libvk_x11_plugin.la
 endif
 if HAVE_WIN32_DESKTOP
-EXTRA_LTLIBRARIES += libvk_win32_plugin.la
-vout_LTLIBRARIES += $(LTLIBvk_win32)
+vout_LTLIBRARIES += libvk_win32_plugin.la
 endif
 if HAVE_ANDROID
 vout_LTLIBRARIES += libvk_android_plugin.la
