@@ -1,0 +1,53 @@
+From 5ebef0b6a2428950239b04009faac85491284e0a Mon Sep 17 00:00:00 2001
+From: Alexandre Janniaux <ajanni@videolabs.io>
+Date: Mon, 29 Apr 2019 20:26:10 +0200
+Subject: [PATCH] WIP
+
+---
+ CMakeLists.txt              | 2 +-
+ loader/loader.c             | 2 +-
+ loader/vk_loader_platform.h | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a64e51af6..88d091787 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -123,7 +123,7 @@ else()
+ endif()
+ 
+ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+-    set(COMMON_COMPILE_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-stringop-truncation -Wno-stringop-overflow")
++    set(COMMON_COMPILE_FLAGS "-Wall -Wextra -Wno-unused-parameter")
+     set(COMMON_COMPILE_FLAGS "${COMMON_COMPILE_FLAGS} -fno-strict-aliasing -fno-builtin-memcmp")
+ 
+     # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
+diff --git a/loader/loader.c b/loader/loader.c
+index c74a501aa..66601dd1e 100644
+--- a/loader/loader.c
++++ b/loader/loader.c
+@@ -60,7 +60,7 @@
+ #include "murmurhash.h"
+ 
+ #if defined(_WIN32)
+-#include <Cfgmgr32.h>
++#include <cfgmgr32.h>
+ #include <initguid.h>
+ #include <Devpkey.h>
+ #endif
+diff --git a/loader/vk_loader_platform.h b/loader/vk_loader_platform.h
+index dd6b3fde6..e405c2108 100644
+--- a/loader/vk_loader_platform.h
++++ b/loader/vk_loader_platform.h
+@@ -25,7 +25,7 @@
+ 
+ #if defined(_WIN32)
+ // WinSock2.h must be included *BEFORE* windows.h
+-#include <WinSock2.h>
++#include <winsock2.h>
+ #endif  // _WIN32
+ 
+ #include "vulkan/vk_platform.h"
+-- 
+2.21.0
+
