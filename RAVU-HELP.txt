@@ -1,20 +1,29 @@
 # VLC with RAVU smart upscaler CLI guide
 
 # Options descriptions:
-# --vout vk             => use Vulkan video output
-# --vk-ravu             => use RAVU GPU version (default=false)
-# --video-filter=ravu   => use RAVU CPU version (with VNNI instructions)
-# --ravu-pass=[0-3]     => how many passes of the RAVU algorithm will be run on the CPU (default=3, all but the final stage)
-# --ravu-render         => the final stage of the algorithm will be run on the CPU (default=false)
-# --scale=2             => this option must be passed along --ravu-render
+# --vout vk                 => use Vulkan video output
+# --vk-ravu                 => use RAVU GPU version (default=false)
+# --video-filter=ravu       => use RAVU CPU version (with VNNI instructions)
+# --video-filter=ravu-fp    => use RAVU CPU FP-32 version
+# --ravu-pass=[0-3]         => how many passes of the RAVU algorithm will be run on the CPU (default=3, all but the final stage)
+# --ravu-render             => the final stage of the algorithm will be run on the CPU (default=false)
+# --scale=2                 => this option must be passed along --ravu-render
+# --no-vnni                 => does not make use of VNNI instruction set
 
 # You can have a customized RAVU pipeline made of both CPU and GPU parts
 # (in this order only)
+
 
 # Here are examples of usage:
 
 # RAVU not used, standard GPU upscaling in the Vulkan video output
 vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk
+
+# CPU (full FP-32) with Vulkan video output
+vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk --video-filter=ravu-fp --ravu-render --scale 2 
+
+# CPU (full without VNNI) with Vulkan video output
+vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk --video-filter=ravu --ravu-render --scale 2 --no-vnni
 
 # CPU (full) with Vulkan video output
 vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk --video-filter=ravu --ravu-render --scale 2 
@@ -30,3 +39,9 @@ vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk --vk-ravu -
 
 # CPU (3 pass) + GPU (last stage) with Vulkan video output
 vlc.exe --dec-dev none --avcodec-hw none --no-spu --no-osd --vout vk --vk-ravu --video-filter=ravu
+
+
+# BENCHMARK
+
+# This will perform benchmark runs on CPU FP-32, CPU VNNI, CPU NO VNNI, GPU
+./bench-RAVU.sh <input_file...> [addional_options]
