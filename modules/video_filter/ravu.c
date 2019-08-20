@@ -27,6 +27,7 @@
 struct filter_sys
 {
     // parameters:
+    bool use_vnni;
     bool do_final_render;
     int number_of_pass;
 
@@ -1433,6 +1434,11 @@ void vlc_ravu_compute_abd_avx512(uint8_t const *pixels,
                                  int32_t *bptr,
                                  uint32_t *cptr);
 
+void vlc_ravu_compute_abd_vnni_avx512(uint8_t const *pixels,
+                                      uint32_t *aptr,
+                                      int32_t *bptr,
+                                      uint32_t *cptr);
+
 void vlc_ravu_shuffle_weights_avx512(int16_t *shuf_weights, int16_t const *weights,
                                      unsigned width, unsigned height);
 
@@ -1440,6 +1446,11 @@ void vlc_ravu_compute_pixels_avx512(uint8_t *omtx, uint8_t const *imtx,
                                     int16_t const *weights,
                                     unsigned width, unsigned height,
                                     ptrdiff_t stride, ptrdiff_t wstride);
+
+void vlc_ravu_compute_pixels_vnni_avx512(uint8_t *omtx, uint8_t const *imtx,
+                                         int16_t const *weights,
+                                         unsigned width, unsigned height,
+                                         ptrdiff_t stride, ptrdiff_t wstride);
 
 struct thread_ctx
 {
@@ -1453,6 +1464,7 @@ struct thread_ctx
     size_t num_pix;
     ptrdiff_t stride;
     ptrdiff_t wstride;
+    bool use_vnni;
 };
 
 static inline void *
@@ -1473,7 +1485,10 @@ pass_0_gather_weights(void *arg)
                 for (int j = 0; j < 6; ++j)
                     pixels[i * 8 + j] =
                         ctx->imtx[(int)x + (i - 2) * ctx->stride + (j - 2)];
-            vlc_ravu_compute_abd_avx512(pixels, &a_, &b_, &d_);
+            if (ctx->use_vnni)
+                vlc_ravu_compute_abd_vnni_avx512(pixels, &a_, &b_, &d_);
+            else
+                vlc_ravu_compute_abd_avx512(pixels, &a_, &b_, &d_);
 
             volatile float a = a_ / (255.f * 255.f);
             volatile float b = b_ / (255.f * 255.f);
@@ -1515,7 +1530,7 @@ static inline int
 Filter_pass_0(uint8_t *omtx, uint8_t const *imtx,
               int16_t *weights, int16_t *shuf_weights,
               unsigned const width, unsigned const height,
-              ptrdiff_t const stride)
+              ptrdiff_t const stride, bool use_vnni)
 {
     vlc_thread_t threads[NUM_THREADS] = {0};
     struct thread_ctx ctx[NUM_THREADS];
@@ -1536,6 +1551,7 @@ Filter_pass_0(uint8_t *omtx, uint8_t const *imtx,
             .num_pix = num_pix,
             .stride = stride,
             .wstride = 18 * stride,
+            .use_vnni = use_vnni,
         };
         if (vlc_clone(threads + i, pass_0_gather_weights,
                       ctx + i, VLC_THREAD_PRIORITY_HIGHEST))
@@ -1545,7 +1561,12 @@ Filter_pass_0(uint8_t *omtx, uint8_t const *imtx,
         vlc_join(threads[i], NULL);
 
     vlc_ravu_shuffle_weights_avx512(shuf_weights, weights, stride, height);
-    vlc_ravu_compute_pixels_avx512(omtx, imtx, shuf_weights, width, height, stride, 18 * stride);
+    if (use_vnni)
+        vlc_ravu_compute_pixels_vnni_avx512(omtx, imtx, shuf_weights,
+                                            width, height, stride, 18 * stride);
+    else
+        vlc_ravu_compute_pixels_avx512(omtx, imtx, shuf_weights,
+                                       width, height, stride, 18 * stride);
 
     omtx -= 2;
     memcpy(omtx - 1 * stride, omtx, stride);
@@ -2031,7 +2052,7 @@ Filter(filter_t *filter, picture_t *ipic)
     if (sys->do_final_render || sys->number_of_pass > 0)
     {
         if (Filter_pass_0(pass_0, input, sys->weights, sys->shuf_weights,
-                          sys->width, sys->height, sys->stride))
+                          sys->width, sys->height, sys->stride, sys->use_vnni))
             goto error;
     }
     if (sys->do_final_render || sys->number_of_pass > 1)
@@ -2126,6 +2147,7 @@ Open(vlc_object_t *obj)
         goto error;
     filter->p_sys = sys;
 
+    sys->use_vnni = var_InheritBool(filter, "vnni");
     sys->do_final_render = var_InheritBool(filter, "ravu-render");
     sys->number_of_pass = var_InheritInteger(filter, "ravu-pass");
 
@@ -2198,6 +2220,9 @@ vlc_module_begin()
     set_capability("video filter", 200)
     add_shortcut("ravu")
     set_callbacks(Open, Close)
+
+    add_bool("vnni", true, "Use AVX-512 VNNI extension instructions",
+             "Make use of the new neural net oriented instruction set.", false)
 
     add_bool("ravu-render", false, "Enable final rendering pass",
              "Do the final rendering pass in smart upscaler CPU filter", false)
