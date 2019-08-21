@@ -52,7 +52,6 @@ public:
     Q_INVOKABLE void addAndPlay(const QString& mrl);
     Q_INVOKABLE void addAndPlay(const QUrl& mrl);
     Q_INVOKABLE void addAndPlay(const QVariantList&itemIdList);
-QtConcurrent::run
     /**
      * Helper func to run medialibrary requests in a dedicated thread and update
      * the UI with the result from the UI thread
@@ -74,6 +73,7 @@ QtConcurrent::run
                 QMetaObject::invokeMethod(this,
                         [return_value = io_func(instance), ui_func {std::move(ui_func)}]() {
                             ui_func(std::move(return_value));
+                        });
                 });
             };
         });
