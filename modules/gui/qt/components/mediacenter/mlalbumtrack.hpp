@@ -31,6 +31,8 @@
 #include "mlhelper.hpp"
 #include "mlqmltypes.hpp"
 
+class MCMediaLib;
+
 class MLAlbumTrack : public QObject
 {
     Q_OBJECT
@@ -51,7 +53,7 @@ public:
     Q_PROPERTY(QString mrl READ getMRL CONSTANT)
 
 public:
-    MLAlbumTrack(vlc_medialibrary_t *_ml, const vlc_ml_media_t *_data, QObject *_parent = nullptr);
+    MLAlbumTrack(MCMediaLib*_ml, const vlc_ml_media_t *_data, QObject *_parent = nullptr);
 
     MLParentId getId() const;
     QString getTitle() const;

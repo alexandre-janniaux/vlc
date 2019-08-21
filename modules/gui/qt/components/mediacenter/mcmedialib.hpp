@@ -52,6 +52,7 @@ public:
     Q_INVOKABLE void addAndPlay(const QString& mrl);
     Q_INVOKABLE void addAndPlay(const QUrl& mrl);
     Q_INVOKABLE void addAndPlay(const QVariantList&itemIdList);
+
     /**
      * Helper func to run medialibrary requests in a dedicated thread and update
      * the UI with the result from the UI thread
@@ -69,14 +70,14 @@ public:
     {
         vlc_medialibrary_t *instance = vlc_ml_instance_get( m_intf );
         QMetaObject::invokeMethod(m_IOContext,
-            [this, instance, ui_func {std::move(ui_func)}, io_func {std::move(io_func)}](){
-                QMetaObject::invokeMethod(this,
-                        [return_value = io_func(instance), ui_func {std::move(ui_func)}]() {
-                            ui_func(std::move(return_value));
-                        });
-                });
-            };
-        });
+            [medialib=this, instance, ui_func {std::move(ui_func)}, io_func {std::move(io_func)}]()
+            {
+                QMetaObject::invokeMethod(medialib,
+                    [return_value {io_func(instance)}, ui_func {std::move(ui_func)}]() mutable
+                    {
+                        ui_func(std::move(return_value));
+                    });
+            });
     }
 
     vlc_medialibrary_t* vlcMl();

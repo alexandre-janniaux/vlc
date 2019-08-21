@@ -19,8 +19,9 @@
 #include <cassert>
 #include "mlalbumtrack.hpp"
 #include "mlhelper.hpp"
+#include "mcmedialib.hpp"
 
-MLAlbumTrack::MLAlbumTrack(MCMediaLibrary *_ml, const vlc_ml_media_t *_data, QObject *_parent )
+MLAlbumTrack::MLAlbumTrack(MCMediaLib *_ml, const vlc_ml_media_t *_data, QObject *_parent )
     : QObject( _parent )
     , m_id         ( _data->i_id, VLC_ML_PARENT_UNKNOWN )
     , m_title      ( QString::fromUtf8( _data->psz_title ) )
@@ -54,22 +55,37 @@ MLAlbumTrack::MLAlbumTrack(MCMediaLibrary *_ml, const vlc_ml_media_t *_data, QOb
 
     if ( _data->album_track.i_album_id != 0 )
     {
-        m_ml->callAsync(
-            [](vlc_medialibrary_t *ml) {
-                ml_unique_ptr<vlc_ml_album_t> album(vlc_ml_get_album(_ml, _data->album_track.i_album_id));
+        _ml->callAsync(
+            [album_id=_data->album_track.i_album_id](vlc_medialibrary_t *ml)
+            {
+                ml_unique_ptr<vlc_ml_album_t> album(vlc_ml_get_album(ml, album_id));
                 return album;
             },
-            [](ml_unique_ptr<vlc_ml_album_t> album) {
+            [this](ml_unique_ptr<vlc_ml_album_t> album)
+            {
                 if (album)
-                     m_albumTitle =  album->psz_title;
+                {
+                    m_albumTitle = album->psz_title;
+                    emit albumTitleChanged();
+                }
             });
     }
 
     if ( _data->album_track.i_artist_id != 0 )
     {
-        ml_unique_ptr<vlc_ml_artist_t> artist(vlc_ml_get_artist(_ml, _data->album_track.i_artist_id));
-        if (artist)
-             m_artist =  artist->psz_name;
+        _ml->callAsync(
+            [artist_id=_data->album_track.i_artist_id](vlc_medialibrary_t *ml)
+            -> ml_unique_ptr<vlc_ml_artist_t> {
+                ml_unique_ptr<vlc_ml_artist_t> artist(vlc_ml_get_artist(ml, artist_id));
+                return artist;
+            },
+            [this](ml_unique_ptr<vlc_ml_artist_t> artist) {
+                if (artist)
+                {
+                    m_artist = artist->psz_name;
+                    emit artistTitleChanged();
+                }
+            });
     }
 }
 
