@@ -25,6 +25,7 @@
 #include "components/playlist/media.hpp"
 #include "components/playlist/playlist_controller.hpp"
 #include <QSettings>
+#include <QThread>
 
 MCMediaLib::MCMediaLib(intf_thread_t *_intf, QObject *_parent)
     : QObject( _parent )

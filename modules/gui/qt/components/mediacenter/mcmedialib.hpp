@@ -28,11 +28,14 @@
 #include <QMetaObject>
 #include <QMetaMethod>
 #include <QQmlEngine>
+#include <QRunnable>
+#include <QThreadPool>
 
 #include <memory>
 
 #include "qt.hpp"
 #include "mlqmltypes.hpp"
+
 
 class MCMediaLib : public QObject
 {
@@ -53,6 +56,40 @@ public:
     Q_INVOKABLE void addAndPlay(const QUrl& mrl);
     Q_INVOKABLE void addAndPlay(const QVariantList&itemIdList);
 
+
+    /**
+     * Wrapper for running inside QThreadPool and process the result
+     * of the request inside the UI thread.
+     **/
+    template <typename T>
+    class AsyncTask : public QRunnable
+    {
+    public:
+        AsyncTask(QObject *context, std::function<T()> func, std::function<void(T)> result)
+        {
+            this->func = std::move(func);
+            this->result = std::move(result);
+            this->context = context;
+        }
+        virtual ~AsyncTask(){}
+
+        void run() override
+        {
+            fprintf(stderr, "executed in IO THREAD: %p\n", QThread::currentThread());
+            QMetaObject::invokeMethod(context,
+                [value {std::move(func())}, result {std::move(result)}]() mutable
+                {
+                fprintf(stderr, "executed in UI THREAD: %p\n", QThread::currentThread());
+                    result(std::move(value));
+                });
+        }
+    private:
+        std::function<T()> func;
+        std::function<void(T)> result;
+        QObject *context;
+    };
+
+
     /**
      * Helper func to run medialibrary requests in a dedicated thread and update
      * the UI with the result from the UI thread
@@ -68,16 +105,29 @@ public:
     template <typename T, typename U>
     void callAsync( T&& io_func, U&& ui_func )
     {
+        fprintf(stderr, "IN CALLASYNC\n");
         vlc_medialibrary_t *instance = vlc_ml_instance_get( m_intf );
-        QMetaObject::invokeMethod(m_IOContext,
-            [medialib=this, instance, ui_func {std::move(ui_func)}, io_func {std::move(io_func)}]()
-            {
-                QMetaObject::invokeMethod(medialib,
-                    [return_value {io_func(instance)}, ui_func {std::move(ui_func)}]() mutable
-                    {
-                        ui_func(std::move(return_value));
-                    });
-            });
+
+        using ReturnType = decltype(io_func(std::declval<vlc_medialibrary_t*>()));
+
+        /* Wrapper executed in the thread pool */
+        auto io_wrapper = [medialib=this, instance, io_func {std::move(io_func)}]() mutable
+        {
+            return io_func(instance);
+        };
+
+        /* Wrapper executed in the UI thread when the task is finished */
+        auto ui_wrapper = [ui_func {std::move(ui_func)}](ReturnType value) mutable
+        {
+            ui_func(std::move(value));
+        };
+
+        auto watcher = new AsyncTask<ReturnType>
+            (this, std::move(io_wrapper), std::move(ui_wrapper));
+
+        QThreadPool::globalInstance()->start(watcher);
+
+        fprintf(stderr, "OUT OF CALLASYNC\n");
     }
 
     vlc_medialibrary_t* vlcMl();
@@ -106,7 +156,4 @@ private:
     /* Medialibrary */
     vlc_medialibrary_t* m_ml;
     std::unique_ptr<vlc_ml_event_callback_t, std::function<void(vlc_ml_event_callback_t*)>> m_event_cb;
-
-    QObject *m_IOContext;
-    QThread *m_IOThread;
 };

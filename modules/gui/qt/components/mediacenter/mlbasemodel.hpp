@@ -135,7 +135,7 @@ public:
 
     int rowCount(const QModelIndex &parent) const override
     {
-        assert(!"CALLING ROWCOUNT");
+        //assert(!"CALLING ROWCOUNT");
         if (parent.isValid())
             return 0;
         vlc_tick_t t = vlc_tick_now();
@@ -170,17 +170,40 @@ public:
         m_item_list.clear();
     }
 
+private:
+    T* postInitGetItem(unsigned int idx) const
+    {
+
+    }
+
 protected:
     T* item(unsigned int idx) const
     {
-        assert(!"CALLING ITEM");
+        //assert(!"CALLING ITEM");
         // Must be called in a locked context
         if ( m_initialized == false )
         {
+            /* We don't have any items currently */
             m_total_count = countTotalElements();
+
             if ( m_total_count > 0 )
-                m_item_list = const_cast<MLSlidingWindowModel<T>*>(this)->fetch();
-            m_initialized = true;
+            {
+                m_initializing = true;
+                m_mcMediaLib->callAsync(
+                    [this](vlc_medialibrary_t *ml)
+                    {
+                            return const_cast<MLSlidingWindowModel<T>*>(this)->fetch();
+                    },
+                    [this](decltype(const_cast<MLSlidingWindowModel<T>*>(this)->fetch()) data)
+                    {
+                        //beginResetModel();
+                        m_item_list = std::move(data);
+                        m_initializing = false;
+                        //endResetModel();
+                    });
+            }
+            else m_initialized = true;
+            return nullptr;
         }
 
         if ( m_total_count == 0 || idx >= m_total_count || idx < 0 )
@@ -192,7 +215,19 @@ protected:
                 m_query_param.i_offset = 0;
             else
                 m_query_param.i_offset = idx - idx % m_query_param.i_nbResults;
-            m_item_list = const_cast<MLSlidingWindowModel<T>*>(this)->fetch();
+            m_initializing = true;
+            m_mcMediaLib->callAsync(
+                [this](vlc_medialibrary_t *ml)
+                {
+                    return const_cast<MLSlidingWindowModel<T>*>(this)->fetch();
+                },
+                [this](decltype(const_cast<MLSlidingWindowModel<T>*>(this)->fetch()) data)
+                {
+                    //beginResetModel();
+                    m_item_list = std::move(data);
+                    m_initializing = false;
+                    //endResetModel();
+                });
         }
 
         //db has changed
@@ -210,6 +245,7 @@ protected:
 
 private:
     mutable bool m_initialized;
+    mutable bool m_initializing = false;
     mutable size_t m_total_count;
 };
 

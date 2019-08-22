@@ -120,6 +120,7 @@ size_t MLAlbumTrackModel::countTotalElements() const
 
 std::vector<std::unique_ptr<MLAlbumTrack>> MLAlbumTrackModel::fetch()
 {
+    fprintf(stderr, "Calling MLAlbumTrackModel::fetch()\n");
     ml_unique_ptr<vlc_ml_media_list_t> media_list;
 
     if ( m_parent.id <= 0 )

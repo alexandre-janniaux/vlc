@@ -94,6 +94,7 @@ QHash<int, QByteArray> MLAlbumModel::roleNames() const
 
 std::vector<std::unique_ptr<MLAlbum>> MLAlbumModel::fetch( )
 {
+    fprintf(stderr, "Calling MLAlbumModel::fetch()\n");
     ml_unique_ptr<vlc_ml_album_list_t> album_list;
     if ( m_parent.id <= 0 )
         album_list.reset( vlc_ml_list_albums(m_ml, &m_query_param ) );

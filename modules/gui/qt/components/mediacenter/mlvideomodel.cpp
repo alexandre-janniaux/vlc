@@ -18,6 +18,8 @@
 
 #include "mlvideomodel.hpp"
 
+#include <QThread>
+
 namespace {
 
 enum Role {
@@ -105,6 +107,7 @@ QHash<int, QByteArray> MLVideoModel::roleNames() const
 
 std::vector<std::unique_ptr<MLVideo> > MLVideoModel::fetch()
 {
+    fprintf(stderr, "MLVideoModel::fetch(), thread=%p\n", QThread::currentThread());
     ml_unique_ptr<vlc_ml_media_list_t> media_list{ vlc_ml_list_video_media(
                 m_ml, &m_query_param ) };
     if ( media_list == nullptr )
