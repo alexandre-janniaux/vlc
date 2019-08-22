@@ -142,7 +142,7 @@ public:
         vlc_mutex_locker lock( &m_item_lock );
         if ( m_initialized == false )
         {
-            m_item_list = const_cast<MLSlidingWindowModel<T>*>(this)->fetch();
+            //m_item_list = const_cast<MLSlidingWindowModel<T>*>(this)->fetch();
             m_total_count = countTotalElements();
             m_initialized = true;
         }
@@ -179,6 +179,9 @@ private:
 protected:
     T* item(unsigned int idx) const
     {
+        if (m_mcMediaLib == NULL)
+            return nullptr;
+
         //assert(!"CALLING ITEM");
         // Must be called in a locked context
         if ( m_initialized == false )

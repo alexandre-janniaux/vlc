@@ -66,7 +66,7 @@ MLAlbumTrack::MLAlbumTrack(MCMediaLib *_ml, const vlc_ml_media_t *_data, QObject
                 if (album)
                 {
                     m_albumTitle = album->psz_title;
-                    emit albumTitleChanged();
+                    //emit albumTitleChanged();
                 }
             });
     }
@@ -83,7 +83,7 @@ MLAlbumTrack::MLAlbumTrack(MCMediaLib *_ml, const vlc_ml_media_t *_data, QObject
                 if (artist)
                 {
                     m_artist = artist->psz_name;
-                    emit artistTitleChanged();
+                    //emit artistTitleChanged();
                 }
             });
     }

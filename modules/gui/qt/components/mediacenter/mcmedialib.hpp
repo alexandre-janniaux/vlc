@@ -81,7 +81,7 @@ public:
                 {
                 fprintf(stderr, "executed in UI THREAD: %p\n", QThread::currentThread());
                     result(std::move(value));
-                });
+                }, Qt::QueuedConnection);
         }
     private:
         std::function<T()> func;
