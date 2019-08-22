@@ -118,7 +118,7 @@ Utils.NavigableFocusScope {
             cellWidth: VLCStyle.cover_normal + VLCStyle.margin_small
             cellHeight: VLCStyle.cover_normal + VLCStyle.fontHeight_normal * 2
 
-            gridDelegate: Utils.GridItem {
+            gridDelegate: Component { Utils.GridItem {
                 property variant delegateModelItem: ({
                     model: ({}),
                     itemsIndex: 0,
@@ -139,33 +139,54 @@ Utils.NavigableFocusScope {
                 }
                 onPlayClicked: medialib.addAndPlay( delegateModelItem.model.id )
                 onAddToPlaylistClicked : medialib.addToPlaylist( delegateModelItem.model.id )
-            }
+            }}
 
-            expandDelegate:  Rectangle {
+            expandDelegate: Component { Rectangle {
                 id: expandDelegateId
                 implicitHeight: albumDetail.implicitHeight
                 width: root.width
                 color: VLCStyle.colors.bgAlt
                 property int currentId: -1
-                property alias model : albumDetail.model
-                property alias currentItemY: albumDetail.currentItemY
-                property alias currentItemHeight: albumDetail.currentItemHeight
+
+                property variant model
+                property int currentItemY
+                property int currentItemHeight
+
+                onModelChanged: console.log("model changed")
+                onCurrentItemYChanged: console.log("currentItemY changed")
 
                 onActiveFocusChanged: {
                     if (activeFocus)
                         albumDetail.forceActiveFocus()
                 }
 
-                MusicAlbumsGridExpandDelegate {
+                Component {
+                    id: musicAlbumsGridExpandDelegate
+                    MusicAlbumsGridExpandDelegate {
+                        model: expandDelegateId.model
+                        currentItem: currentItem
+                        currentItemY: expandDelegateId.currentItemY
+                        currentItemHeight: expandDelegateId.currentItemHeight
+                    }
+                }
+
+                Loader {
                     id: albumDetail
+                    active: expandDelegateId.model != undefined
                     anchors.fill: parent
+                    sourceComponent: musicAlbumsGridExpandDelegate
+                }
+
+                Connections {
+                    target: albumDetail.item
                     onActionCancel:  gridView_id.retract()
                     onActionUp:  gridView_id.retract()
                     onActionDown: gridView_id.retract()
                     onActionLeft: root.actionLeft(index)
                     onActionRight: root.actionRight(index)
+                    onCompleted: console.log("LOADED")
                 }
-            }
+            }}
 
             model: delegateModel
             modelTop: delegateModel.parts.gridTop

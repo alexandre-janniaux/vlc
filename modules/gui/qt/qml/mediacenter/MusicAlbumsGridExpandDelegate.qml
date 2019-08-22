@@ -26,15 +26,20 @@ import "qrc:///style/"
 
 Utils.NavigableFocusScope {
     id: root
-    property variant model: MLAlbumModel{}
+
+    property var model
+    property int currentItemY
+    property int currentItemHeight
+    property Component currentItem
+
+    onModelChanged: console.log("Model changed in ExpandDelegate")
+    onCurrentItemYChanged: console.log("current item Y changed")
+
     //color: VLCStyle.colors.bg
     implicitHeight: layout.height
     clip: true
 
     width: parent.width
-
-    property int currentItemY
-    property int currentItemHeight
 
     Row {
         id: layout
