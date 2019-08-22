@@ -165,8 +165,6 @@ Utils.NavigableFocusScope {
                     MusicAlbumsGridExpandDelegate {
                         model: expandDelegateId.model
                         currentItem: currentItem
-                        currentItemY: expandDelegateId.currentItemY
-                        currentItemHeight: expandDelegateId.currentItemHeight
                     }
                 }
 
@@ -185,6 +183,8 @@ Utils.NavigableFocusScope {
                     onActionLeft: root.actionLeft(index)
                     onActionRight: root.actionRight(index)
                     onCompleted: console.log("LOADED")
+                    onCurrentItemY: expandDelegateId.currentItemY = albumDetail.item.currentItemY
+                    onCurrentItemHeight: expandDelegateId.currentItemHeight = albumDetail.item.currentItemHeight
                 }
             }}
 
