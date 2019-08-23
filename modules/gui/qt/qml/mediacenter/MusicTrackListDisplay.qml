@@ -25,8 +25,14 @@ import org.videolan.medialib 0.1
 import "qrc:///utils/" as Utils
 import "qrc:///style/"
 
+/*
+ * Available properties:
+ *  - model: the MLAlbumTraskModel
+ */
 Utils.KeyNavigableTableView {
     id: root
+
+    //property alias parentId: root.model.parentId
 
     sortModel: ListModel {
         ListElement{ isPrimary: true; criteria: "title";       width:0.44; text: qsTr("Title");    showSection: "title" }
@@ -41,23 +47,21 @@ Utils.KeyNavigableTableView {
 
     headerColor: VLCStyle.colors.bg
 
-    model: MLAlbumTrackModel {
-        id: rootmodel
-        ml: medialib
+    /* Bind criteria change in model to section display */
+    Connections {
+        target: root.model
         onSortCriteriaChanged: {
-            switch (rootmodel.sortCriteria) {
+            switch (root.model.sortCriteria) {
             case "title":
             case "album_title":
             case "main_artist":
-                section.property = rootmodel.sortCriteria + "_first_symbol"
+                section.property = root.model.sortCriteria + "_first_symbol"
                 break;
             default:
                 section.property = ""
             }
         }
     }
-
-    property alias parentId: rootmodel.parentId
 
     colDelegate: Item {
         anchors.fill: parent

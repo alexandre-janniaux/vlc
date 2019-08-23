@@ -188,10 +188,10 @@ Utils.NavigableFocusScope {
 
                 headerColor: VLCStyle.colors.bgAlt
 
-                parentId : root.model.id
-                onParentIdChanged: {
-                    currentIndex = 0
-                    focus = true
+                model: MLAlbumTrackModel {
+                    id: rootmodel
+                    ml: medialib
+                    parentId: root.model.id
                 }
 
                 onCurrentItemChanged: {

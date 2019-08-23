@@ -48,7 +48,13 @@ Utils.NavigableFocusScope {
     Component { id: albumComp; MusicAlbumsDisplay{ } }
     Component { id: artistComp; MusicArtistsDisplay{ } }
     Component { id: genresComp; MusicGenresDisplay{ } }
-    Component { id: tracksComp; MusicTrackListDisplay{ } }
+    Component { id: tracksComp; MusicTrackListDisplay
+    {
+        model: MLAlbumTrackModel {
+            id: rootmodel
+            ml: medialib
+        }
+    } }
 
     readonly property var pageModel: [{
             displayText: qsTr("Albums"),
