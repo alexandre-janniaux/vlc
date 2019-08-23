@@ -232,11 +232,8 @@ NavigableFocusScope {
      */
     onActiveFocusChanged: {
         if (activeFocus && delegateModel.items.count > 0 && delegateModel.selectedGroup.count === 0) {
-            var initialIndex = 0
-            if (view.currentIndex !== -1)
-                initialIndex = view.currentIndex
-            delegateModel.items.get(initialIndex).inSelected = true
-            view.currentIndex = initialIndex
+            delegateModel.items.get(0).inSelected = true
+            view.currentIndex = 0
         }
     }
 
