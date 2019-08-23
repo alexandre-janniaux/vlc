@@ -26,7 +26,8 @@ import "qrc:///style/"
 
 Utils.NavigableFocusScope {
     id: root
-    property variant model: MLAlbumModel{}
+    property var model
+
     //color: VLCStyle.colors.bg
     implicitHeight: layout.height
     clip: true
@@ -188,11 +189,13 @@ Utils.NavigableFocusScope {
 
                 headerColor: VLCStyle.colors.bgAlt
 
-                model: MLAlbumTrackModel {
-                    id: rootmodel
-                    ml: medialib
-                    parentId: root.model.id
-                }
+                Component.onCompleted: console.log("MusicAlbumsGridExpandDelegate completed")
+
+                //model: MLAlbumTrackModel {
+                //    id: rootmodel
+                //    ml: medialib
+                //    parentId: root.model.id == 0 ? -1 : root.model.id
+                //}
 
                 onCurrentItemChanged: {
                     if (currentItem != undefined) {

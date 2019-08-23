@@ -50,6 +50,7 @@ NavigableFocusScope {
     //delegate to display the extended item
     property Component gridDelegate: Item{}
     property Component expandDelegate: Item{}
+    property var expandModel
     property Item expanderItem: Item{}
 
     //signals emitted when selected items is updated from keyboard
@@ -58,6 +59,10 @@ NavigableFocusScope {
     signal actionAtIndex(int index)
 
     property double _expandRetractSpeed: 1.
+
+    Connections {
+        target: root
+        onCurrentI
 
     function renderLayout() {
         flickable.layout()

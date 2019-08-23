@@ -38,7 +38,7 @@ enum Role {
 }
 
 QHash<QByteArray, vlc_ml_sorting_criteria_t> MLAlbumTrackModel::M_names_to_criteria = {
-    {"id", VLC_ML_SORTING_DEFAULT},
+    //{"id", VLC_ML_SORTING_DEFAULT},
     {"title", VLC_ML_SORTING_ALPHA},
     {"album_title", VLC_ML_SORTING_ALBUM},
     {"track_number", VLC_ML_SORTING_TRACKNUMBER},
@@ -113,8 +113,11 @@ size_t MLAlbumTrackModel::countTotalElements() const
     auto queryParams = m_query_param;
     queryParams.i_offset = 0;
     queryParams.i_nbResults = 0;
+
+    size_t number = 0;
     if ( m_parent.id <= 0 )
         return vlc_ml_count_audio_media(m_ml, &queryParams);
+
     return vlc_ml_count_media_of(m_ml, &queryParams, m_parent.type, m_parent.id );
 }
 

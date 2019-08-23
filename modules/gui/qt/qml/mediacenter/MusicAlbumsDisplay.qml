@@ -46,6 +46,7 @@ Utils.NavigableFocusScope {
         model: MLAlbumModel {
             id: albumModelId
             ml: medialib
+            parentId: -1
         }
 
 
@@ -140,7 +141,7 @@ Utils.NavigableFocusScope {
                 onAddToPlaylistClicked : medialib.addToPlaylist( delegateModelItem.model.id )
             }
 
-            expandDelegate:  Rectangle {
+            expandDelegate: Rectangle {
                 id: expandDelegateId
                 implicitHeight: albumDetail.implicitHeight
                 width: root.width
@@ -149,6 +150,8 @@ Utils.NavigableFocusScope {
                 property alias model : albumDetail.model
                 property alias currentItemY: albumDetail.currentItemY
                 property alias currentItemHeight: albumDetail.currentItemHeight
+
+                Component.onCompleted: console.log("NEW EXPAND DELEGATE")
 
                 onActiveFocusChanged: {
                     if (activeFocus)
@@ -164,6 +167,11 @@ Utils.NavigableFocusScope {
                     onActionLeft: root.actionLeft(index)
                     onActionRight: root.actionRight(index)
                 }
+            }
+
+            expandModel: MLAlbumTrackModel {
+                ml: medialib
+                parentId: delegateModelItem.model.id
             }
 
             model: delegateModel

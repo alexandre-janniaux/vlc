@@ -130,4 +130,3 @@ MLAlbumTrack *MLAlbumTrack::clone(QObject *parent) const
 {
     return new MLAlbumTrack(*this, parent);
 }
-

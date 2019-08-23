@@ -72,6 +72,7 @@ Utils.KeyNavigableTableView {
         Text {
             anchors.fill:parent
 
+            Component.onCompleted: console.assert(rowModel["id"] !== undefined)
             text: !rowModel ? "" : (rowModel[model.criteria] || "")
             elide: Text.ElideRight
             font.pixelSize: VLCStyle.fontSize_normal
