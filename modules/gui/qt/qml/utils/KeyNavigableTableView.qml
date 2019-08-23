@@ -96,7 +96,7 @@ NavigableFocusScope {
                         color: VLCStyle.colors.getBgColor(element.DelegateModel.inSelected, hoverArea.containsMouse, lineView.activeFocus)
                     }
 
-                    Rectangle{
+                    Rectangle {
                         anchors.fill: parent
                         anchors.topMargin: VLCStyle.margin_xxsmall
                         anchors.bottomMargin: VLCStyle.margin_xxsmall
@@ -105,29 +105,27 @@ NavigableFocusScope {
                         color: VLCStyle.colors.bg
                         radius: height / 10
 
-                    Row {
-                        anchors {
-                            fill: parent
-                        }
-                        Repeater {
-                            model: sortModel
+                        Row {
+                            anchors {
+                                fill: parent
+                            }
+                            Repeater {
+                                model: sortModel
 
-                            Item {
-                                height: parent.height
-                                width: model.width * view.width
-                                Layout.alignment: Qt.AlignVCenter
-                                    Loader{
+                                Item {
+                                    height: parent.height
+                                    width: model.width * view.width
+                                    Layout.alignment: Qt.AlignVCenter
+                                    Loader {
                                         anchors.fill: parent
                                         sourceComponent: colDelegate
 
                                         property var rowModel: element.rowModel
                                         property var colModel: model
-
                                     }
-
+                                }
                             }
                         }
-                    }
                     }
                 }
             }
