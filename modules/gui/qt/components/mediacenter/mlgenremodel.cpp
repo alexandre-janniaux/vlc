@@ -85,7 +85,7 @@ std::vector<std::unique_ptr<MLGenre>> MLGenreModel::fetch()
         return {};
     std::vector<std::unique_ptr<MLGenre>> res;
     for( const vlc_ml_genre_t& genre: ml_range_iterate<vlc_ml_genre_t>( genre_list ) )
-        res.emplace_back( std::unique_ptr<MLGenre>{ new MLGenre( &genre ) } );
+        res.emplace_back( std::make_unique<MLGenre>( &genre ) );
     return res;
 }
 
