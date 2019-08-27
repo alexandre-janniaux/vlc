@@ -104,6 +104,7 @@ typedef void (APIENTRY *PFNGLVIEWPORTPROC) (GLint x, GLint y, GLsizei width, GLs
 #   define PFNGLGETATTRIBLOCATIONPROC        typeof(glGetAttribLocation)*
 #   define PFNGLVERTEXATTRIBPOINTERPROC      typeof(glVertexAttribPointer)*
 #   define PFNGLENABLEVERTEXATTRIBARRAYPROC  typeof(glEnableVertexAttribArray)*
+#   define PFNGLDISABLEVERTEXATTRIBARRAYPROC typeof(glDisableVertexAttribArray)*
 #   define PFNGLUNIFORMMATRIX4FVPROC         typeof(glUniformMatrix4fv)*
 #   define PFNGLUNIFORMMATRIX3FVPROC         typeof(glUniformMatrix3fv)*
 #   define PFNGLUNIFORMMATRIX2FVPROC         typeof(glUniformMatrix2fv)*
@@ -201,6 +202,7 @@ typedef struct {
     PFNGLGETATTRIBLOCATIONPROC       GetAttribLocation;
     PFNGLVERTEXATTRIBPOINTERPROC     VertexAttribPointer;
     PFNGLENABLEVERTEXATTRIBARRAYPROC EnableVertexAttribArray;
+    PFNGLDISABLEVERTEXATTRIBARRAYPROC DisableVertexAttribArray;
     PFNGLUNIFORMMATRIX4FVPROC        UniformMatrix4fv;
     PFNGLUNIFORMMATRIX3FVPROC        UniformMatrix3fv;
     PFNGLUNIFORMMATRIX2FVPROC        UniformMatrix2fv;
