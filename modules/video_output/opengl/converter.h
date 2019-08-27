@@ -201,8 +201,6 @@ typedef struct {
     PFNGLGETUNIFORMLOCATIONPROC      GetUniformLocation;
     PFNGLGETATTRIBLOCATIONPROC       GetAttribLocation;
     PFNGLVERTEXATTRIBPOINTERPROC     VertexAttribPointer;
-    PFNGLENABLEVERTEXATTRIBARRAYPROC EnableVertexAttribArray;
-    PFNGLDISABLEVERTEXATTRIBARRAYPROC DisableVertexAttribArray;
     PFNGLUNIFORMMATRIX4FVPROC        UniformMatrix4fv;
     PFNGLUNIFORMMATRIX3FVPROC        UniformMatrix3fv;
     PFNGLUNIFORMMATRIX2FVPROC        UniformMatrix2fv;
@@ -212,6 +210,10 @@ typedef struct {
     PFNGLUNIFORM2FPROC               Uniform2f;
     PFNGLUNIFORM1FPROC               Uniform1f;
     PFNGLUNIFORM1IPROC               Uniform1i;
+
+    /* Attribute array commands */
+    PFNGLENABLEVERTEXATTRIBARRAYPROC  EnableVertexAttribArray;
+    PFNGLDISABLEVERTEXATTRIBARRAYPROC DisableVertexAttribArray;
 
     /* Program commands */
     PFNGLCREATEPROGRAMPROC CreateProgram;
