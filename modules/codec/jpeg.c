@@ -635,7 +635,7 @@ static int OpenEncoder(vlc_object_t *p_this)
     p_sys->i_blocksize = 3 * p_enc->fmt_in.video.i_visible_width * p_enc->fmt_in.video.i_visible_height;
 
     p_enc->fmt_in.i_codec = VLC_CODEC_I420;
-    p_enc->fmt_in.color_range = COLOR_RANGE_FULL;
+    p_enc->fmt_in.video.color_range = COLOR_RANGE_FULL;
     p_enc->pf_encode_video = EncodeBlock;
 
     return VLC_SUCCESS;
