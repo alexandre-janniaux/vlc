@@ -61,13 +61,13 @@ static const struct
 } chroma_table[] =
 {
     /* Planar YUV formats */
-    {VLC_CODEC_I444, AV_PIX_FMT_YUV444P, 0, 0, 0 },
+    {VLC_CODEC_I444, AV_PIX_FMT_YUV444P,  0, 0, 0 },
     {VLC_CODEC_J444, AV_PIX_FMT_YUVJ444P, 0, 0, 0 },
 
-    {VLC_CODEC_I440, AV_PIX_FMT_YUV440P, 0, 0, 0 },
+    {VLC_CODEC_I440, AV_PIX_FMT_YUV440P,  0, 0, 0 },
     {VLC_CODEC_J440, AV_PIX_FMT_YUVJ440P, 0, 0, 0 },
 
-    {VLC_CODEC_I422, AV_PIX_FMT_YUV422P, 0, 0, 0 },
+    {VLC_CODEC_I422, AV_PIX_FMT_YUV422P,  0, 0, 0 },
     {VLC_CODEC_J422, AV_PIX_FMT_YUVJ422P, 0, 0, 0 },
 
     {VLC_CODEC_I420, AV_PIX_FMT_YUV420P, 0, 0, 0 },
@@ -124,7 +124,6 @@ static const struct
 
     /* Packed YUV formats */
     {VLC_CODEC_YUYV, AV_PIX_FMT_YUYV422, 0, 0, 0 },
-    {VLC_FOURCC('Y','U','Y','V'), AV_PIX_FMT_YUYV422, 0, 0, 0 },
     {VLC_CODEC_UYVY, AV_PIX_FMT_UYVY422, 0, 0, 0 },
     {VLC_CODEC_YVYU, AV_PIX_FMT_YVYU422, 0, 0, 0 },
     {VLC_FOURCC('Y','4','1','1'), AV_PIX_FMT_UYYVYY411, 0, 0, 0 },
