@@ -126,7 +126,7 @@ static const struct
     {VLC_CODEC_YUYV, AV_PIX_FMT_YUYV422, 0, 0, 0 },
     {VLC_CODEC_UYVY, AV_PIX_FMT_UYVY422, 0, 0, 0 },
     {VLC_CODEC_YVYU, AV_PIX_FMT_YVYU422, 0, 0, 0 },
-    {VLC_FOURCC('Y','4','1','1'), AV_PIX_FMT_UYYVYY411, 0, 0, 0 },
+    {VLC_CODEC_UYV1, AV_PIX_FMT_UYYVYY411, 0, 0, 0 },
 
     /* Packed RGB formats */
     VLC_RGB( VLC_FOURCC('R','G','B','4'), AV_PIX_FMT_RGB4, AV_PIX_FMT_BGR4, 0x10, 0x06, 0x01 )
