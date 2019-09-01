@@ -98,13 +98,13 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
 
     if (fabs(*pitch) + 0.01f > (float)M_PI_2)
     {
-        *roll = atan2( V_11, -V_21 );
-        *yaw  = atan2( V_11, -V_13 );
+        *roll = atan2( V_11, V_21 );
+        *yaw  = atan2( V_11, V_13 );
     }
     else
     {
-        *roll = atan2( V_12, V_22 );
-        *yaw  = atan2( V_31, V_33 );
+        *roll = atan2( V_12, -V_22 );
+        *yaw  = atan2( V_31, -V_33 );
     }
 
     //float s1 = 2.f * (q[0] * q[1] + q[2] * q[3]);
