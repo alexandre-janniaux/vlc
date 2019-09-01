@@ -225,7 +225,9 @@ const QEvent::Type DialogEvent::DialogEvent_Type =
 
 void DialogsProvider::prefsDialog()
 {
+    MainInterface *main_interface = p_intf->p_sys->p_mi
     PrefsDialog *p = new PrefsDialog( (QWidget *)p_intf->p_sys->p_mi, p_intf );
+    p->restorePosition(main_interface);
     p->toggleVisible();
 }
 

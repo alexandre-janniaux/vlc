@@ -1,5 +1,5 @@
 /*****************************************************************************
- * qvlcframe.hpp : A few helpers
+ * qvlcframe.cpp : A few helpers
  *****************************************************************************
  * Copyright (C) 2006-2007 the VideoLAN team
  *
@@ -20,9 +20,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
-#ifndef VLC_QT_QVLCFRAME_HPP_
-#define VLC_QT_QVLCFRAME_HPP_
-
 #include <QWidget>
 #include <QDialog>
 #include <QHBoxLayout>
@@ -35,67 +32,54 @@
 
 #include "qt.hpp"
 
-class QVLCTools
+void QVLCTools::saveWidgetPosition( QSettings *settings, QWidget *widget)
 {
-   public:
-       /*
-        use this function to save a widgets screen position
-        only for windows / dialogs which are floating, if a
-        window is docked into another - don't all this function
-        or it may write garbage to position info!
-       */
-       static void saveWidgetPosition( QSettings *settings, QWidget *widget)
-       {
-         settings->setValue("geometry", widget->saveGeometry());
-       }
-       static void saveWidgetPosition( intf_thread_t *p_intf,
+    settings->setValue("geometry", widget->saveGeometry());
+}
+
+void QVLCTools::saveWidgetPosition( intf_thread_t *p_intf,
+                                    const QString& configName,
+                                    QWidget *widget )
+{
+    getSettings()->beginGroup( configName );
+    QVLCTools::saveWidgetPosition(getSettings(), widget);
+    getSettings()->endGroup();
+}
+
+
+bool QVLCTools::restoreWidgetPosition(QSettings *settings,
+                                      QWidget *widget,
+                                      QSize defSize = QSize( 0, 0 ),
+                                      QPoint defPos = QPoint( 0, 0 ))
+{
+    if(!widget->restoreGeometry(settings->value("geometry")
+                .toByteArray()))
+    {
+        widget->move(defPos);
+        widget->resize(defSize);
+
+        if(defPos.x() == 0 && defPos.y()==0)
+            widget->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, widget->size(), qApp->desktop()->availableGeometry()));
+        return true;
+    }
+    return false;
+}
+
+bool QVLCTools::restoreWidgetPosition( intf_thread_t *p_intf,
                                        const QString& configName,
-                                       QWidget *widget)
-       {
-         getSettings()->beginGroup( configName );
-         QVLCTools::saveWidgetPosition(getSettings(), widget);
-         getSettings()->endGroup();
-       }
+                                       QWidget *widget,
+                                       QSize defSize = QSize( 0, 0 ),
+                                       QPoint defPos = QPoint( 0, 0 ) )
+{
+    getSettings()->beginGroup( configName );
+    bool defaultUsed = QVLCTools::restoreWidgetPosition( getSettings(),
+            widget,
+            defSize,
+            defPos);
+    getSettings()->endGroup();
 
-
-       /*
-         use this method only for restoring window state of non docked
-         windows!
-       */
-       static bool restoreWidgetPosition(QSettings *settings,
-                                           QWidget *widget,
-                                           QSize defSize = QSize( 0, 0 ),
-                                           QPoint defPos = QPoint( 0, 0 ))
-       {
-          if(!widget->restoreGeometry(settings->value("geometry")
-                                      .toByteArray()))
-          {
-            widget->move(defPos);
-            widget->resize(defSize);
-
-            if(defPos.x() == 0 && defPos.y()==0)
-               widget->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, widget->size(), qApp->desktop()->availableGeometry()));
-            return true;
-          }
-          return false;
-       }
-
-       static bool restoreWidgetPosition( intf_thread_t *p_intf,
-                                           const QString& configName,
-                                           QWidget *widget,
-                                           QSize defSize = QSize( 0, 0 ),
-                                           QPoint defPos = QPoint( 0, 0 ) )
-       {
-         getSettings()->beginGroup( configName );
-         bool defaultUsed = QVLCTools::restoreWidgetPosition( getSettings(),
-                                                                   widget,
-                                                                   defSize,
-                                                                   defPos);
-         getSettings()->endGroup();
-
-         return defaultUsed;
-       }
-};
+    return defaultUsed;
+}
 
 class QVLCFrame : public QWidget
 {
@@ -112,38 +96,39 @@ public:
 protected:
     intf_thread_t *p_intf;
 
-    void restoreWidgetPosition( const QString& name,
-                       QSize defSize = QSize( 1, 1 ),
-                       QPoint defPos = QPoint( 0, 0 ) )
-    {
-        QVLCTools::restoreWidgetPosition(p_intf, name, this, defSize, defPos);
-    }
+void QVLCFrame::restoreWidgetPosition( const QString& name,
+                                       QSize defSize = QSize( 1, 1 ),
+                                       QPoint defPos = QPoint( 0, 0 ) )
+{
+    QVLCTools::restoreWidgetPosition(p_intf, name, this, defSize, defPos);
+}
 
-    void saveWidgetPosition( const QString& name )
-    {
-        QVLCTools::saveWidgetPosition( p_intf, name, this);
-    }
+void QVLCFrame::saveWidgetPosition( const QString& name )
+{
+    QVLCTools::saveWidgetPosition( p_intf, name, this);
+}
 
-    virtual void cancel()
+virtual void cancel()
+{
+    hide();
+}
+virtual void close()
+{
+    hide();
+}
+
+void QVLCFrame::keyPressEvent( QKeyEvent *keyEvent )
+{
+    if( keyEvent->key() == Qt::Key_Escape )
     {
-        hide();
+        this->cancel();
     }
-    virtual void close()
+    else if( keyEvent->key() == Qt::Key_Return
+            || keyEvent->key() == Qt::Key_Enter )
     {
-        hide();
+        this->close();
     }
-    void keyPressEvent( QKeyEvent *keyEvent ) Q_DECL_OVERRIDE
-    {
-        if( keyEvent->key() == Qt::Key_Escape )
-        {
-            this->cancel();
-        }
-        else if( keyEvent->key() == Qt::Key_Return
-              || keyEvent->key() == Qt::Key_Enter )
-        {
-             this->close();
-        }
-    }
+}
 };
 
 class QVLCDialog : public QDialog
@@ -236,4 +221,3 @@ protected:
     }
 };
 
-#endif
