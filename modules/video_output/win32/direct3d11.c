@@ -1383,9 +1383,7 @@ static int Direct3D11MapSubpicture(vout_display_t *vd, int *subpicture_region_co
             }
         }
 
-        struct vlc_subpicture_place place;
-        vlc_subpicture_region_Place(&place, r);
-
+        RECT output;
 
         output.left   = r->fmt.i_x_offset;
         output.right  = r->fmt.i_x_offset + r->fmt.i_visible_width;
@@ -1488,10 +1486,10 @@ static int Direct3D11MapSubpicture(vout_display_t *vd, int *subpicture_region_co
         d3d_quad_t *quad = (d3d_quad_t *) quad_picture->p_sys;
 
         RECT spuViewport;
-        spuViewport.left   = (FLOAT) r->i_x * sys->area.place.width  / r->screen.width;
-        spuViewport.top    = (FLOAT) r->i_y * sys->area.place.height / r->screen.height;
-        spuViewport.right  = (FLOAT) (r->i_x + r->fmt.i_visible_width)  * sys->area.place.width  / r->screen.width;
-        spuViewport.bottom = (FLOAT) (r->i_y + r->fmt.i_visible_height) * sys->area.place.height / r->screen.height
+        spuViewport.left   = (FLOAT) r->i_x * sys->area.place.width  / r->screen.i_width;
+        spuViewport.top    = (FLOAT) r->i_y * sys->area.place.height / r->screen.i_height;
+        spuViewport.right  = (FLOAT) (r->i_x + r->fmt.i_visible_width)  * sys->area.place.width  / r->screen.i_width;
+        spuViewport.bottom = (FLOAT) (r->i_y + r->fmt.i_visible_height) * sys->area.place.height / r->screen.i_height;
 
         /* move the SPU inside the video area */
         spuViewport.left   += sys->area.place.x;
@@ -1505,4 +1503,3 @@ static int Direct3D11MapSubpicture(vout_display_t *vd, int *subpicture_region_co
     }
     return VLC_SUCCESS;
 }
-

@@ -1107,24 +1107,6 @@ static void SpuRenderRegion(spu_t *spu,
             dst->fmt.i_sar_den = region->fmt.i_sar_den;
         }
     }
-
-exit:
-    if (restore_text) {
-        /* Some forms of subtitles need to be re-rendered more than
-         * once, eg. karaoke. We therefore restore the region to its
-         * pre-rendered state, so the next time through everything is
-         * calculated again.
-         */
-        if (region->p_picture) {
-            picture_Release(region->p_picture);
-            region->p_picture = NULL;
-        }
-        if (region->p_private) {
-            subpicture_region_private_Delete(region->p_private);
-            region->p_private = NULL;
-        }
-        region->fmt = fmt_original;
-    }
 }
 
 /**
