@@ -212,12 +212,22 @@ static int ActivateConverter( vlc_object_t *p_this )
 {
     filter_t *p_filter = (filter_t *)p_this;
 
-    const bool b_chroma = p_filter->fmt_in.video.i_chroma != p_filter->fmt_out.video.i_chroma;
-    const bool b_resize = p_filter->fmt_in.video.i_width  != p_filter->fmt_out.video.i_width ||
-                          p_filter->fmt_in.video.i_height != p_filter->fmt_out.video.i_height;
+    video_format_t vfmtout = p_filter->fmt_out.video;
+    const bool b_chroma = p_filter->fmt_in.video.i_chroma != vfmtout.i_chroma;
+    const bool b_transform = p_filter->fmt_in.video.orientation != vfmtout.orientation;
+    if( b_transform )
+    {
+        /* Get the transformation operation that will be done by converter */
+        video_orientation_t t = video_format_GetTransform( p_filter->fmt_in.video.orientation,
+                                                           vfmtout.orientation );
+        /* Reverse that transformation on the final video size, so we can check if scaling
+           will be required */
+        video_format_TransformTo( &vfmtout, transform_Inverse(t) );
+    }
+    const bool b_resize = p_filter->fmt_in.video.i_width  != vfmtout.i_width ||
+                          p_filter->fmt_in.video.i_height != vfmtout.i_height;
 
     const bool b_chroma_resize = b_chroma && b_resize;
-    const bool b_transform = p_filter->fmt_in.video.orientation != p_filter->fmt_out.video.orientation;
 
     if( !b_chroma && !b_chroma_resize && !b_transform)
         return VLC_EGENERIC;
