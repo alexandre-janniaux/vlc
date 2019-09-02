@@ -1383,7 +1383,10 @@ static int Direct3D11MapSubpicture(vout_display_t *vd, int *subpicture_region_co
             }
         }
 
-        RECT output;
+        struct vlc_subpicture_place place;
+        vlc_subpicture_region_Place(&place, r);
+
+
         output.left   = r->fmt.i_x_offset;
         output.right  = r->fmt.i_x_offset + r->fmt.i_visible_width;
         output.top    = r->fmt.i_y_offset;
@@ -1485,21 +1488,10 @@ static int Direct3D11MapSubpicture(vout_display_t *vd, int *subpicture_region_co
         d3d_quad_t *quad = (d3d_quad_t *) quad_picture->p_sys;
 
         RECT spuViewport;
-        spuViewport.left   = (FLOAT) r->i_x * sys->area.place.width  / subpicture->i_original_picture_width;
-        spuViewport.top    = (FLOAT) r->i_y * sys->area.place.height / subpicture->i_original_picture_height;
-        spuViewport.right  = (FLOAT) (r->i_x + r->fmt.i_visible_width)  * sys->area.place.width  / subpicture->i_original_picture_width;
-        spuViewport.bottom = (FLOAT) (r->i_y + r->fmt.i_visible_height) * sys->area.place.height / subpicture->i_original_picture_height;
-
-        if (r->zoom_h.num != 0 && r->zoom_h.den != 0)
-        {
-            spuViewport.left   = (FLOAT) spuViewport.left   * r->zoom_h.num / r->zoom_h.den;
-            spuViewport.right  = (FLOAT) spuViewport.right  * r->zoom_h.num / r->zoom_h.den;
-        }
-        if (r->zoom_v.num != 0 && r->zoom_v.den != 0)
-        {
-            spuViewport.top    = (FLOAT) spuViewport.top    * r->zoom_v.num / r->zoom_v.den;
-            spuViewport.bottom = (FLOAT) spuViewport.bottom * r->zoom_v.num / r->zoom_v.den;
-        }
+        spuViewport.left   = (FLOAT) r->i_x * sys->area.place.width  / r->screen.width;
+        spuViewport.top    = (FLOAT) r->i_y * sys->area.place.height / r->screen.height;
+        spuViewport.right  = (FLOAT) (r->i_x + r->fmt.i_visible_width)  * sys->area.place.width  / r->screen.width;
+        spuViewport.bottom = (FLOAT) (r->i_y + r->fmt.i_visible_height) * sys->area.place.height / r->screen.height
 
         /* move the SPU inside the video area */
         spuViewport.left   += sys->area.place.x;
