@@ -310,7 +310,7 @@ tc_va_check_interop_blacklist(opengl_tex_converter_t *tc, VADisplay *vadpy)
     };
 
     char vendor_prefix[BL_SIZE_MAX];
-    strncpy(vendor_prefix, vendor, BL_SIZE_MAX);
+    strncpy(vendor_prefix, vendor, BL_SIZE_MAX-1);
     vendor_prefix[BL_SIZE_MAX - 1] = '\0';
 
     const char *found = bsearch(vendor_prefix, blacklist_prefix,
