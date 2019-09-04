@@ -40,9 +40,8 @@
     QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::NormalizePathSegments ))
 
 ConvertDialog::ConvertDialog( QWidget *parent, intf_thread_t *_p_intf,
-                              const QStringList& inputMRLs,
-                              qfu("Convert"), QSize( 0, 0 ) ) // TODO: invalid size
-              : QVLCDialog( parent, _p_intf ),
+                              const QStringList& inputMRLs )
+              : QVLCDialog( parent, _p_intf, qfu("Convert"), QSize( 0, 0 ) ) // TODO: invalid size
                 singleFileSelected( inputMRLs.length() == 1 )
 {
     setWindowTitle( qtr( "Convert" ) );
