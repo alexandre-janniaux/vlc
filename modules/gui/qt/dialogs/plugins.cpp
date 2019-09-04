@@ -94,7 +94,7 @@ PluginDialog::PluginDialog( intf_thread_t *_p_intf ) : QVLCFrame( _p_intf )
     box->addButton( okButton, QDialogButtonBox::RejectRole );
     layout->addWidget( box );
     BUTTONACT( okButton, close() );
-    restoreWidgetPosition( "PluginsDialog", QSize( 435, 280 ), NULL);
+    restoreWidgetPosition( "PluginsDialog", QSize( 435, 280 ));
 }
 
 PluginDialog::~PluginDialog()
@@ -1439,7 +1439,7 @@ ExtensionInfoDialog::ExtensionInfoDialog( const QModelIndex &index,
 
 AddonInfoDialog::AddonInfoDialog( const QModelIndex &index,
                                   intf_thread_t *p_intf, QWidget *parent )
-       : QVLCDialog( parent, p_intf )
+       : QVLCDialog( parent, p_intf, qfu("addoninfodialog"), QSize(640, 480) )
 {
     // Let's be a modal dialog
     setWindowModality( Qt::WindowModal );

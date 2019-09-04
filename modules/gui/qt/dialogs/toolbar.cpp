@@ -57,7 +57,7 @@
 #include <assert.h>
 
 ToolbarEditDialog::ToolbarEditDialog( QWidget *_w, intf_thread_t *_p_intf)
-                  : QVLCDialog( _w,  _p_intf )
+                  : QVLCDialog( _w,  _p_intf, qfu("toolbareditor"), QSize(0,0) )
 {
     setWindowTitle( qtr( "Toolbars Editor" ) );
     setWindowRole( "vlc-toolbars-editor" );
