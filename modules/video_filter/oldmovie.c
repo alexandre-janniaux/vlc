@@ -43,11 +43,11 @@ static inline int64_t MOD(int64_t a, int64_t b) {
     return ( ( a % b ) + b ) % b; }
 
 #define SUB_MIN(val, sub_val, min) val = \
-        ((val-(int32_t)sub_val)<min?min:val-sub_val)
+        ((val-(long)sub_val)<min?min:val-sub_val)
 #define ADD_MAX(val, add_val, max) val = \
-        ((val+(int32_t)add_val)>max?max:val+add_val)
+        ((val+(long)add_val)>max?max:val+add_val)
 
-static inline int32_t PIX_OFS(int32_t i_x, int32_t i_y, plane_t *ps_plane) {
+static inline long PIX_OFS(long i_x, long i_y, plane_t *ps_plane) {
     return i_x * ps_plane->i_pixel_pitch + i_y * ps_plane->i_pitch; }
 
 #define CHECK_PIX_OFS(i_x, i_y, ps_plane) ( \
@@ -56,25 +56,25 @@ static inline int32_t PIX_OFS(int32_t i_x, int32_t i_y, plane_t *ps_plane) {
         (i_y) < ps_plane->i_visible_lines \
     )
 
-static inline void DARKEN_PIXEL(int32_t i_x, int32_t i_y,
+static inline void DARKEN_PIXEL(long i_x, long i_y,
     int16_t intensity, plane_t *ps_plane) {
     SUB_MIN( ps_plane->p_pixels[ PIX_OFS(i_x, i_y, ps_plane) ],
         intensity, 0 );
 }
 
-static inline void LIGHTEN_PIXEL(int32_t i_x, int32_t i_y,
+static inline void LIGHTEN_PIXEL(long i_x, long i_y,
                                 int16_t intensity, plane_t *ps_plane) {
     ADD_MAX( ps_plane->p_pixels[ PIX_OFS(i_x, i_y, ps_plane) ],
         intensity, 0xFF );
 }
 
-static inline void CHECK_N_DARKEN_PIXEL(int32_t i_x, int32_t i_y,
+static inline void CHECK_N_DARKEN_PIXEL(long i_x, long i_y,
                                 int16_t intensity, plane_t *ps_plane) {
     if ( likely( CHECK_PIX_OFS(i_x, i_y, ps_plane) ) )
         DARKEN_PIXEL(i_x, i_y, intensity, ps_plane);
 }
 
-static inline void CHECK_N_LIGHTEN_PIXEL(int32_t i_x, int32_t i_y,
+static inline void CHECK_N_LIGHTEN_PIXEL(long i_x, long i_y,
                                 int16_t intensity, plane_t *ps_plane) {
     if ( likely( CHECK_PIX_OFS(i_x, i_y, ps_plane) ) )
         LIGHTEN_PIXEL(i_x, i_y, intensity, ps_plane);
@@ -85,25 +85,25 @@ static inline void CHECK_N_LIGHTEN_PIXEL(int32_t i_x, int32_t i_y,
 #define MAX_DUST           10
 
 typedef struct {
-    int32_t  i_offset;
-    int32_t  i_width;
+    long  i_offset;
+    long  i_width;
     uint16_t i_intensity;
     vlc_tick_t  i_stop_trigger;
 } scratch_t;
 
 typedef struct {
-    int32_t  i_x, i_y;
+    long  i_x, i_y;
     uint8_t  i_rotation;
-    int32_t  i_width;
-    int32_t  i_length;
-    int32_t  i_curve;
+    long  i_width;
+    long  i_length;
+    long  i_curve;
     uint16_t i_intensity;
     vlc_tick_t  i_stop_trigger;
 } hair_t;
 
 typedef struct {
-    int32_t  i_x, i_y;
-    int32_t  i_width;
+    long  i_x, i_y;
+    long  i_width;
     uint16_t i_intensity;
     vlc_tick_t  i_stop_trigger;
 } dust_t;
@@ -125,9 +125,9 @@ typedef struct
     vlc_tick_t  i_offset_trigger;
     vlc_tick_t  i_sliding_trigger;
     vlc_tick_t  i_sliding_stop_trig;
-    int32_t  i_offset_ofs;
-    int32_t  i_sliding_ofs;
-    int32_t  i_sliding_speed;
+    long  i_offset_ofs;
+    long  i_sliding_ofs;
+    long  i_sliding_speed;
 
     /* scratch on film */
     vlc_tick_t i_scratch_trigger;
@@ -335,13 +335,13 @@ static int oldmovie_allocate_data( filter_t *p_filter, picture_t *p_pic_in ) {
 static void oldmovie_free_allocated_data( filter_t *p_filter ) {
     filter_sys_t *p_sys = p_filter->p_sys;
 
-    for ( uint32_t i_s = 0; i_s < MAX_SCRATCH; i_s++ )
+    for ( unsigned long i_s = 0; i_s < MAX_SCRATCH; i_s++ )
         FREENULL(p_sys->p_scratch[i_s]);
 
-    for ( uint32_t i_h = 0; i_h < MAX_HAIR; i_h++ )
+    for ( unsigned long i_h = 0; i_h < MAX_HAIR; i_h++ )
         FREENULL(p_sys->p_hair[i_h]);
 
-    for ( uint32_t i_d = 0; i_d < MAX_DUST; i_d++ )
+    for ( unsigned long i_d = 0; i_d < MAX_DUST; i_d++ )
         FREENULL(p_sys->p_dust[i_d]);
 
     p_sys->i_planes = 0;
@@ -367,25 +367,25 @@ static void oldmovie_shutter_effect( filter_t *p_filter, picture_t *p_pic_out ) 
    /*
     * depending on current time: define shutter location on picture
     */
-    int32_t i_shutter_sup = VLC_CLIP((int64_t)SUB_FRAME
-                                      * p_pic_out->p[Y_PLANE].i_visible_lines
-                                      * SHUTTER_SPEED / CLOCK_FREQ,
-                                      0, p_pic_out->p[Y_PLANE].i_visible_lines);
+    long i_shutter_sup = VLC_CLIP((int64_t)SUB_FRAME
+                                  * p_pic_out->p[Y_PLANE].i_visible_lines
+                                  * SHUTTER_SPEED / CLOCK_FREQ,
+                                  0, p_pic_out->p[Y_PLANE].i_visible_lines);
 
-    int32_t i_shutter_inf = VLC_CLIP((int64_t)SUB_FRAME
-                                      * p_pic_out->p[Y_PLANE].i_visible_lines
-                                      * SHUTTER_SPEED / CLOCK_FREQ
-                                      - SHUTTER_HEIGHT * p_pic_out->p[Y_PLANE].i_visible_lines,
-                                      0, p_pic_out->p[Y_PLANE].i_visible_lines);
+    long i_shutter_inf = VLC_CLIP((int64_t)SUB_FRAME
+                                  * p_pic_out->p[Y_PLANE].i_visible_lines
+                                  * SHUTTER_SPEED / CLOCK_FREQ
+                                  - SHUTTER_HEIGHT * p_pic_out->p[Y_PLANE].i_visible_lines,
+                                  0, p_pic_out->p[Y_PLANE].i_visible_lines);
 
-    int32_t i_width = p_pic_out->p[Y_PLANE].i_visible_pitch
-                    / p_pic_out->p[Y_PLANE].i_pixel_pitch;
+    long i_width = p_pic_out->p[Y_PLANE].i_visible_pitch
+                 / p_pic_out->p[Y_PLANE].i_pixel_pitch;
 
    /*
     * darken pixels currently occulted by shutter
     */
-    for ( int32_t i_y = i_shutter_inf; i_y < i_shutter_sup; i_y++ )
-        for ( int32_t i_x = 0; i_x < i_width; i_x++ )
+    for ( long i_y = i_shutter_inf; i_y < i_shutter_sup; i_y++ )
+        for ( long i_x = 0; i_x < i_width; i_x++ )
             DARKEN_PIXEL( i_x, i_y, SHUTTER_INTENSITY, &p_pic_out->p[Y_PLANE] );
 }
 
@@ -445,21 +445,21 @@ static int oldmovie_sliding_offset_effect( filter_t *p_filter, picture_t *p_pic_
         p_sys->i_sliding_stop_trig = RandomEnd(p_sys, SLIDING_AVERAGE_DURATION);
         p_sys->i_sliding_ofs = 0;
         /* note: sliding speed unit = image per 100 s */
-        p_sys->i_sliding_speed = MOD(((int32_t) vlc_mrand48() ), 201) - 100;
+        p_sys->i_sliding_speed = MOD(vlc_mrand48(), 201) - 100;
     }
     /* stop trigger disabling sliding effect */
     else if (   ( p_sys->i_sliding_stop_trig  <= p_sys->i_cur_time )
              && ( p_sys->i_sliding_trigger    == 0 ) ) {
 
         /* first increase speed to ensure we will come back to stable image */
-        if ( abs(p_sys->i_sliding_speed) < 50 )
+        if ( labs(p_sys->i_sliding_speed) < 50 )
             p_sys->i_sliding_speed += 5;
 
         /* check if offset is close to 0 and then ready to stop */
-        if ( abs( p_sys->i_sliding_ofs ) < abs( p_sys->i_sliding_speed
+        if ( labs( p_sys->i_sliding_ofs ) < labs( p_sys->i_sliding_speed
              * p_sys->i_height[Y_PLANE]
              * SEC_FROM_VLC_TICK( p_sys->i_cur_time - p_sys->i_last_time ) )
-             ||  abs( p_sys->i_sliding_ofs ) < p_sys->i_height[Y_PLANE] * 100 / 20 ) {
+             ||  labs( p_sys->i_sliding_ofs ) < p_sys->i_height[Y_PLANE] * 100 / 20 ) {
 
             /* reset sliding parameters */
             p_sys->i_sliding_ofs     = p_sys->i_sliding_speed = 0;
@@ -495,8 +495,8 @@ static int oldmovie_sliding_offset_apply( filter_t *p_filter, picture_t *p_pic_o
                 p_pic_out->p[i_p].i_lines * p_pic_out->p[i_p].i_pitch );
 
         /* copy lines to output_pic */
-        for ( int32_t i_y = 0; i_y < p_pic_out->p[i_p].i_visible_lines; i_y++ ) {
-            int32_t i_ofs = MOD( ( p_sys->i_offset_ofs + p_sys->i_sliding_ofs )
+        for ( long i_y = 0; i_y < p_pic_out->p[i_p].i_visible_lines; i_y++ ) {
+            long i_ofs = MOD( ( p_sys->i_offset_ofs + p_sys->i_sliding_ofs )
                                  /100,
                                  p_sys->i_height[Y_PLANE] );
             i_ofs *= p_pic_out->p[i_p].i_visible_lines;
@@ -517,11 +517,11 @@ static int oldmovie_sliding_offset_apply( filter_t *p_filter, picture_t *p_pic_o
  */
 static void oldmovie_black_n_white_effect( picture_t *p_pic_out )
 {
-    for ( int32_t i_y = 0; i_y < p_pic_out->p[Y_PLANE].i_visible_lines; i_y++ )
-        for ( int32_t i_x = 0; i_x < p_pic_out->p[Y_PLANE].i_visible_pitch;
+    for ( long i_y = 0; i_y < p_pic_out->p[Y_PLANE].i_visible_lines; i_y++ )
+        for ( long i_x = 0; i_x < p_pic_out->p[Y_PLANE].i_visible_pitch;
               i_x += p_pic_out->p[Y_PLANE].i_pixel_pitch ) {
 
-            uint32_t i_pix_ofs = i_x+i_y*p_pic_out->p[Y_PLANE].i_pitch;
+            unsigned long i_pix_ofs = i_x+i_y*p_pic_out->p[Y_PLANE].i_pitch;
             p_pic_out->p[Y_PLANE].p_pixels[i_pix_ofs] -= p_pic_out->p[Y_PLANE].p_pixels[i_pix_ofs] >> 2;
             p_pic_out->p[Y_PLANE].p_pixels[i_pix_ofs] += 30;
         }
@@ -541,13 +541,13 @@ static int oldmovie_dark_border_effect( filter_t *p_filter, picture_t *p_pic_out
 
 #define BORDER_DIST 20
 
-    for ( int32_t i_y = 0; i_y < p_sys->i_height[Y_PLANE]; i_y++ )
-        for ( int32_t i_x = 0; i_x < p_sys->i_width[Y_PLANE]; i_x++ ) {
+    for ( long i_y = 0; i_y < p_sys->i_height[Y_PLANE]; i_y++ )
+        for ( long i_x = 0; i_x < p_sys->i_width[Y_PLANE]; i_x++ ) {
 
-            int32_t i_x_border_dist = __MIN( i_x, p_sys->i_width[Y_PLANE] - i_x);
-            int32_t i_y_border_dist = __MIN( i_y, p_sys->i_height[Y_PLANE] - i_y);
+            long i_x_border_dist = __MIN( i_x, p_sys->i_width[Y_PLANE] - i_x);
+            long i_y_border_dist = __MIN( i_y, p_sys->i_height[Y_PLANE] - i_y);
 
-            int32_t i_border_dist = __MAX(BORDER_DIST - i_x_border_dist,0)
+            long i_border_dist = __MAX(BORDER_DIST - i_x_border_dist,0)
                                   + __MAX(BORDER_DIST - i_y_border_dist,0);
 
             i_border_dist = __MIN(BORDER_DIST, i_border_dist);
@@ -555,8 +555,8 @@ static int oldmovie_dark_border_effect( filter_t *p_filter, picture_t *p_pic_out
             if ( i_border_dist == 0 )
                 continue;
 
-            uint32_t i_pix_ofs = i_x * p_pic_out->p[Y_PLANE].i_pixel_pitch
-                               + i_y * p_pic_out->p[Y_PLANE].i_pitch;
+            unsigned long i_pix_ofs = i_x * p_pic_out->p[Y_PLANE].i_pixel_pitch
+                                    + i_y * p_pic_out->p[Y_PLANE].i_pitch;
 
             SUB_MIN( p_pic_out->p[Y_PLANE].p_pixels[i_pix_ofs],
                      i_border_dist * 255 / BORDER_DIST, 0 );
@@ -577,7 +577,7 @@ static int oldmovie_film_scratch_effect( filter_t *p_filter, picture_t *p_pic_ou
 
     /* generate new scratch */
     if ( p_sys->i_scratch_trigger <= p_sys->i_cur_time ) {
-        for ( uint32_t i_s = 0; i_s < MAX_SCRATCH; i_s++ )
+        for ( unsigned long i_s = 0; i_s < MAX_SCRATCH; i_s++ )
             if ( p_sys->p_scratch[i_s] == NULL ) {
                 /* allocate data */
                 p_sys->p_scratch[i_s] = calloc( 1, sizeof(scratch_t) );
@@ -600,7 +600,7 @@ static int oldmovie_film_scratch_effect( filter_t *p_filter, picture_t *p_pic_ou
     }
 
     /* manage and apply current scratch */
-    for ( uint32_t i_s = 0; i_s < MAX_SCRATCH; i_s++ )
+    for ( unsigned long i_s = 0; i_s < MAX_SCRATCH; i_s++ )
         if ( p_sys->p_scratch[i_s] ) {
             /* remove outdated scratch */
             if ( p_sys->p_scratch[i_s]->i_stop_trigger <= p_sys->i_cur_time ) {
@@ -609,8 +609,8 @@ static int oldmovie_film_scratch_effect( filter_t *p_filter, picture_t *p_pic_ou
             }
 
             /* otherwise apply scratch */
-            for ( int32_t i_y = 0; i_y < p_pic_out->p[Y_PLANE].i_visible_lines; i_y++ )
-                for ( int32_t i_x = p_sys->p_scratch[i_s]->i_offset;
+            for ( long i_y = 0; i_y < p_pic_out->p[Y_PLANE].i_visible_lines; i_y++ )
+                for ( long i_x = p_sys->p_scratch[i_s]->i_offset;
                       i_x < __MIN(p_sys->p_scratch[i_s]->i_offset
                       + p_sys->p_scratch[i_s]->i_width, p_sys->i_width[Y_PLANE] );
                       i_x++ )
@@ -634,22 +634,22 @@ static void oldmovie_film_blotch_effect( filter_t *p_filter, picture_t *p_pic_ou
     /* generate blotch */
     if ( p_sys->i_blotch_trigger <= p_sys->i_cur_time ) {
         /* set random parameters */
-        int32_t i_bx =        (unsigned)vlc_mrand48() % p_sys->i_width[Y_PLANE];
-        int32_t i_by =        (unsigned)vlc_mrand48() % p_sys->i_height[Y_PLANE];
-        int32_t i_width =     (unsigned)vlc_mrand48() % __MAX( 1, p_sys->i_width[Y_PLANE] / 10 ) + 1;
-        int32_t i_intensity = (unsigned)vlc_mrand48() % 50 + 20;
+        long i_bx =        (unsigned)vlc_mrand48() % p_sys->i_width[Y_PLANE];
+        long i_by =        (unsigned)vlc_mrand48() % p_sys->i_height[Y_PLANE];
+        long i_width =     (unsigned)vlc_mrand48() % __MAX( 1, p_sys->i_width[Y_PLANE] / 10 ) + 1;
+        long i_intensity = (unsigned)vlc_mrand48() % 50 + 20;
 
         if ( (unsigned)vlc_mrand48() & 0x01 ) {
             /* draw dark blotch */
-            for ( int32_t i_y = -i_width + 1; i_y < i_width; i_y++ )
-                for ( int32_t i_x = -i_width + 1; i_x < i_width; i_x++ )
+            for ( long i_y = -i_width + 1; i_y < i_width; i_y++ )
+                for ( long i_x = -i_width + 1; i_x < i_width; i_x++ )
                     if ( i_x * i_x + i_y * i_y <= i_width * i_width )
                         CHECK_N_DARKEN_PIXEL( i_x + i_bx, i_y + i_by,
                                               i_intensity, &p_pic_out->p[Y_PLANE] );
         } else {
             /* draw light blotch */
-            for ( int32_t i_y = -i_width+1; i_y < i_width; i_y++ )
-                for ( int32_t i_x = -i_width+1; i_x < i_width; i_x++ )
+            for ( long i_y = -i_width+1; i_y < i_width; i_y++ )
+                for ( long i_x = -i_width+1; i_x < i_width; i_x++ )
                     if ( i_x * i_x + i_y * i_y <= i_width * i_width )
                         CHECK_N_LIGHTEN_PIXEL( i_x + i_bx, i_y + i_by,
                                                i_intensity, &p_pic_out->p[Y_PLANE] );
@@ -667,7 +667,7 @@ static void oldmovie_film_dust_effect( filter_t *p_filter, picture_t *p_pic_out 
 
     filter_sys_t *p_sys = p_filter->p_sys;
 
-    for ( int32_t i_dust = 0;
+    for ( long i_dust = 0;
           i_dust < p_sys->i_width[Y_PLANE] * p_sys->i_height[Y_PLANE] / ONESHOT_DUST_RATIO;
           i_dust++)
         if ( (unsigned)vlc_mrand48() % 5 < 3 )
@@ -712,7 +712,7 @@ static int oldmovie_lens_hair_effect( filter_t *p_filter, picture_t *p_pic_out )
 
     /* generate new hair */
     if ( p_sys->i_hair_trigger <= p_sys->i_cur_time ) {
-        for ( uint32_t i_h = 0; i_h < MAX_HAIR; i_h++ )
+        for ( unsigned long i_h = 0; i_h < MAX_HAIR; i_h++ )
             if ( p_sys->p_hair[i_h] == NULL ) {
                 /* allocate data */
                 p_sys->p_hair[i_h] = calloc( 1, sizeof(hair_t) );
@@ -722,7 +722,7 @@ static int oldmovie_lens_hair_effect( filter_t *p_filter, picture_t *p_pic_out )
                 /* set random parameters */
                 p_sys->p_hair[i_h]->i_length = (unsigned)vlc_mrand48()
                                              % ( p_sys->i_width[Y_PLANE] / 3 ) + 5;
-                p_sys->p_hair[i_h]->i_curve  = MOD( (int32_t)vlc_mrand48(), 80 ) - 40;
+                p_sys->p_hair[i_h]->i_curve  = MOD( (long)vlc_mrand48(), 80 ) - 40;
                 p_sys->p_hair[i_h]->i_width  = (unsigned)vlc_mrand48()
                                              % __MAX( 1, p_sys->i_width[Y_PLANE] / 1500 ) + 1;
                 p_sys->p_hair[i_h]->i_intensity = (unsigned)vlc_mrand48() % 50 + 20;
@@ -735,7 +735,7 @@ static int oldmovie_lens_hair_effect( filter_t *p_filter, picture_t *p_pic_out )
     }
 
     /* manage and apply current hair */
-    for ( uint32_t i_h = 0; i_h < MAX_HAIR; i_h++ )
+    for ( unsigned long i_h = 0; i_h < MAX_HAIR; i_h++ )
         if ( p_sys->p_hair[i_h] ) {
             /* remove outdated ones */
             if ( p_sys->p_hair[i_h]->i_stop_trigger <= p_sys->i_cur_time ) {
@@ -754,18 +754,19 @@ static int oldmovie_lens_hair_effect( filter_t *p_filter, picture_t *p_pic_out )
             double  f_base_x   = (double)p_sys->p_hair[i_h]->i_x;
             double  f_base_y   = (double)p_sys->p_hair[i_h]->i_y;
 
-            for ( int32_t i_l = 0; i_l < p_sys->p_hair[i_h]->i_length; i_l++ ) {
-                uint32_t i_current_rot = p_sys->p_hair[i_h]->i_rotation
-                                       + p_sys->p_hair[i_h]->i_curve * i_l / 100;
+            for ( long i_l = 0; i_l < p_sys->p_hair[i_h]->i_length; i_l++ ) {
+                unsigned long i_current_rot = p_sys->p_hair[i_h]->i_rotation
+                                            + p_sys->p_hair[i_h]->i_curve
+                                            * i_l / 100;
                 f_base_x += cos( (double)i_current_rot / 128.0 * M_PI );
                 f_base_y += sin( (double)i_current_rot / 128.0 * M_PI );
                 double f_current_x = f_base_x;
                 double f_current_y = f_base_y;
-                for ( int32_t i_w = 0; i_w < p_sys->p_hair[i_h]->i_width; i_w++ ) {
+                for ( long i_w = 0; i_w < p_sys->p_hair[i_h]->i_width; i_w++ ) {
                     f_current_x += sin( (double)i_current_rot / 128.0 * M_PI );
                     f_current_y += cos( (double)i_current_rot / 128.0 * M_PI );
-                    CHECK_N_DARKEN_PIXEL( (int32_t) f_current_x,
-                                          (int32_t) f_current_y,
+                    CHECK_N_DARKEN_PIXEL( (long) f_current_x,
+                                          (long) f_current_y,
                                           p_sys->p_hair[i_h]->i_intensity,
                                           &p_pic_out->p[Y_PLANE] );
                 }
@@ -803,7 +804,7 @@ static int oldmovie_lens_dust_effect( filter_t *p_filter, picture_t *p_pic_out )
 
     /* generate new dust */
     if ( p_sys->i_dust_trigger <= p_sys->i_cur_time ) {
-        for ( uint32_t i_d = 0; i_d < MAX_DUST; i_d++ )
+        for ( unsigned long i_d = 0; i_d < MAX_DUST; i_d++ )
             if ( p_sys->p_dust[i_d] == NULL ) {
                 /* allocate data */
                 p_sys->p_dust[i_d] = calloc( 1, sizeof(dust_t) );
@@ -821,7 +822,7 @@ static int oldmovie_lens_dust_effect( filter_t *p_filter, picture_t *p_pic_out )
     }
 
     /* manage and apply current dust */
-    for ( uint32_t i_d = 0; i_d < MAX_DUST; i_d++ )
+    for ( unsigned long i_d = 0; i_d < MAX_DUST; i_d++ )
         if ( p_sys->p_dust[i_d] ) {
             /* remove outdated ones */
             if ( p_sys->p_dust[i_d]->i_stop_trigger <= p_sys->i_cur_time ) {
@@ -837,8 +838,8 @@ static int oldmovie_lens_dust_effect( filter_t *p_filter, picture_t *p_pic_out )
             }
 
             /* draw dust */
-            for ( int32_t i_y = -p_sys->p_dust[i_d]->i_width + 1; i_y < p_sys->p_dust[i_d]->i_width; i_y++ )
-                for ( int32_t i_x = -p_sys->p_dust[i_d]->i_width + 1; i_x < p_sys->p_dust[i_d]->i_width; i_x++ )
+            for ( long i_y = -p_sys->p_dust[i_d]->i_width + 1; i_y < p_sys->p_dust[i_d]->i_width; i_y++ )
+                for ( long i_x = -p_sys->p_dust[i_d]->i_width + 1; i_x < p_sys->p_dust[i_d]->i_width; i_x++ )
                     if ( i_x * i_x + i_y * i_y <= p_sys->p_dust[i_d]->i_width * p_sys->p_dust[i_d]->i_width )
                         CHECK_N_DARKEN_PIXEL( i_x + p_sys->p_dust[i_d]->i_x,
                                               i_y + p_sys->p_dust[i_d]->i_y,
