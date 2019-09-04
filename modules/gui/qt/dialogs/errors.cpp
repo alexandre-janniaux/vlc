@@ -34,11 +34,11 @@
 #include <QPushButton>
 
 ErrorsDialog::ErrorsDialog( intf_thread_t *_p_intf )
-             : QVLCDialog( (QWidget*)_p_intf->p_sys->p_mi, _p_intf )
+             : QVLCDialog( (QWidget*)_p_intf->p_sys->p_mi, _p_intf,
+                           "Error", QSize( 500, 300 ) )
 {
     setWindowTitle( qtr( "Errors" ) );
     setWindowRole( "vlc-errors" );
-    resize( 500 , 300 );
 
     QGridLayout *layout = new QGridLayout( this );
 

@@ -49,7 +49,7 @@
 #include <vlc_modules.h>
 
 PrefsDialog::PrefsDialog( QWidget *parent, intf_thread_t *_p_intf )
-            : QVLCDialog( parent, _p_intf )
+            : QVLCDialog( parent, _p_intf, "Preferences", QSize( 800, 700 ) )
 {
     QGridLayout *main_layout = new QGridLayout( this );
     setWindowTitle( qtr( "Preferences" ) );
@@ -142,6 +142,7 @@ PrefsDialog::PrefsDialog( QWidget *parent, intf_thread_t *_p_intf )
     BUTTONACT( simple, setSimple() );
     BUTTONACT( all, setAdvanced() );
 
+    // TODO
     QVLCTools::restoreWidgetPosition( p_intf, "Preferences", this, QSize( 800 , 700 ) );
 }
 

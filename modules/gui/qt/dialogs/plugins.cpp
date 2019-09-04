@@ -73,6 +73,7 @@
 static QPixmap *loadPixmapFromData( char *, int size );
 
 
+// TODO: why a QVLCFrame and not a QVLCDialog
 PluginDialog::PluginDialog( intf_thread_t *_p_intf ) : QVLCFrame( _p_intf )
 {
     setWindowTitle( qtr( "Plugins and extensions" ) );
@@ -93,7 +94,7 @@ PluginDialog::PluginDialog( intf_thread_t *_p_intf ) : QVLCFrame( _p_intf )
     box->addButton( okButton, QDialogButtonBox::RejectRole );
     layout->addWidget( box );
     BUTTONACT( okButton, close() );
-    restoreWidgetPosition( "PluginsDialog", QSize( 435, 280 ) );
+    restoreWidgetPosition( "PluginsDialog", QSize( 435, 280 ), NULL);
 }
 
 PluginDialog::~PluginDialog()
@@ -1355,7 +1356,7 @@ void AddonItemDelegate::editButtonClicked()
 ExtensionInfoDialog::ExtensionInfoDialog( const QModelIndex &index,
                                           intf_thread_t *p_intf,
                                           QWidget *parent )
-       : QVLCDialog( parent, p_intf )
+       : QVLCDialog( parent, p_intf, "ExtensionInfo", QSize( 450, 350 ) )
 {
     // Let's be a modal dialog
     setWindowModality( Qt::WindowModal );

@@ -150,7 +150,7 @@ class QVLCDialog : public QDialog
 {
 public:
     QVLCDialog( QWidget* parent, intf_thread_t *_p_intf,
-                std::string name, QSize default_size ) :
+                QString name, QSize default_size ) :
         QDialog( parent ), p_intf( _p_intf ),
         name(name), default_size(default_size)
     {
@@ -192,6 +192,10 @@ protected:
             this->close();
         }
     }
+
+private:
+    QString name;
+    QSize default_size;
 };
 
 class QVLCMW : public QMainWindow
