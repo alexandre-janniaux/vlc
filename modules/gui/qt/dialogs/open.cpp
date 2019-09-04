@@ -63,7 +63,8 @@ OpenDialog* OpenDialog::getInstance( QWidget *parent, intf_thread_t *p_intf,
 OpenDialog::OpenDialog( QWidget *parent,
                         intf_thread_t *_p_intf,
                         bool b_selectMode,
-                        int _action_flag )  :  QVLCDialog( parent, _p_intf )
+                        int _action_flag )
+    : QVLCDialog( parent, _p_intf, qfu("opendialog"), QSize(0,0) )
 {
     i_action_flag = _action_flag;
 
@@ -507,4 +508,3 @@ QStringList OpenDialog::SeparateEntries( const QString& entries )
 
     return entries_array;
 }
-

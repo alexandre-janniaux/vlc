@@ -36,7 +36,7 @@
 #define VALUE_3 "33;65;0;4;1;65;7 | 3;0;4"
 
 ToolbarEditorDialog::ToolbarEditorDialog( QWidget *_w, intf_thread_t *_p_intf)
-    : QVLCDialog( _w,  _p_intf )
+    : QVLCDialog( _w,  _p_intf, qfu("toolbareditor"), QSize(0,0) )
 {
     setWindowTitle( qtr( "Toolbars Editor" ) );
     setWindowRole( "vlc-toolbars-editor" );
