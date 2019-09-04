@@ -28,10 +28,12 @@
 #include <QHBoxLayout>
 #include <QApplication>
 #include <QMainWindow>
+#include <QWindow>
 #include <QKeyEvent>
 #include <QDesktopWidget>
 #include <QSettings>
 #include <QStyle>
+#include <QScreen>
 
 #include "qt.hpp"
 
@@ -65,8 +67,12 @@ class QVLCTools
        static bool restoreWidgetPosition(QSettings *settings,
                                            QWidget *widget,
                                            QSize defSize = QSize( 0, 0 ),
-                                           QPoint defPos = QPoint( 0, 0 ))
+                                           QPoint defPos = QPoint( 0, 0 ),
+                                           QScreen *screen = nullptr)
        {
+         if (screen == nullptr)
+           screen = QGuiApplication::primaryScreen();
+
           if(!widget->restoreGeometry(settings->value("geometry")
                                       .toByteArray()))
           {
@@ -74,7 +80,8 @@ class QVLCTools
             widget->resize(defSize);
 
             if(defPos.x() == 0 && defPos.y()==0)
-               widget->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, widget->size(), qApp->desktop()->availableGeometry()));
+               widget->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, widget->size(),
+                                   screen->availableGeometry()));
             return true;
           }
           return false;
@@ -84,13 +91,15 @@ class QVLCTools
                                            const QString& configName,
                                            QWidget *widget,
                                            QSize defSize = QSize( 0, 0 ),
-                                           QPoint defPos = QPoint( 0, 0 ) )
+                                           QPoint defPos = QPoint( 0, 0 ),
+                                           QScreen *screen = nullptr)
        {
          getSettings()->beginGroup( configName );
          bool defaultUsed = QVLCTools::restoreWidgetPosition( getSettings(),
                                                                    widget,
                                                                    defSize,
-                                                                   defPos);
+                                                                   defPos,
+                                                                   screen);
          getSettings()->endGroup();
 
          return defaultUsed;
@@ -112,11 +121,13 @@ public:
 protected:
     intf_thread_t *p_intf;
 
+    /* TODO: use current widget screen */
     void restoreWidgetPosition( const QString& name,
                        QSize defSize = QSize( 1, 1 ),
-                       QPoint defPos = QPoint( 0, 0 ) )
+                       QPoint defPos = QPoint( 0, 0 ),
+                       QScreen *screen = nullptr)
     {
-        QVLCTools::restoreWidgetPosition(p_intf, name, this, defSize, defPos);
+        QVLCTools::restoreWidgetPosition(p_intf, name, this, defSize, defPos, screen);
     }
 
     void saveWidgetPosition( const QString& name )
@@ -164,9 +175,14 @@ public:
         else show();
     }
 
-    void restorePosition( MainInterface *main_interface )
+    void restorePosition( QWidget *main_interface )
     {
-        QVLCTools::restoreWidgetPosition( p_intf, name, this, default_size );
+        QScreen *mi_screen = NULL;
+
+        if (main_interface->isVisible())
+            mi_screen = main_interface->window()->windowHandle()->screen();
+
+        QVLCTools::restoreWidgetPosition( p_intf, name, this, default_size, QPoint(0,0), mi_screen );
     }
 
 protected:
