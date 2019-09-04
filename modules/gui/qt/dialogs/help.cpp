@@ -78,7 +78,9 @@ HelpDialog::~HelpDialog()
 }
 
 AboutDialog::AboutDialog( intf_thread_t *_p_intf)
-            : QVLCDialog( (QWidget*)_p_intf->p_sys->p_mi, _p_intf ), b_advanced( false )
+            : QVLCDialog( (QWidget*)_p_intf->p_sys->p_mi, _p_intf,
+                          qfu("aboutdialog"), QSize(0,0))
+            , b_advanced( false )
 {
     /* Build UI */
     ui.setupUi( this );

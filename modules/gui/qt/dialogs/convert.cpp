@@ -41,7 +41,7 @@
 
 ConvertDialog::ConvertDialog( QWidget *parent, intf_thread_t *_p_intf,
                               const QStringList& inputMRLs,
-                              "Convert", QSize( 0, 0 ) ) // TODO: invalid size
+                              qfu("Convert"), QSize( 0, 0 ) ) // TODO: invalid size
               : QVLCDialog( parent, _p_intf ),
                 singleFileSelected( inputMRLs.length() == 1 )
 {
