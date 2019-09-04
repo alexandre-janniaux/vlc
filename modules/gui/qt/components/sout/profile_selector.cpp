@@ -431,7 +431,7 @@ void VLCProfileSelector::updateOptionsOldFormat( int i )
  **/
 VLCProfileEditor::VLCProfileEditor( const QString& qs_name, const QString& value,
         QWidget *_parent )
-                 : QVLCDialog( _parent, NULL )
+                 : QVLCDialog( _parent, NULL, qfu("profileeditor"), QSize(0,0) )
 {
     ui.setupUi( this );
     ui.buttonGroup->setObjectName( CATPROP2NAME( CATANDPROP( "muxer", "mux" ) ) );
