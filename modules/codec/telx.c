@@ -547,7 +547,8 @@ static bool DecodePacketX1_X23( decoder_t *p_dec, const uint8_t *packet,
     if ( strcmp( t, p_sys->ppsz_lines[row] ) )
     {
         strncpy( p_sys->ppsz_lines[row], t,
-                 sizeof(p_sys->ppsz_lines[row]) - 1 );
+                 sizeof(p_sys->ppsz_lines[row]) - 2 );
+        p_sys->ppsz_lines[row][sizeof(p_sys->ppsz_lines[row]) - 1] = '\0';
         b_update = true;
     }
 
@@ -682,8 +683,10 @@ static int Decode( decoder_t *p_dec, block_t *p_block )
             /* row 0 : flags and header line */
             b_update |= DecodePageHeaderPacket( p_dec, packet, magazine );
             if( b_update )
+            {
                 dbg((p_dec, "%ld --> %ld", (long int) p_block->i_pts,
                                            (long int)(p_sys->prev_pts+1500000)));
+            }
         }
         else if ( row < 26 ) /* Normal Packet */
         {
