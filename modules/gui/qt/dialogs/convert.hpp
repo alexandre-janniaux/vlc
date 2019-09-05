@@ -25,6 +25,8 @@
 
 #include "util/qvlcframe.hpp"
 
+#include <QUrl>
+
 class QLineEdit;
 class QCheckBox;
 class QRadioButton;

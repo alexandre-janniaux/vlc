@@ -24,7 +24,7 @@
 # include "config.h"
 #endif
 
-#include "dialogs/errors.hpp"
+#include "qt.hpp"
 
 #include <QTextCursor>
 #include <QTextEdit>
@@ -32,6 +32,11 @@
 #include <QGridLayout>
 #include <QDialogButtonBox>
 #include <QPushButton>
+
+#include <vlc_common.h>
+#include <vlc_interface.h>
+
+#include "dialogs/errors.hpp"
 
 ErrorsDialog::ErrorsDialog( intf_thread_t *_p_intf )
              : QVLCDialog( (QWidget*)_p_intf->p_sys->p_mi, _p_intf )

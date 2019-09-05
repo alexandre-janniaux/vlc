@@ -20,6 +20,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#include "qt.hpp"
+
 #include "extensions.hpp"
 #include "extensions_manager.hpp" // for isUnloading()
 

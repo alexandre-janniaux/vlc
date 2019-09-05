@@ -46,6 +46,7 @@
 #include <QSlider>
 #include <QBitmap>
 #include <QUrl>
+#include <QSettings>
 
 #if defined (QT5_HAS_X11)
 # include <X11/Xlib.h>

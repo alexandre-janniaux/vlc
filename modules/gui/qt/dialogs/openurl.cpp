@@ -36,6 +36,7 @@
 #include <QList>
 #include <QFile>
 #include <QLabel>
+#include <QVBoxLayout>
 
 #include <assert.h>
 

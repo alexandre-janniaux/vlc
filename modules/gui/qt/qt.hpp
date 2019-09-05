@@ -24,10 +24,6 @@
 #ifndef QVLC_H_
 #define QVLC_H_
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #include <vlc_common.h>
 #include <vlc_interface.h> /* intf_thread_t */
 #include <vlc_playlist.h>  /* vlc_playlist_t */
@@ -112,41 +108,7 @@ struct vlc_player_locker {
         vlc_player_t* p_player;
 };
 
-#define THEDP DialogsProvider::getInstance()
-#define THEMIM p_intf->p_sys->p_mainPlayerController
-#define THEMPL p_intf->p_sys->p_mainPlaylistController
-
-#define qfu( i ) QString::fromUtf8( i )
-#define qfue( i ) QString::fromUtf8( i ).replace( "&", "&&" ) /* for actions/buttons */
-#define qtr( i ) QString::fromUtf8( vlc_gettext(i) )
-#define qtu( i ) ((i).toUtf8().constData())
-
-#define CONNECT( a, b, c, d ) \
-        connect( a, SIGNAL(b), c, SLOT(d) )
-#define DCONNECT( a, b, c, d ) \
-        connect( a, SIGNAL(b), c, SLOT(d), Qt::DirectConnection )
-#define BUTTONACT( b, a ) connect( b, SIGNAL(clicked()), this, SLOT(a) )
-
-#define BUTTON_SET( button, text, tooltip )  \
-    button->setText( text );                 \
-    button->setToolTip( tooltip );
-
-#define BUTTON_SET_ACT( button, text, tooltip, thisslot ) \
-    BUTTON_SET( button, text, tooltip );                  \
-    BUTTONACT( button, thisslot );
-
-#define BUTTON_SET_IMG( button, text, image, tooltip )    \
-    BUTTON_SET( button, text, tooltip );                  \
-    button->setIcon( QIcon( ":/"#image ".svg") );
-
-#define BUTTON_SET_ACT_I( button, text, image, tooltip, thisslot ) \
-    BUTTON_SET_IMG( button, text, image, tooltip );                \
-    BUTTONACT( button, thisslot );
-
-/* for widgets which must not follow the RTL auto layout changes */
-#define RTL_UNAFFECTED_WIDGET setLayoutDirection( Qt::LeftToRight );
-
-#define getSettings() p_intf->p_sys->mainSettings
+#include "util/helpers.hpp"
 
 static inline QString QVLCUserDir( vlc_userdir_t type )
 {

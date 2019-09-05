@@ -53,6 +53,7 @@
 #include <QVBoxLayout>
 #include <QTabWidget>
 #include <QSignalMapper>
+#include <QSettings>
 
 #include <assert.h>
 

@@ -20,6 +20,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 
 #include "components/sout/profile_selector.hpp"
 #include "components/sout/profiles.hpp"
@@ -37,6 +40,7 @@
 #include <QUrl>
 #include <QListWidgetItem>
 #include <QFontMetrics>
+#include <QSettings>
 
 #include <assert.h>
 #include <vlc_modules.h>

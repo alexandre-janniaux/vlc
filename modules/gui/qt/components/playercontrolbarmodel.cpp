@@ -15,9 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
-#include <QSettings>
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 
 #include "qt.hpp"
+
+#include <QSettings>
 #include "playercontrolbarmodel.hpp"
 
 #define MAIN_TB1_DEFAULT "20;21;65;17;3;0-2;1-2;4;18;65;33;7"
@@ -220,4 +225,3 @@ void PlayerControlBarModel::remove(int index)
     mButtons.remove(index);
     endRemoveRows();
 }
-

@@ -32,6 +32,7 @@
 #include <QTabWidget>
 #include <QRegExp>
 #include <QMenu>
+#include <QSettings>
 
 #ifndef NDEBUG
 # define DEBUG_QT 1
@@ -507,4 +508,3 @@ QStringList OpenDialog::SeparateEntries( const QString& entries )
 
     return entries_array;
 }
-

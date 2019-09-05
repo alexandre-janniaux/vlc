@@ -23,6 +23,8 @@
 # include "config.h"
 #endif
 
+#include "qt.hpp"
+
 #include <QPlainTextEdit>
 #include <QTextCursor>
 #include <QTextBlock>
@@ -37,6 +39,7 @@
 #include <QScrollBar>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QSettings>
 
 #include <assert.h>
 

@@ -21,6 +21,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include "qt.hpp"
 #include "recents.hpp"
 #include "dialogs_provider.hpp"
@@ -32,6 +36,7 @@
 #include <QStringList>
 #include <QRegExp>
 #include <QSignalMapper>
+#include <QSettings>
 
 #ifdef _WIN32
     #include <shlobj.h>

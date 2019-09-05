@@ -62,6 +62,7 @@
 #include <QSignalMapper>
 #include <QFileDialog>
 #include <QUrl>
+#include <QSettings>
 
 #define I_OP_DIR_WINTITLE I_DIR_OR_FOLDER( N_("Open Directory"), \
                                            N_("Open Folder") )

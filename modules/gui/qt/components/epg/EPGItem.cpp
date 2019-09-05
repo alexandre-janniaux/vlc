@@ -20,6 +20,12 @@
  * 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#include "qt.hpp"
+
 #include <QTransform>
 #include <QFont>
 #include <QFontMetrics>
@@ -31,8 +37,6 @@
 
 #include "EPGItem.hpp"
 #include "EPGView.hpp"
-
-#include "qt.hpp"
 
 EPGItem::EPGItem( const vlc_epg_event_t *data, EPGView *view, EPGProgram *prog )
     : QGraphicsItem()

@@ -25,11 +25,11 @@
 # include "config.h"
 #endif
 
-#include <vlc_common.h>
+#include "qt.hpp"
+
 #include <vlc_variables.h>
 #include <QObject>
 
-#include "qt.hpp"
 #include "var_common_p.hpp"
 
 /*

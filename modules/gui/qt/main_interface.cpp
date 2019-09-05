@@ -80,6 +80,7 @@
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QLabel>
+#include <QDesktopWidget>
 #include <QStackedWidget>
 #include <QScreen>
 #include <QStackedLayout>

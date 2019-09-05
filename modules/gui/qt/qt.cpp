@@ -43,6 +43,7 @@ extern "C" char **environ;
 #include <QDate>
 #include <QMutex>
 #include <QtQuickControls2/QQuickStyle>
+#include <QSettings>
 
 #include "qt.hpp"
 

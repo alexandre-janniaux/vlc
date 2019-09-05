@@ -50,6 +50,7 @@
 #include <QSpinBox>
 #include <QScrollArea>
 #include <QFileDialog>
+#include <QSettings>
 
 
 VLMDialog::VLMDialog( intf_thread_t *_p_intf ) : QVLCFrame( _p_intf )

@@ -25,15 +25,12 @@
 
 #include <QWidget>
 #include <QDialog>
-#include <QHBoxLayout>
-#include <QApplication>
 #include <QMainWindow>
-#include <QKeyEvent>
-#include <QDesktopWidget>
-#include <QSettings>
-#include <QStyle>
 
-#include "qt.hpp"
+class QKeyEvent;
+class QSettings;
+
+struct intf_thread_t;
 
 class QVLCTools
 {
@@ -44,57 +41,26 @@ class QVLCTools
         window is docked into another - don't all this function
         or it may write garbage to position info!
        */
-       static void saveWidgetPosition( QSettings *settings, QWidget *widget)
-       {
-         settings->setValue("geometry", widget->saveGeometry());
-       }
+       static void saveWidgetPosition( QSettings *settings, QWidget *widget);
+
        static void saveWidgetPosition( intf_thread_t *p_intf,
                                        const QString& configName,
-                                       QWidget *widget)
-       {
-         getSettings()->beginGroup( configName );
-         QVLCTools::saveWidgetPosition(getSettings(), widget);
-         getSettings()->endGroup();
-       }
-
+                                       QWidget *widget);
 
        /*
          use this method only for restoring window state of non docked
          windows!
        */
        static bool restoreWidgetPosition(QSettings *settings,
-                                           QWidget *widget,
-                                           QSize defSize = QSize( 0, 0 ),
-                                           QPoint defPos = QPoint( 0, 0 ))
-       {
-          if(!widget->restoreGeometry(settings->value("geometry")
-                                      .toByteArray()))
-          {
-            widget->move(defPos);
-            widget->resize(defSize);
-
-            if(defPos.x() == 0 && defPos.y()==0)
-               widget->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, widget->size(), qApp->desktop()->availableGeometry()));
-            return true;
-          }
-          return false;
-       }
+                                         QWidget *widget,
+                                         QSize defSize = QSize( 0, 0 ),
+                                         QPoint defPos = QPoint( 0, 0 ));
 
        static bool restoreWidgetPosition( intf_thread_t *p_intf,
                                            const QString& configName,
                                            QWidget *widget,
                                            QSize defSize = QSize( 0, 0 ),
-                                           QPoint defPos = QPoint( 0, 0 ) )
-       {
-         getSettings()->beginGroup( configName );
-         bool defaultUsed = QVLCTools::restoreWidgetPosition( getSettings(),
-                                                                   widget,
-                                                                   defSize,
-                                                                   defPos);
-         getSettings()->endGroup();
-
-         return defaultUsed;
-       }
+                                           QPoint defPos = QPoint( 0, 0 ) );
 };
 
 class QVLCFrame : public QWidget
@@ -132,18 +98,7 @@ protected:
     {
         hide();
     }
-    void keyPressEvent( QKeyEvent *keyEvent ) Q_DECL_OVERRIDE
-    {
-        if( keyEvent->key() == Qt::Key_Escape )
-        {
-            this->cancel();
-        }
-        else if( keyEvent->key() == Qt::Key_Return
-              || keyEvent->key() == Qt::Key_Enter )
-        {
-             this->close();
-        }
-    }
+    void keyPressEvent( QKeyEvent *keyEvent ) Q_DECL_OVERRIDE;
 };
 
 class QVLCDialog : public QDialog
@@ -173,18 +128,7 @@ protected:
     {
         hide();
     }
-    void keyPressEvent( QKeyEvent *keyEvent ) Q_DECL_OVERRIDE
-    {
-        if( keyEvent->key() == Qt::Key_Escape )
-        {
-            this->cancel();
-        }
-        else if( keyEvent->key() == Qt::Key_Return
-              || keyEvent->key() == Qt::Key_Enter )
-        {
-            this->close();
-        }
-    }
+    void keyPressEvent( QKeyEvent *keyEvent ) Q_DECL_OVERRIDE;
 };
 
 class QVLCMW : public QMainWindow

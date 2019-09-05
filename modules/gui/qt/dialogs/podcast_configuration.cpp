@@ -23,7 +23,11 @@
 # include "config.h"
 #endif
 
+#include <vlc_common.h>
+
 #include "podcast_configuration.hpp"
+#include "qt.hpp"
+
 
 PodcastConfigDialog::PodcastConfigDialog( intf_thread_t *_p_intf)
                     : QVLCDialog( (QWidget*)_p_intf->p_sys->p_mi, _p_intf )

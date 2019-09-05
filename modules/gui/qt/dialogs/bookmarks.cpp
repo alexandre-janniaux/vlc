@@ -24,6 +24,8 @@
 # include "config.h"
 #endif
 
+#include "qt.hpp"
+
 #include "dialogs/bookmarks.hpp"
 #include "components/player_controller.hpp"
 

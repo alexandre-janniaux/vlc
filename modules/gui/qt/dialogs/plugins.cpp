@@ -25,6 +25,8 @@
 # include "config.h"
 #endif
 
+#include "qt.hpp"
+
 #include "plugins.hpp"
 
 #include "util/searchlineedit.hpp"
@@ -65,6 +67,7 @@
 #include <QSplitter>
 #include <QToolButton>
 #include <QStackedWidget>
+#include <QSettings>
 
 //match the image source (width/height)
 #define SCORE_ICON_WIDTH_SCALE 4

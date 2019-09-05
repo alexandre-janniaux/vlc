@@ -46,12 +46,14 @@
 #include <QDialogButtonBox>
 #include <QLineEdit>
 #include <QStackedLayout>
+#include <QVBoxLayout>
 #include <QCompleter>
 #include <QDirModel>
 #include <QScrollArea>
 #include <QUrl>
 #include <QMimeData>
 #include <QDropEvent>
+#include <QSettings>
 
 #define I_DEVICE_TOOLTIP \
     I_DIR_OR_FOLDER( N_("Select a device or a VIDEO_TS directory"), \
@@ -1430,4 +1432,3 @@ void CaptureOpenPanel::advancedDialog()
     delete adv;
     module_config_free( p_config );
 }
-

@@ -45,6 +45,7 @@
 #include <QSplitter>
 #include <QShortcut>
 #include <QScrollArea>
+#include <QSettings>
 
 #include <vlc_modules.h>
 

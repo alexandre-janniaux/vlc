@@ -24,6 +24,8 @@
 # include "config.h"
 #endif
 
+#include "qt.hpp"
+
 #include "dialogs/epg.hpp"
 
 #include "components/epg/EPGWidget.hpp"
@@ -40,7 +42,6 @@
 #include <QTimer>
 #include <QDateTime>
 
-#include "qt.hpp"
 #include "components/player_controller.hpp"
 
 EpgDialog::EpgDialog( intf_thread_t *_p_intf ): QVLCFrame( _p_intf )

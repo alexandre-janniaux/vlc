@@ -23,6 +23,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#include "qt.hpp"
+
 #include "components/sout/sout_widgets.hpp"
 #include "dialogs/sout.hpp"
 #include "util/qt_dirs.hpp"
@@ -583,4 +589,3 @@ QString ICEDestBox::getMRL( const QString& )
     m.end();
     return m.getMrl();
 }
-

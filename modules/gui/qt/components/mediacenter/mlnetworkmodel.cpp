@@ -418,5 +418,5 @@ void MLNetworkModel::SourceListener::onItemRemoved( vlc_media_tree_t *, input_it
 
 bool MLNetworkModel::canBeIndexed(const QUrl& url , ItemType itemType )
 {
-    return itemType != ITEM_TYPE_FILE && (url.scheme() == "smb" || url.scheme() == "ftp");
+    return itemType != TYPE_FILE && (url.scheme() == "smb" || url.scheme() == "ftp");
 }

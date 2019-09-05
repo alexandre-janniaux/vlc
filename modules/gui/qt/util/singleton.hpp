@@ -23,10 +23,10 @@
 #ifndef VLC_QT_SINGLETON_HPP_
 #define VLC_QT_SINGLETON_HPP_
 
+/* WARNING: <vlc_common.h> must be included before this file. */
+
 #include <stdlib.h>
 #include <vlc_threads.h>
-
-#include "qt.hpp"
 
 template <typename T>
 class       Singleton
