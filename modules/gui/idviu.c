@@ -87,7 +87,9 @@ static void *Run(void *data)
             // read error
         }
 
+        vlc_player_Lock(player);
         vlc_player_SetAudioDelay(player, VLC_TICK_FROM_MS(avsync_delay), VLC_PLAYER_WHENCE_ABSOLUTE);
+        vlc_player_Unlock(player);
 
         vlc_restorecancel(canc);
 
