@@ -34,7 +34,7 @@
 #include <vlc_plugin.h>
 #include <vlc_interface.h>
 #include <vlc_player.h>
-#include <vlc_playlist_legacy.h>
+#include <vlc_playlist.h>
 
 static int  Open           (vlc_object_t *);
 static void Close          (vlc_object_t *);
@@ -64,43 +64,34 @@ static void *Run(void *data)
     intf_thread_t *intf = data;
     intf_sys_t    *sys  = intf->p_sys;
 
-    playlist_t *playlist = pl_Get(intf);
+    vlc_playlist_t *playlist = vlc_intf_GetMainPlaylist(intf);
+    vlc_player_t *player = vlc_playlist_GetPlayer(playlist);
 
     char buffer[100];
 
     for (;;) {
         vlc_testcancel();
 
-        input_thread_t *input = playlist_CurrentInput(playlist);
+        int canc = vlc_savecancel();
 
-        if (input != NULL)
+        /* flush current data */
+        lseek(sys->avsync_fd, 0, SEEK_SET);
+        ssize_t size = read(sys->avsync_fd, buffer, sizeof(buffer));
+        if (size <= 0) {}
+
+        msg_Info(intf, "Read \"%*s\" from avsync device", size, buffer);
+
+        int avsync_delay;
+        if (sscanf(buffer, "%d", &avsync_delay) != 1)
         {
-
-            int canc = vlc_savecancel();
-
-            /* flush current data */
-            lseek(sys->avsync_fd, 0, SEEK_SET);
-            ssize_t size = read(sys->avsync_fd, buffer, sizeof(buffer));
-            if (size <= 0) {}
-
-            msg_Info(intf, "Read \"%*s\" from avsync device", size, buffer);
-
-            int avsync_delay;
-            if (sscanf(buffer, "%d", &avsync_delay) != 1)
-            {
-                // read error
-            }
-
-            var_SetInteger(input, "audio-delay", VLC_TICK_FROM_MS(avsync_delay));
-
-            vlc_restorecancel(canc);
-
-            msg_Info(intf, "Setting audio delay to %d ms", avsync_delay);
+            // read error
         }
-        else
-        {
-            msg_Warn(intf, "No current media, not setting audio delay");
-        }
+
+        vlc_player_SetAudioDelay(player, VLC_TICK_FROM_MS(avsync_delay), VLC_PLAYER_WHENCE_ABSOLUTE);
+
+        vlc_restorecancel(canc);
+
+        msg_Info(intf, "Setting audio delay to %d ms", avsync_delay);
 
         vlc_tick_sleep(VLC_TICK_FROM_MS(1000));
     }
