@@ -254,6 +254,7 @@ typedef enum video_projection_mode_t
 {
     PROJECTION_MODE_RECTANGULAR = 0,
     PROJECTION_MODE_EQUIRECTANGULAR,
+    PROJECTION_MODE_FISHEYE,
 
     PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD = 0x100,
 } video_projection_mode_t;
