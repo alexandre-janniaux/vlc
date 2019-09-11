@@ -2043,7 +2043,7 @@ vlc_module_begin ()
               FORCE_PROJECTION_TEXT, FORCE_PROJECTION_LONGTEXT, false);
 
     add_integer( "projection-mode", PROJECTION_MODE_RECTANGULAR,
-                 FORCE_EQUIRECTANGULAR_TEXT, FORCE_EQUIRECTANGULAR_LONGTEXT, false );
+                 PROJECTION_MODE_TEXT, PROJECTION_MODE_LONGTEXT, false );
 
 /* Decoder options */
     set_subcategory( SUBCAT_INPUT_VCODEC )
