@@ -94,6 +94,8 @@ typedef void (APIENTRY *PFNGLTEXPARAMETERIPROC) (GLenum target, GLenum pname, GL
 typedef void (APIENTRY *PFNGLTEXSUBIMAGE2DPROC) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
 typedef void (APIENTRY *PFNGLVIEWPORTPROC) (GLint x, GLint y, GLsizei width, GLsizei height);
 
+typedef void (APIENTRY *PFNGLSCISSORPROC) (GLint x, GLint y, GLsizei width, GLsizei height);
+
 /* The following are defined in glext.h but not for GLES2 or on Apple systems */
 #if defined(USE_OPENGL_ES2) || defined(__APPLE__)
 #   define PFNGLGETPROGRAMIVPROC             typeof(glGetProgramiv)*
@@ -238,6 +240,8 @@ typedef struct {
     PFNGLFENCESYNCPROC              FenceSync; /* can be NULL */
     PFNGLDELETESYNCPROC             DeleteSync; /* can be NULL */
     PFNGLCLIENTWAITSYNCPROC         ClientWaitSync; /* can be NULL */
+
+    PFNGLSCISSORPROC                Scissor;
 } opengl_vtable_t;
 
 struct pl_context;

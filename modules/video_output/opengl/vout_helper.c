@@ -736,6 +736,8 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     GET_PROC_ADDR_CORE(TexSubImage2D);
     GET_PROC_ADDR_CORE(Viewport);
 
+    GET_PROC_ADDR_CORE(Scissor);
+
     GET_PROC_ADDR_CORE_GL(GetTexLevelParameteriv);
     GET_PROC_ADDR_CORE_GL(TexEnvf);
 
