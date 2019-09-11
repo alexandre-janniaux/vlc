@@ -918,6 +918,14 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     vgl->region = NULL;
     vgl->pool = NULL;
 
+    bool force_projection = var_InheritInteger(vgl->gl, "force-projection");
+
+    if (force_projection)
+    {
+        int projection_mode = var_InheritInteger(vgl->gl, "projection-mode");
+        vgl->fmt.projection_mode = projection_mode;
+    }
+
     if (vgl->fmt.projection_mode != PROJECTION_MODE_RECTANGULAR
      && vout_display_opengl_SetViewpoint(vgl, viewpoint) != VLC_SUCCESS)
     {
