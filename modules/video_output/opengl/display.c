@@ -66,6 +66,9 @@ vlc_module_begin ()
     add_module("gl", "opengl", NULL, GL_TEXT, PROVIDER_LONGTEXT)
 #endif
     add_integer("gl-left-mask", 0, "left mask", "left mask", false)
+    add_integer("gl-right-mask", 0, "right mask", "right mask", false)
+    add_integer("gl-top-mask", 0, "top mask", "top mask", false)
+    add_integer("gl-bottom-mask", 0, "bottom mask", "bottom mask", false)
     add_glopts ()
 vlc_module_end ()
 
