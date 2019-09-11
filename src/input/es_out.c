@@ -1889,6 +1889,14 @@ static es_out_id_t *EsOutAddSlaveLocked( es_out_t *out, const es_format_t *fmt,
     //if (b_forceEquirectangular)
     //    es->fmt.video.projection_mode = PROJECTION_MODE_EQUIRECTANGULAR;
 
+    bool force_projection = var_InheritBool(p_input, "force-projection");
+
+    if (force_projection)
+    {
+        int projection_mode = var_InheritInteger(p_input, "projection-mode");
+        es->fmt.video.projection_mode = projection_mode;
+    }
+
     if( es->fmt.i_id < 0 )
         es->fmt.i_id = p_sys->i_id;
     if( !es->fmt.i_original_fourcc )
