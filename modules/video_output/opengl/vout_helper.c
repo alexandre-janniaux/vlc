@@ -160,6 +160,8 @@ struct vout_display_opengl_t {
         unsigned int height;
     } viewport;
 
+    unsigned mask_left;
+
     /* Non-power-of-2 texture size support */
     bool supports_npot;
 
@@ -1840,6 +1842,14 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
         vgl->vt.DrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
     vgl->vt.Disable(GL_BLEND);
+
+    /* Draw left mask border */
+    {
+        vgl->vt.Enable(GL_SCISSOR_TEST);
+        vgl->vt.Scissor(0, 0, vgl->mask_left, vgl->viewport.height);
+        vgl->vt.Clear(GL_COLOR_BUFFER_BIT);
+        vgl->vt.Disable(GL_SCISSOR_TEST);
+    }
 
     /* Display */
     vlc_gl_Swap(vgl->gl);
