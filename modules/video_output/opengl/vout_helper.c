@@ -245,7 +245,8 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
                                  struct prgm *prgm)
 {
     if (projection_mode == PROJECTION_MODE_EQUIRECTANGULAR
-        || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD)
+        || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD
+        || projection_mode == PROJECTION_MODE_FISHEYE)
     {
         getProjectionMatrix(vgl->f_sar, vgl->f_fovy, prgm->var.ProjectionMatrix);
         getZoomMatrix(vgl->f_z, prgm->var.ZoomMatrix);
