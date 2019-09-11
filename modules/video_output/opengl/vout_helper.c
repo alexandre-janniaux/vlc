@@ -957,7 +957,10 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
         *subpicture_chromas = gl_subpicture_chromas;
     }
 
-    vgl->mask_left = var_InheritInteger(vgl->gl, "gl-left-mask");
+    vgl->mask.left = var_InheritInteger(vgl->gl, "gl-left-mask");
+    vgl->mask.right = var_InheritInteger(vgl->gl, "gl-right-mask");
+    vgl->mask.top = var_InheritInteger(vgl->gl, "gl-top-mask");
+    vgl->mask.bottom = var_InheritInteger(vgl->gl, "gl-bottom-mask");
 
     GL_ASSERT_NOERROR();
     return vgl;
@@ -1860,8 +1863,21 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     /* Draw left mask border */
     {
         vgl->vt.Enable(GL_SCISSOR_TEST);
-        vgl->vt.Scissor(0, 0, vgl->mask_left, vgl->viewport.height);
+
+        vgl->vt.Scissor(0, 0, vgl->mask.left, vgl->viewport.height);
         vgl->vt.Clear(GL_COLOR_BUFFER_BIT);
+
+        vgl->vt.Scissor(vgl->viewport.width - vgl->mask.right,      0,
+                        vgl->mask.right,                            vgl->viewport.height);
+        vgl->vt.Clear(GL_COLOR_BUFFER_BIT);
+
+        vgl->vt.Scissor(0, 0, vgl->viewport.width, vgl->mask.bottom);
+        vgl->vt.Clear(GL_COLOR_BUFFER_BIT);
+
+        vgl->vt.Scissor(0,                      vgl->viewport.height - vgl->mask.top,
+                        vgl->viewport.width,    vgl->mask.top);
+        vgl->vt.Clear(GL_COLOR_BUFFER_BIT);
+
         vgl->vt.Disable(GL_SCISSOR_TEST);
     }
 
