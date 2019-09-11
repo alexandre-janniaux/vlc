@@ -1885,9 +1885,9 @@ static es_out_id_t *EsOutAddSlaveLocked( es_out_t *out, const es_format_t *fmt,
         return NULL;
     }
 
-    bool b_forceEquirectangular = var_GetBool( p_input, "force-equirectangular" );
-    if (b_forceEquirectangular)
-        es->fmt.video.projection_mode = PROJECTION_MODE_EQUIRECTANGULAR;
+    //bool b_forceEquirectangular = var_GetBool( p_input, "force-equirectangular" );
+    //if (b_forceEquirectangular)
+    //    es->fmt.video.projection_mode = PROJECTION_MODE_EQUIRECTANGULAR;
 
     if( es->fmt.i_id < 0 )
         es->fmt.i_id = p_sys->i_id;
@@ -3902,6 +3902,9 @@ static void EsOutUpdateInfo( es_out_t *out, es_out_id_t *es, const vlc_meta_t *p
                break;
            case PROJECTION_MODE_EQUIRECTANGULAR:
                psz_loc_name = N_("Equirectangular");
+               break;
+            case PROJECTION_MODE_FISHEYE:
+               psz_loc_name = N_("Fisheye");
                break;
            case PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD:
                psz_loc_name = N_("Cubemap");
