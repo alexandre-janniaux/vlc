@@ -727,10 +727,14 @@ static const char *const ppsz_prefres[] = {
 
 #define INPUT_LUA_TEXT N_( "Disable all lua plugins" )
 
-#define FORCE_EQUIRECTANGULAR_TEXT N_("Force the equirectangular projection")
-#define FORCE_EQUIRECTANGULAR_LONGTEXT N_( \
-    "This option can be used to force the equirectangular projection " \
-    "for a 360° input." )
+#define FORCE_PROJECTION_TEXT N_("Force the projection defined by the projection-mode option")
+#define FORCE_PROJECTION_LONGTEXT N_( \
+    "This option can be used to force the project defined by projection-mode, " \
+    "see also --projection-mode or :projection-mode." )
+
+#define PROJECTION_MODE_TEXT N_("Define the projection mode")
+#define PROJECTION_MODE_LONGTEXT N_("Define the projection mode which will be "\
+    "used if --force-projection-mode is given.")
 
 // DEPRECATED
 #define SUB_CAT_LONGTEXT N_( \
@@ -2035,8 +2039,11 @@ vlc_module_begin ()
 
     add_bool( "lua", true, INPUT_LUA_TEXT, INPUT_LUA_TEXT, true );
 
-    add_bool( "force-equirectangular", false,
-              FORCE_EQUIRECTANGULAR_TEXT, FORCE_EQUIRECTANGULAR_LONGTEXT, false );
+    add_bool( "force-projection", false,
+              FORCE_PROJECTION_TEXT, FORCE_PROJECTION_LONGTEXT, false);
+
+    add_integer( "projection-mode", PROJECTION_MODE_RECTANGULAR,
+                 FORCE_EQUIRECTANGULAR_TEXT, FORCE_EQUIRECTANGULAR_LONGTEXT, false );
 
 /* Decoder options */
     set_subcategory( SUBCAT_INPUT_VCODEC )
