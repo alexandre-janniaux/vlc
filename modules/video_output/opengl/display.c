@@ -65,6 +65,7 @@ vlc_module_begin ()
     add_shortcut ("opengl", "gl")
     add_module("gl", "opengl", NULL, GL_TEXT, PROVIDER_LONGTEXT)
 #endif
+    add_integer("gl-left-mask", 0, "left mask", "left mask", false)
     add_glopts ()
 vlc_module_end ()
 

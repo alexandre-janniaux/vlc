@@ -951,6 +951,8 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
         *subpicture_chromas = gl_subpicture_chromas;
     }
 
+    vgl->mask_left = var_InheritInteger(vgl->gl, "gl-left-mask");
+
     GL_ASSERT_NOERROR();
     return vgl;
 }
