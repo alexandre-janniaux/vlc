@@ -103,6 +103,8 @@ void vout_display_opengl_SetWindowAspectRatio(vout_display_opengl_t *vgl,
 
 void vout_display_opengl_Viewport(vout_display_opengl_t *vgl, int x, int y,
                                   unsigned width, unsigned height);
+void vout_display_opengl_SetSize(vout_display_opengl_t *vgl,
+                                 unsigned width, unsigned height);
 
 int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,
                                 picture_t *picture, subpicture_t *subpicture);

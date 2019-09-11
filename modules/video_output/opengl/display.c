@@ -248,6 +248,7 @@ static int Control (vout_display_t *vd, int query, va_list ap)
             return VLC_SUCCESS;
         vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
         vout_display_opengl_Viewport(sys->vgl, place.x, place.y, place.width, place.height);
+        vout_display_opengl_SetSize(sys->vgl, c.display.width, c.display.height);
         vlc_gl_ReleaseCurrent (sys->gl);
         return VLC_SUCCESS;
       }

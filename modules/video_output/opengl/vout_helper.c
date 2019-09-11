@@ -157,10 +157,16 @@ struct vout_display_opengl_t {
     } last_source;
 
     struct {
+        unsigned int width;
         unsigned int height;
     } viewport;
 
-    unsigned mask_left;
+    struct {
+        unsigned left;
+        unsigned right;
+        unsigned top;
+        unsigned bottom;
+    } mask;
 
     /* Non-power-of-2 texture size support */
     bool supports_npot;
@@ -1063,11 +1069,17 @@ void vout_display_opengl_SetWindowAspectRatio(vout_display_opengl_t *vgl,
     getViewpointMatrixes(vgl, vgl->fmt.projection_mode, vgl->prgm);
 }
 
+void vout_display_opengl_SetSize(vout_display_opengl_t *vgl,
+                                 unsigned width, unsigned height)
+{
+    vgl->viewport.width = width;
+    vgl->viewport.height = height;
+}
+
 void vout_display_opengl_Viewport(vout_display_opengl_t *vgl, int x, int y,
                                   unsigned width, unsigned height)
 {
     vgl->vt.Viewport(x, y, width, height);
-    vgl->viewport.height = height;
 }
 
 bool vout_display_opengl_HasPool(const vout_display_opengl_t *vgl)
