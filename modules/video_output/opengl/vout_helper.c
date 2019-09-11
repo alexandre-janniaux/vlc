@@ -1173,6 +1173,90 @@ static int BuildSphere(unsigned nbPlanes,
                         const float *right, const float *bottom)
 {
     unsigned nbLatBands = 128;
+    unsigned nbLonBands = 128;
+
+    *nbVertices = (nbLatBands + 1) * (nbLonBands + 1);
+    *nbIndices = nbLatBands * nbLonBands * 3 * 2;
+
+    *vertexCoord = vlc_alloc(*nbVertices * 3, sizeof(GLfloat));
+    if (*vertexCoord == NULL)
+        return VLC_ENOMEM;
+    *textureCoord = vlc_alloc(nbPlanes * *nbVertices * 2, sizeof(GLfloat));
+    if (*textureCoord == NULL)
+    {
+        free(*vertexCoord);
+        return VLC_ENOMEM;
+    }
+    *indices = vlc_alloc(*nbIndices, sizeof(GLushort));
+    if (*indices == NULL)
+    {
+        free(*textureCoord);
+        free(*vertexCoord);
+        return VLC_ENOMEM;
+    }
+
+    for (unsigned lat = 0; lat <= nbLatBands; lat++) {
+        float theta = lat * (float) M_PI / nbLatBands;
+        float sinTheta, cosTheta;
+
+        sincosf(theta, &sinTheta, &cosTheta);
+
+        for (unsigned lon = 0; lon <= nbLonBands; lon++) {
+            float phi = lon * 2 * (float) M_PI / nbLonBands;
+            float sinPhi, cosPhi;
+
+            sincosf(phi, &sinPhi, &cosPhi);
+
+            float x = cosPhi * sinTheta;
+            float y = cosTheta;
+            float z = sinPhi * sinTheta;
+
+            unsigned off1 = (lat * (nbLonBands + 1) + lon) * 3;
+            (*vertexCoord)[off1] = SPHERE_RADIUS * x;
+            (*vertexCoord)[off1 + 1] = SPHERE_RADIUS * y;
+            (*vertexCoord)[off1 + 2] = SPHERE_RADIUS * z;
+
+            for (unsigned p = 0; p < nbPlanes; ++p)
+            {
+                unsigned off2 = (p * (nbLatBands + 1) * (nbLonBands + 1)
+                                + lat * (nbLonBands + 1) + lon) * 2;
+                float width = right[p] - left[p];
+                float height = bottom[p] - top[p];
+                float u = (float)lon / nbLonBands * width;
+                float v = (float)lat / nbLatBands * height;
+                (*textureCoord)[off2] = u;
+                (*textureCoord)[off2 + 1] = v;
+            }
+        }
+    }
+
+    for (unsigned lat = 0; lat < nbLatBands; lat++) {
+        for (unsigned lon = 0; lon < nbLonBands; lon++) {
+            unsigned first = (lat * (nbLonBands + 1)) + lon;
+            unsigned second = first + nbLonBands + 1;
+
+            unsigned off = (lat * nbLatBands + lon) * 3 * 2;
+
+            (*indices)[off] = first;
+            (*indices)[off + 1] = second;
+            (*indices)[off + 2] = first + 1;
+
+            (*indices)[off + 3] = second;
+            (*indices)[off + 4] = second + 1;
+            (*indices)[off + 5] = first + 1;
+        }
+    }
+
+    return VLC_SUCCESS;
+}
+
+static int BuildTwinSphere(unsigned nbPlanes,
+                        GLfloat **vertexCoord, GLfloat **textureCoord, unsigned *nbVertices,
+                        GLushort **indices, unsigned *nbIndices,
+                        const float *left, const float *top,
+                        const float *right, const float *bottom)
+{
+    unsigned nbLatBands = 128;
     unsigned nbLonBands = 64;
 
     *nbVertices = (nbLatBands + 1) * (nbLonBands + 1) * 2;
@@ -1472,6 +1556,12 @@ static int SetupCoords(vout_display_opengl_t *vgl,
                             &indices, &nbIndices,
                             left, top, right, bottom);
         break;
+    case PROJECTION_MODE_FISHEYE:
+        i_ret = BuildTwinSphere(vgl->prgm->tc->tex_count,
+                                &vertexCoord, &textureCoord, &nbVertices,
+                                &indices, &nbIndices,
+                                left, top, right, bottom);
+        break;
     case PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD:
         i_ret = BuildCube(vgl->prgm->tc->tex_count,
                           (float)vgl->fmt.i_cubemap_padding / vgl->fmt.i_width,
@@ -1738,4 +1828,3 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
     return VLC_SUCCESS;
 }
-
