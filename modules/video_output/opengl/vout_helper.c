@@ -156,6 +156,10 @@ struct vout_display_opengl_t {
         unsigned int i_visible_height;
     } last_source;
 
+    struct {
+        unsigned int height;
+    } viewport;
+
     /* Non-power-of-2 texture size support */
     bool supports_npot;
 
@@ -1059,6 +1063,7 @@ void vout_display_opengl_Viewport(vout_display_opengl_t *vgl, int x, int y,
                                   unsigned width, unsigned height)
 {
     vgl->vt.Viewport(x, y, width, height);
+    vgl->viewport.height = height;
 }
 
 bool vout_display_opengl_HasPool(const vout_display_opengl_t *vgl)
