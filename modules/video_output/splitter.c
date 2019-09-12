@@ -402,6 +402,12 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
             return VLC_EGENERIC;
         }
 
+        static const char * const ppsz_display_options[] = {
+            "stereo-hmd", NULL };
+
+        config_ChainParse(part->window, "", ppsz_display_options, output->config_chain);
+
+
         vdcfg.window = part->window;
         vout_display_t *display = vout_display_New(obj, &output->fmt, ctx, &vdcfg,
                                                    modname, NULL);
