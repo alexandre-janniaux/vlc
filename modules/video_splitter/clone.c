@@ -91,6 +91,7 @@ static int Open( vlc_object_t *p_this )
                                                        CFG_PREFIX "vout-list" );
     if( psz_clonelist )
     {
+	msg_Info(p_splitter, "Configuration vout-list=%s", psz_clonelist);
         /* Count the number of defined vout */
         p_splitter->i_output = 1;
         for( int i = 0; psz_clonelist[i]; i++ )
@@ -112,11 +113,23 @@ static int Open( vlc_object_t *p_this )
         char *psz_tmp = psz_clonelist;
         for( int i = 0; psz_tmp && *psz_tmp; i++ )
         {
+            video_splitter_output_t *p_cfg = &p_splitter->p_output[i];
+
             char *psz_new = strchr( psz_tmp, VOUTSEPARATOR );
             if( psz_new )
                 *psz_new++ = '\0';
 
-            p_splitter->p_output[i].psz_module = strdup( psz_tmp );
+            char *name = NULL; config_chain_t *cfg = NULL;
+
+            msg_Dbg(p_splitter, "psz_module=%s", p_cfg->psz_module);
+            config_ChainCreate(&name, &cfg, psz_tmp);
+
+            if (name != NULL)
+            {
+                char *module = p_cfg->psz_module;
+                p_cfg->psz_module = strdup(name);
+                p_cfg->config_chain = cfg;
+            }
 
             psz_tmp = psz_new;
         }
@@ -144,20 +157,10 @@ static int Open( vlc_object_t *p_this )
     /* */
     for( int i = 0; i < p_splitter->i_output; i++ )
     {
+	fprintf(stderr, "CONFIGURING %d\n", i);
         video_splitter_output_t *p_cfg = &p_splitter->p_output[i];
         video_format_Copy( &p_cfg->fmt, &p_splitter->fmt );
 
-	char * name = NULL; config_chain_t *cfg;
-
-	config_ChainCreate(&name, &cfg, p_cfg->psz_module);
-
-	if (name != NULL)
-	{
-		char *module = p_cfg->psz_module;
-		p_cfg->psz_module = strdup(name);
-		p_cfg->config_chain = cfg;
-	}
-	msg_Info(p_splitter, "Configuration is %s", p_cfg->psz_module);
     }
 
     /* */
