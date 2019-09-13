@@ -73,6 +73,8 @@ struct vout_display_sys_t
     vout_display_opengl_t *vgl;
     vlc_gl_t *gl;
     picture_pool_t *pool;
+    vout_display_place_t place;
+    vlc_viewpoint_t viewpoint;
 };
 
 /* Display callbacks */
@@ -255,9 +257,49 @@ static void PictureDisplay (vout_display_t *vd, picture_t *pic)
     vlc_gl_Exec(sys->gl, OpenglPictureDisplay, &command);
 }
 
+#define OPENGL_UPDATE_VIEWPORT 1
+#define OPENGL_UPDATE_VIEWPOINT 2
+
+struct OpenglControlCommand
+{
+    vout_display_t *vd;
+    unsigned update_kind;
+    int result;
+};
+
+static void OpenglDisplayControl(void *userdata)
+{
+    struct OpenglControlCommand *command = userdata;
+    struct vout_display_sys_t *sys = command->vd->sys;
+
+    if (command->update_kind == OPENGL_UPDATE_VIEWPORT)
+    {
+        float aspect_ratio = (float)sys->place.width / sys->place.height;
+
+        command->result = vlc_gl_MakeCurrent (sys->gl);
+
+        // TODO: this is changing behaviour
+        if (command->result != VLC_SUCCESS)
+            return;
+
+        vout_display_opengl_SetWindowAspectRatio(sys->vgl, aspect_ratio);
+        vout_display_opengl_Viewport(sys->vgl, sys->place.x, sys->place.y,
+                                     sys->place.width, sys->place.height);
+        vlc_gl_ReleaseCurrent (sys->gl);
+    }
+
+    if (command->update_kind == OPENGL_UPDATE_VIEWPOINT)
+    {
+        vout_display_opengl_SetViewpoint (sys->vgl, &sys->viewpoint);
+    }
+}
+
+
 static int Control (vout_display_t *vd, int query, va_list ap)
 {
     vout_display_sys_t *sys = vd->sys;
+
+    unsigned update = 0;
 
     switch (query)
     {
@@ -272,7 +314,6 @@ static int Control (vout_display_t *vd, int query, va_list ap)
       {
         vout_display_cfg_t c = *va_arg (ap, const vout_display_cfg_t *);
         const video_format_t *src = &vd->source;
-        vout_display_place_t place;
 
         /* Reverse vertical alignment as the GL tex are Y inverted */
         if (c.align.vertical == VLC_VIDEO_ALIGN_TOP)
@@ -280,14 +321,11 @@ static int Control (vout_display_t *vd, int query, va_list ap)
         else if (c.align.vertical == VLC_VIDEO_ALIGN_BOTTOM)
             c.align.vertical = VLC_VIDEO_ALIGN_TOP;
 
-        vout_display_PlacePicture(&place, src, &c);
+        vout_display_PlacePicture(&sys->place, src, &c);
         vlc_gl_Resize (sys->gl, c.display.width, c.display.height);
-        if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
-            return VLC_SUCCESS;
-        vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
-        vout_display_opengl_Viewport(sys->vgl, place.x, place.y, place.width, place.height);
-        vlc_gl_ReleaseCurrent (sys->gl);
-        return VLC_SUCCESS;
+
+        update = OPENGL_UPDATE_VIEWPORT;
+        break;
       }
 
       case VOUT_DISPLAY_CHANGE_SOURCE_ASPECT:
@@ -297,18 +335,32 @@ static int Control (vout_display_t *vd, int query, va_list ap)
         vout_display_place_t place;
 
         vout_display_PlacePicture(&place, &vd->source, cfg);
-        if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
-            return VLC_SUCCESS;
-        vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
-        vout_display_opengl_Viewport(sys->vgl, place.x, place.y, place.width, place.height);
-        vlc_gl_ReleaseCurrent (sys->gl);
-        return VLC_SUCCESS;
+        update = OPENGL_UPDATE_VIEWPORT;
+        break;
       }
       case VOUT_DISPLAY_CHANGE_VIEWPOINT:
-        return vout_display_opengl_SetViewpoint (sys->vgl,
-            &va_arg (ap, const vout_display_cfg_t* )->viewpoint);
+      {
+          const vout_display_cfg_t *cfg = va_arg (ap, const vout_display_cfg_t *);
+          sys->viewpoint = cfg->viewpoint;
+          update = OPENGL_UPDATE_VIEWPOINT;
+          break;
+      }
       default:
         msg_Err (vd, "Unknown request %d", query);
+        return VLC_EGENERIC;
     }
-    return VLC_EGENERIC;
+
+    /* We should define update if we have to execute an OpenGL command. */
+    assert (update != 0);
+
+    struct OpenglControlCommand command =
+    {
+        .vd = vd,
+        .update_kind = update,
+        .result = VLC_SUCCESS,
+    };
+
+    vlc_gl_Exec(sys->gl, OpenglDisplayControl, &command);
+
+    return command.result;
 }
