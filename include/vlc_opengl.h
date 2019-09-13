@@ -52,6 +52,7 @@ struct vlc_gl_t
     void (*swap)(vlc_gl_t *);
     void*(*getProcAddress)(vlc_gl_t *, const char *);
     void (*destroy)(vlc_gl_t *);
+    void (*exec)(vlc_gl_t *, void (*)(void *));
 
     enum {
         VLC_GL_EXT_DEFAULT,
@@ -130,6 +131,21 @@ VLC_API vlc_gl_t *vlc_gl_surface_Create(vlc_object_t *,
                                         struct vout_window_t **) VLC_USED;
 VLC_API bool vlc_gl_surface_CheckSize(vlc_gl_t *, unsigned *w, unsigned *h);
 VLC_API void vlc_gl_surface_Destroy(vlc_gl_t *);
+
+static inline void vlc_gl_Exec(vlc_gl_t *gl, void (*func)(void *), void *userdata)
+{
+    if (gl->exec)
+    {
+        /* If the OpenGL implementation require special setup, transfer the
+         * function to execute. */
+        gl->exec(func, userdata);
+    }
+    else
+    {
+        /* Otherwise, keep the function execution in the current call size. */
+        func(userdata);
+    }
+}
 
 static inline bool vlc_gl_StrHasToken(const char *apis, const char *api)
 {
