@@ -188,15 +188,57 @@ static picture_pool_t *Pool (vout_display_t *vd, unsigned count)
     return sys->pool;
 }
 
+struct PictureRenderCommand
+{
+    vout_display_t *vd;
+    picture_t *picture;
+    subpicture_t *subpicture;
+    vlc_tick_t date;
+};
+
+static void OpenglPictureRender (void *userdata)
+{
+    struct PictureRenderCommand *command = userdata;
+    struct vout_display_sys_t *sys = command->vd->sys;
+
+    if (vlc_gl_MakeCurrent (sys->gl) == VLC_SUCCESS)
+    {
+        vout_display_opengl_Prepare (sys->vgl, command->picture,
+                                     command->subpicture);
+        vlc_gl_ReleaseCurrent (sys->gl);
+    }
+}
+
 static void PictureRender (vout_display_t *vd, picture_t *pic, subpicture_t *subpicture,
                            vlc_tick_t date)
 {
     VLC_UNUSED(date);
     vout_display_sys_t *sys = vd->sys;
 
+    struct PictureRenderCommand command = {
+        .vd = vd,
+        .picture = pic,
+        .subpicture = subpicture,
+        .date = date,
+    };
+
+    vlc_gl_Exec(sys->gl, OpenglPictureRender, &command);
+}
+
+struct PictureDisplayCommand
+{
+    vout_display_t *vd;
+    picture_t *picture;
+};
+
+static void OpenglPictureDisplay(void *userdata)
+{
+    struct PictureDisplayCommand *command = userdata;
+    vout_display_sys_t *sys = command->vd->sys;
+
     if (vlc_gl_MakeCurrent (sys->gl) == VLC_SUCCESS)
     {
-        vout_display_opengl_Prepare (sys->vgl, pic, subpicture);
+        vout_display_opengl_Display (sys->vgl, &command->vd->source);
         vlc_gl_ReleaseCurrent (sys->gl);
     }
 }
@@ -204,13 +246,13 @@ static void PictureRender (vout_display_t *vd, picture_t *pic, subpicture_t *sub
 static void PictureDisplay (vout_display_t *vd, picture_t *pic)
 {
     vout_display_sys_t *sys = vd->sys;
-    VLC_UNUSED(pic);
 
-    if (vlc_gl_MakeCurrent (sys->gl) == VLC_SUCCESS)
-    {
-        vout_display_opengl_Display (sys->vgl, &vd->source);
-        vlc_gl_ReleaseCurrent (sys->gl);
-    }
+    struct PictureDisplayCommand command = {
+        .vd = vd,
+        .picture = pic,
+    };
+
+    vlc_gl_Exec(sys->gl, OpenglPictureDisplay, &command);
 }
 
 static int Control (vout_display_t *vd, int query, va_list ap)
