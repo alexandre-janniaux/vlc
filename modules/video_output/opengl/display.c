@@ -263,43 +263,44 @@ static void PictureDisplay (vout_display_t *vd, picture_t *pic)
 struct OpenglControlCommand
 {
     vout_display_t *vd;
-    unsigned update_kind;
     int result;
 };
 
-static void OpenglDisplayControl(void *userdata)
+static void OpenglUpdateViewport(void *userdata)
 {
     struct OpenglControlCommand *command = userdata;
     struct vout_display_sys_t *sys = command->vd->sys;
 
-    if (command->update_kind == OPENGL_UPDATE_VIEWPORT)
-    {
-        float aspect_ratio = (float)sys->place.width / sys->place.height;
+    float aspect_ratio = (float)sys->place.width / sys->place.height;
 
-        command->result = vlc_gl_MakeCurrent (sys->gl);
+    command->result = vlc_gl_MakeCurrent (sys->gl);
 
-        // TODO: this is changing behaviour
-        if (command->result != VLC_SUCCESS)
-            return;
+    // TODO: this is changing behaviour
+    if (command->result != VLC_SUCCESS)
+        return;
 
-        vout_display_opengl_SetWindowAspectRatio(sys->vgl, aspect_ratio);
-        vout_display_opengl_Viewport(sys->vgl, sys->place.x, sys->place.y,
-                                     sys->place.width, sys->place.height);
-        vlc_gl_ReleaseCurrent (sys->gl);
-    }
+    vout_display_opengl_SetWindowAspectRatio(sys->vgl, aspect_ratio);
+    vout_display_opengl_Viewport(sys->vgl, sys->place.x, sys->place.y,
+                                 sys->place.width, sys->place.height);
+    vlc_gl_ReleaseCurrent (sys->gl);
 
-    if (command->update_kind == OPENGL_UPDATE_VIEWPOINT)
-    {
-        vout_display_opengl_SetViewpoint (sys->vgl, &sys->viewpoint);
-    }
+    command->result = VLC_SUCCESS;
 }
 
+static void OpenglUpdateViewpoint(void *userdata)
+{
+    struct OpenglControlCommand *command = userdata;
+    vout_display_sys_t *sys = command->vd->sys;
+
+    vout_display_opengl_SetViewpoint (sys->vgl, &sys->viewpoint);
+    command->result = VLC_SUCCESS;
+}
 
 static int Control (vout_display_t *vd, int query, va_list ap)
 {
     vout_display_sys_t *sys = vd->sys;
-
-    unsigned update = 0;
+    struct OpenglControlCommand command =
+    { .vd = vd, .result = VLC_SUCCESS, };
 
     switch (query)
     {
@@ -324,8 +325,8 @@ static int Control (vout_display_t *vd, int query, va_list ap)
         vout_display_PlacePicture(&sys->place, src, &c);
         vlc_gl_Resize (sys->gl, c.display.width, c.display.height);
 
-        update = OPENGL_UPDATE_VIEWPORT;
-        break;
+        vlc_gl_Exec(sys->gl, OpenglUpdateViewport, &command);
+        return command.result;
       }
 
       case VOUT_DISPLAY_CHANGE_SOURCE_ASPECT:
@@ -335,32 +336,19 @@ static int Control (vout_display_t *vd, int query, va_list ap)
         vout_display_place_t place;
 
         vout_display_PlacePicture(&place, &vd->source, cfg);
-        update = OPENGL_UPDATE_VIEWPORT;
-        break;
+
+        vlc_gl_Exec(sys->gl, OpenglUpdateViewport, &command);
+        return command.result;
       }
       case VOUT_DISPLAY_CHANGE_VIEWPOINT:
       {
           const vout_display_cfg_t *cfg = va_arg (ap, const vout_display_cfg_t *);
           sys->viewpoint = cfg->viewpoint;
-          update = OPENGL_UPDATE_VIEWPOINT;
-          break;
+          vlc_gl_Exec(sys->gl, OpenglUpdateViewpoint, &command);
+          return command.result;
       }
       default:
         msg_Err (vd, "Unknown request %d", query);
-        return VLC_EGENERIC;
     }
-
-    /* We should define update if we have to execute an OpenGL command. */
-    assert (update != 0);
-
-    struct OpenglControlCommand command =
-    {
-        .vd = vd,
-        .update_kind = update,
-        .result = VLC_SUCCESS,
-    };
-
-    vlc_gl_Exec(sys->gl, OpenglDisplayControl, &command);
-
-    return command.result;
+    return VLC_EGENERIC;
 }
