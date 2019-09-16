@@ -47,7 +47,7 @@ public:
     GetWindow(vlc_window_provider_t *opaque_provider,
               vlc_object_t *parent);
 
-    const vlc_window_provider_t *GetProvider();
+    vlc_window_provider_t *GetProvider();
 
 public slots:
     void Resize(unsigned width, unsigned height);

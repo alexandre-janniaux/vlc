@@ -154,7 +154,7 @@ end:
     //emit provider->WindowRequested();
 }
 
-const vlc_window_provider_t *
+vlc_window_provider_t *
 WaylandWindowProvider::GetProvider()
 {
     return &provider;

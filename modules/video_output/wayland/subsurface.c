@@ -110,6 +110,9 @@ static void ReportSize(vout_window_t *wnd)
     unsigned width  = sys->surface.width;
     unsigned height = sys->surface.height;
 
+    var_SetInteger(wnd, "width", width);
+    var_SetInteger(wnd, "height", height);
+
     /* TODO: should we report zero size values ? */
     msg_Err(wnd, "WAYLAND report size %ux%u", width, height);
     vout_window_ReportSize(wnd, width, height);
@@ -133,6 +136,8 @@ static int Enable(vout_window_t *wnd, const vout_window_cfg_t *restrict cfg)
 {
     vout_window_sys_t *sys = wnd->sys;
     struct wl_display *display = wnd->display.wl;
+
+
 
     wl_surface_commit(wnd->handle.wl);
     wl_display_flush(display);
@@ -215,6 +220,11 @@ static int Open(vout_window_t *wnd, vout_window_t *parent)
 
     wl_subsurface_set_desync(sys->surface.role);
     wl_subsurface_place_below(sys->surface.role, parent->handle.wl);
+
+    struct wl_region *region = wl_compositor_create_region(sys->compositor);
+    wl_region_add(region, 0, 0, 0, 0);
+    wl_surface_set_input_region(sys->surface.handle, region);
+    wl_region_destroy(region);
 
     wnd->type = VOUT_WINDOW_TYPE_WAYLAND;
     wnd->handle.wl = sys->surface.handle;

@@ -356,6 +356,9 @@ int vout_display_window_InitOwner(vout_window_owner_t *owner,
     if (state == NULL)
         return VLC_EGENERIC;
 
+    memset(state, 0, sizeof(*state));
+    state->vout = vout;
+
     vlc_mouse_Init(&state->mouse);
     state->last_left_press = INT64_MIN;
 
