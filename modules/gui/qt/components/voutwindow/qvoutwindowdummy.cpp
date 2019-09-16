@@ -53,7 +53,7 @@ QSGNode*VideoSurfaceProviderDummy::updatePaintNode(QQuickItem* item, QSGNode* ol
     if (!node)
     {
         node = item->window()->createRectangleNode();
-        node->setColor(Qt::black);
+        node->setColor(Qt::transparent);
     }
     node->setRect(item->boundingRect());
     return node;
