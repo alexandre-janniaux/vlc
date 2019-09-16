@@ -68,10 +68,11 @@ Utils.NavigableFocusScope {
 
     //center image
     Rectangle {
-        visible: !rootWindow.hasEmbededVideo
+        visible: false//!rootWindow.hasEmbededVideo
         focus: false
         color: VLCStyle.colors.bg
         anchors.fill: parent
+
 
         FastBlur {
             //destination aspect ration
