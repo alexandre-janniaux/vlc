@@ -31,6 +31,10 @@ extern "C" {
 #  include <stdbool.h>
 # endif
 
+/* Forward declaration for libvlc_media_player_set_wl_surface. */
+struct wl_display;
+struct wl_surface;
+
 /** \defgroup libvlc_media_player LibVLC media player
  * \ingroup libvlc
  * A LibVLC media player plays one media (usually in a custom drawable).
@@ -915,6 +919,13 @@ LIBVLC_API void libvlc_media_player_set_hwnd ( libvlc_media_player_t *p_mi, void
  * \return a window handle or NULL if there are none.
  */
 LIBVLC_API void *libvlc_media_player_get_hwnd ( libvlc_media_player_t *p_mi );
+
+/**
+ * TODO
+ */
+LIBVLC_API void libvlc_media_player_set_wl_surface( libvlc_media_player_t *p_mi,
+                                                    struct wl_display *display,
+                                                    struct wl_surface *surface );
 
 /**
  * Set the android context.

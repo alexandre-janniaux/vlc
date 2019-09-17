@@ -1202,6 +1202,25 @@ void *libvlc_media_player_get_hwnd( libvlc_media_player_t *p_mi )
 }
 
 /**************************************************************************
+ * set_xwindow
+ **************************************************************************/
+void libvlc_media_player_set_wl_surface( libvlc_media_player_t *p_mi,
+                                         struct wl_display *display,
+                                         struct wl_surface *surface )
+{
+    assert (p_mid != NULL);
+
+    /* display = NULL / surface = NULL remove the surface */
+    assert (display != NULL || surface == NULL);
+
+    var_SetString (p_mi, "avcodec-hw", "");
+    var_SetString (p_mi, "vout", "");
+    var_SetAddress (p_mi, "wl-embed-display", display);
+    var_SetAddress (p_mi, "wl-embed-surface", surface);
+    var_SetString (p_mi, "window", surface ? "embed-wl" : "");
+}
+
+/**************************************************************************
  * set_android_context
  **************************************************************************/
 void libvlc_media_player_set_android_context( libvlc_media_player_t *p_mi,
