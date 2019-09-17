@@ -230,6 +230,15 @@ libwl_shm_plugin_la_CFLAGS = $(WAYLAND_CLIENT_CFLAGS)
 libwl_shm_plugin_la_LIBADD = $(WAYLAND_CLIENT_LIBS)
 CLEANFILES += $(nodist_libwl_shm_plugin_la_SOURCES)
 
+libwl_embed_plugin_la_SOURCES = video_output/wayland/embed.c
+nodist_libwl_embed_plugin_la_SOURCES = \
+	video_output/wayland/viewporter-client-protocol.h \
+	video_output/wayland/viewporter-protocol.c
+libwl_embed_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) \
+	-I$(builddir)/video_output/wayland
+libwl_embed_plugin_la_CFLAGS = $(WAYLAND_CLIENT_CFLAGS)
+libwl_embed_plugin_la_LIBADD = $(WAYLAND_CLIENT_LIBS)
+
 video_output/wayland/viewporter-client-protocol.h: \
 		$(WAYLAND_PROTOCOLS)/stable/viewporter/viewporter.xml
 	$(AM_V_GEN)$(WAYLAND_SCANNER) client-header $< $@
@@ -296,6 +305,7 @@ if HAVE_WAYLAND
 BUILT_SOURCES += $(nodist_libwl_shm_plugin_la_SOURCES)
 vout_LTLIBRARIES += libwl_shm_plugin.la
 vout_LTLIBRARIES += libwl_shell_plugin.la
+vout_LTLIBRARIES += libwl_embed_plugin.la
 BUILT_SOURCES += $(nodist_libxdg_shell_plugin_la_SOURCES)
 vout_LTLIBRARIES += libxdg_shell_plugin.la
 if HAVE_EGL

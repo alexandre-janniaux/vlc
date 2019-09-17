@@ -1208,7 +1208,7 @@ void libvlc_media_player_set_wl_surface( libvlc_media_player_t *p_mi,
                                          struct wl_display *display,
                                          struct wl_surface *surface )
 {
-    assert (p_mid != NULL);
+    assert (p_mi != NULL);
 
     /* display = NULL / surface = NULL remove the surface */
     assert (display != NULL || surface == NULL);
