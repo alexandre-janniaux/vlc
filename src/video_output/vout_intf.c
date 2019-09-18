@@ -284,6 +284,11 @@ void vout_CreateVars( vout_thread_t *p_vout )
     /* Viewpoint */
     var_Create( p_vout, "viewpoint", VLC_VAR_ADDRESS  );
     var_Create( p_vout, "viewpoint-changeable", VLC_VAR_BOOL );
+
+    /* Wayland embed hack, filled by libVLC */
+    var_Create( p_vout, "wl-embed-display", VLC_VAR_ADDRESS );
+    var_Create( p_vout, "wl-embed-surface", VLC_VAR_ADDRESS );
+    var_Create( p_vout, "wl-embed-size", VLC_VAR_COORDS );
 }
 
 void vout_IntfInit( vout_thread_t *p_vout )

@@ -1217,9 +1217,20 @@ void libvlc_media_player_set_wl_surface( libvlc_media_player_t *p_mp,
 
     var_SetString (vout, "avcodec-hw", "");
     var_SetString (vout, "vout", "");
-    var_SetString (vout, "window", surface ? "embed-wl" : "");
+    var_SetString (vout, "window", surface ? "wl_embed" : "");
     var_SetAddress (vout, "wl-embed-display", display);
     var_SetAddress (vout, "wl-embed-surface", surface);
+}
+
+void libvlc_media_player_set_wl_surface_size( libvlc_media_player_t *p_mp,
+                                              unsigned width,
+                                              unsigned height )
+{
+    assert (p_mp != NULL);
+
+    vout_thread_t *vout = vlc_player_vout_Hold(p_mp->player);
+
+    var_SetCoords(vout, "wl-embed-size", (int32_t)width, (int32_t)height);
 }
 
 /**************************************************************************

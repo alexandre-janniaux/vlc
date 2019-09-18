@@ -204,8 +204,10 @@ static int Open(vout_window_t *wnd)
     //wl_surface_set_input_region(sys->surface.handle, region);
     //wl_region_destroy(region);
 
-    var_InheritURational(wnd, "wl-embed-size",
-                         &sys->surface.width, &sys->surface.height);
+    vlc_value_t var_embed_size;
+    var_Inherit(wnd, "wl-embed-size", VLC_VAR_COORDS, &var_embed_size);
+    sys->surface.width  = var_embed_size.x;
+    sys->surface.height = var_embed_size.y;
     ReportSize(wnd);
 
     /*
