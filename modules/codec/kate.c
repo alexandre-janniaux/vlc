@@ -49,14 +49,14 @@
 # define PROFILE_STOP(name) ((void)0)
 #endif
 
-#define CHECK_TIGER_RET( statement )                                   \
-    do                                                                 \
-    {                                                                  \
-        int i_ret = (statement);                                       \
-        if( i_ret < 0 )                                                \
-        {                                                              \
-            msg_Dbg( p_dec, "Error in " #statement ": %d", i_ret );    \
-        }                                                              \
+#define CHECK_TIGER_RET( statement )                                         \
+    do                                                                       \
+    {                                                                        \
+        int i_internal_ret = (statement);                                    \
+        if( i_internal_ret < 0 )                                             \
+        {                                                                    \
+            msg_Dbg( p_dec, "Error in " #statement ": %d", i_internal_ret ); \
+        }                                                                    \
     } while( 0 )
 
 /*****************************************************************************
