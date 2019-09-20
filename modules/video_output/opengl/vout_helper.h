@@ -86,6 +86,11 @@
 
 typedef struct vout_display_opengl_t vout_display_opengl_t;
 
+typedef enum {
+    VLC_GL_VIEWPORT_PICTURE,
+    VLC_GL_VIEWPORT_SPU,
+} vlc_gl_viewport_type;
+
 vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
                                                const vlc_fourcc_t **subpicture_chromas,
                                                vlc_gl_t *gl,
@@ -101,7 +106,9 @@ int vout_display_opengl_SetViewpoint(vout_display_opengl_t *vgl, const vlc_viewp
 void vout_display_opengl_SetWindowAspectRatio(vout_display_opengl_t *vgl,
                                               float f_sar);
 
-void vout_display_opengl_Viewport(vout_display_opengl_t *vgl, int x, int y,
+void vout_display_opengl_Viewport(vout_display_opengl_t *vgl,
+                                  vlc_gl_viewport_type kind,
+                                  int x, int y,
                                   unsigned width, unsigned height);
 
 int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,

@@ -148,10 +148,10 @@ struct vout_display_opengl_t {
     int    subpicture_buffer_object_count;
 
     /* Store viewport information. */
-    struct {
+    struct vlc_gl_viewport {
         int x, y;
         unsigned width, height;
-    } vp_image;
+    } vp_image, vp_spu;
 
     struct {
         unsigned int i_x_offset;
@@ -1024,13 +1024,26 @@ void vout_display_opengl_SetWindowAspectRatio(vout_display_opengl_t *vgl,
     getViewpointMatrixes(vgl, vgl->fmt.projection_mode, vgl->prgm);
 }
 
-void vout_display_opengl_Viewport(vout_display_opengl_t *vgl, int x, int y,
-                                  unsigned width, unsigned height)
+void vout_display_opengl_Viewport(vout_display_opengl_t *vgl,
+                                  vlc_gl_viewport_type kind,
+                                  int x, int y, unsigned width, unsigned height)
 {
-    vgl->vp_image.x = x;
-    vgl->vp_image.y = y;
-    vgl->vp_image.width  = width;
-    vgl->vp_image.height = height;
+    struct vlc_gl_viewport *vp = NULL;
+
+    switch(kind)
+    {
+        case VLC_GL_VIEWPORT_PICTURE:
+            vp = &vgl->vp_image; break;
+        case VLC_GL_VIEWPORT_SPU:
+            vp = &vgl->vp_spu; break;
+        default:
+            return;
+    }
+
+    vp->x = x;
+    vp->y = y;
+    vp->width  = width;
+    vp->height = height;
 }
 
 bool vout_display_opengl_HasPool(const vout_display_opengl_t *vgl)
@@ -1638,6 +1651,10 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
     vgl->vt.Enable(GL_BLEND);
     vgl->vt.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    /* Restaure viewport for SPU */
+    vgl->vt.Viewport(vgl->vp_spu.x, vgl->vp_spu.y,
+                     vgl->vp_spu.width, vgl->vp_spu.height);
 
     /* We need two buffer objects for each region: for vertex and texture coordinates. */
     if (2 * vgl->region_count > vgl->subpicture_buffer_object_count) {
