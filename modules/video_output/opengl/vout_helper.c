@@ -1034,8 +1034,8 @@ void vout_display_opengl_Viewport(vout_display_opengl_t *vgl,
     {
         case VLC_GL_VIEWPORT_PICTURE:
             vp = &vgl->vp_image; break;
-        case VLC_GL_VIEWPORT_SPU:
-            vp = &vgl->vp_spu; break;
+        case VLC_GL_VIEWPORT_TEXT:
+            vp = &vgl->vp_text; break;
         default:
             return;
     }
@@ -1652,10 +1652,6 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     vgl->vt.Enable(GL_BLEND);
     vgl->vt.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    /* Restaure viewport for SPU */
-    vgl->vt.Viewport(vgl->vp_spu.x, vgl->vp_spu.y,
-                     vgl->vp_spu.width, vgl->vp_spu.height);
-
     /* We need two buffer objects for each region: for vertex and texture coordinates. */
     if (2 * vgl->region_count > vgl->subpicture_buffer_object_count) {
         if (vgl->subpicture_buffer_object_count > 0)
@@ -1676,6 +1672,15 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     vgl->vt.ActiveTexture(GL_TEXTURE0 + 0);
     for (int i = 0; i < vgl->region_count; i++) {
         gl_region_t *glr = &vgl->region[i];
+
+        /* Restaure correct viewport for SPU or Picture */
+        if (glr->is_text)
+            vgl->vt.Viewport(vgl->vp_text.x, vgl->vp_text.y,
+                             vgl->vp_text.width, vgl->vp_text.height);
+        else
+            vgl->vt.Viewport(vgl->vp_picture.x, vgl->vp_picture.y,
+                             vgl->vp_picture.width, vgl->vp_picture.height);
+
         const GLfloat vertexCoord[] = {
             glr->left,  glr->top,
             glr->left,  glr->bottom,

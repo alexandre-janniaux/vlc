@@ -243,7 +243,10 @@ static int Control (vout_display_t *vd, int query, va_list ap)
         if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
             return VLC_SUCCESS;
         vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
-        vout_display_opengl_Viewport(sys->vgl, place.x, place.y, place.width, place.height);
+        vout_display_opengl_Viewport(sys->vgl, VLC_GL_VIEWPORT_PICTURE,
+                                     place.x, place.y, place.width, place.height);
+        vout_display_opengl_Viewport(sys->vgl, VLC_GL_VIEWPORT_TEXT,
+                                     0, 0, cfg->display.width, cfg->display.height);
         vlc_gl_ReleaseCurrent (sys->gl);
         return VLC_SUCCESS;
       }
@@ -258,7 +261,10 @@ static int Control (vout_display_t *vd, int query, va_list ap)
         if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
             return VLC_SUCCESS;
         vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
-        vout_display_opengl_Viewport(sys->vgl, place.x, place.y, place.width, place.height);
+        vout_display_opengl_Viewport(sys->vgl, VLC_GL_VIEWPORT_PICTURE,
+                                     place.x, place.y, place.width, place.height);
+        vout_display_opengl_Viewport(sys->vgl, VLC_GL_VIEWPORT_TEXT,
+                                     0, 0, cfg->display.width, cfg->display.height);
         vlc_gl_ReleaseCurrent (sys->gl);
         return VLC_SUCCESS;
       }

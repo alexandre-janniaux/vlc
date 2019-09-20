@@ -88,7 +88,7 @@ typedef struct vout_display_opengl_t vout_display_opengl_t;
 
 typedef enum {
     VLC_GL_VIEWPORT_PICTURE,
-    VLC_GL_VIEWPORT_SPU,
+    VLC_GL_VIEWPORT_TEXT,
 } vlc_gl_viewport_type;
 
 vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
