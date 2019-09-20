@@ -147,6 +147,12 @@ struct vout_display_opengl_t {
     GLuint *subpicture_buffer_object;
     int    subpicture_buffer_object_count;
 
+    /* Store viewport information. */
+    struct {
+        int x, y;
+        unsigned width, height;
+    } vp_image;
+
     struct {
         unsigned int i_x_offset;
         unsigned int i_y_offset;
@@ -1021,7 +1027,10 @@ void vout_display_opengl_SetWindowAspectRatio(vout_display_opengl_t *vgl,
 void vout_display_opengl_Viewport(vout_display_opengl_t *vgl, int x, int y,
                                   unsigned width, unsigned height)
 {
-    vgl->vt.Viewport(x, y, width, height);
+    vgl->vp_image.x = x;
+    vgl->vp_image.y = y;
+    vgl->vp_image.width  = width;
+    vgl->vp_image.height = height;
 }
 
 bool vout_display_opengl_HasPool(const vout_display_opengl_t *vgl)
@@ -1563,6 +1572,9 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
                                 const video_format_t *source)
 {
     GL_ASSERT_NOERROR();
+    /* Restaure viewport for picture */
+    vgl->vt.Viewport(vgl->vp_picture.x, vgl->vp_picture.y,
+                     vgl->vp_picture.width, vgl->vp_picture.height);
 
     /* Why drawing here and not in Render()? Because this way, the
        OpenGL providers can call vout_display_opengl_Display to force redraw.
