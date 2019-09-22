@@ -90,6 +90,8 @@ typedef struct {
 
     float    tex_width;
     float    tex_height;
+
+    bool     is_text;
 } gl_region_t;
 
 struct prgm
@@ -151,7 +153,7 @@ struct vout_display_opengl_t {
     struct vlc_gl_viewport {
         int x, y;
         unsigned width, height;
-    } vp_image, vp_spu;
+    } vp_picture, vp_text;
 
     struct {
         unsigned int i_x_offset;
@@ -1033,7 +1035,7 @@ void vout_display_opengl_Viewport(vout_display_opengl_t *vgl,
     switch(kind)
     {
         case VLC_GL_VIEWPORT_PICTURE:
-            vp = &vgl->vp_image; break;
+            vp = &vgl->vp_picture; break;
         case VLC_GL_VIEWPORT_TEXT:
             vp = &vgl->vp_text; break;
         default:
@@ -1107,6 +1109,7 @@ int vout_display_opengl_Prepare(vout_display_opengl_t *vgl,
              r && ret == VLC_SUCCESS; r = r->p_next, i++) {
             gl_region_t *glr = &vgl->region[i];
 
+            glr->is_text = r->b_is_text || r->p_text;
             glr->width  = r->fmt.i_visible_width;
             glr->height = r->fmt.i_visible_height;
             if (!vgl->supports_npot) {

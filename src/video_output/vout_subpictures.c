@@ -332,6 +332,7 @@ static void SpuRenderText(spu_t *spu,
 
         if ( region->p_text )
             text->pf_render(text, region, region, chroma_list);
+        region->b_is_text = true;
     }
     vlc_mutex_unlock(&sys->textlock);
 }

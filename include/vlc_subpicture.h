@@ -71,6 +71,7 @@ struct subpicture_region_t
     bool            b_noregionbg;    /**< render background under text only */
     bool            b_gridmode;      /** if the decoder sends row/cols based output */
     bool            b_balanced_text; /** try to balance wrapped text lines */
+    bool            b_is_text;
     int             i_max_width;     /** horizontal rendering/cropping target/limit */
     int             i_max_height;    /** vertical rendering/cropping target/limit */
 
