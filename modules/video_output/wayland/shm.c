@@ -191,6 +191,7 @@ static int Control(vout_display_t *vd, int query, va_list ap)
             const vout_display_cfg_t *cfg = va_arg(ap, const vout_display_cfg_t *);
             sys->display_width = cfg->display.width;
             sys->display_height = cfg->display.height;
+            msg_Err(vd, "DISPLAY: change size to %ux%u", sys->display_width, sys->display_height);
 
             if (sys->viewport != NULL)
             {
