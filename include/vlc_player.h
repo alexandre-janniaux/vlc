@@ -2526,6 +2526,11 @@ vlc_player_vout_Snapshot(vlc_player_t *player);
 VLC_API void
 vlc_player_osd_Message(vlc_player_t *player, const char *fmt, ...);
 
+/* TODO */
+VLC_API void
+vlc_player_SetWindowProvider(vlc_player_t *player,
+                             vlc_window_provider_t *provider);
+
 /** @} vlc_player__vout */
 
 /**

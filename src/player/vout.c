@@ -201,3 +201,10 @@ vlc_player_vout_Snapshot(vlc_player_t *player)
 {
     vlc_player_vout_TriggerOption(player, "video-snapshot");
 }
+
+void
+vlc_player_SetWindowProvider(vlc_player_t *player,
+                             vlc_window_provider_t *provider)
+{
+    input_resource_SetWindowProvider(player->resource, provider);
+}
