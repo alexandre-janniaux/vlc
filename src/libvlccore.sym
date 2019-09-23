@@ -863,6 +863,7 @@ vlc_player_SetSubtitleTextScale
 vlc_player_SetTeletextEnabled
 vlc_player_SetTeletextTransparency
 vlc_player_SetTrackCategoryEnabled
+vlc_player_SetWindowProvider
 vlc_player_Start
 vlc_player_Stop
 vlc_player_timer_point_GetNextIntervalDate
