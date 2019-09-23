@@ -30,6 +30,8 @@
 #include "components/player_controller.hpp"
 #include "components/voutwindow/qvoutwindow.hpp"
 
+#include "window_provider.hpp"
+
 #include <QSystemTrayIcon>
 #include <QStackedWidget>
 #include <QtQuick/QQuickView>
@@ -93,6 +95,8 @@ private:
     static void requestVideoState( struct vout_window_t *, unsigned );
     static void requestVideoWindowed( struct vout_window_t * );
     static void requestVideoFullScreen( struct vout_window_t *, const char * );
+
+    WaylandWindowProvider windowProvider;
 
 public:
     QQmlContext* getRootCtx() { return mediacenterView->rootContext(); }
