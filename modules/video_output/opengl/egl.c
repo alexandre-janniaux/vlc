@@ -56,6 +56,8 @@ typedef struct vlc_gl_sys_t
 #endif
     PFNEGLCREATEIMAGEKHRPROC    eglCreateImageKHR;
     PFNEGLDESTROYIMAGEKHRPROC   eglDestroyImageKHR;
+
+    bool prevent_terminate;
 } vlc_gl_sys_t;
 
 static int MakeCurrent (vlc_gl_t *gl)
@@ -185,7 +187,11 @@ static void Close(vlc_gl_t *gl)
             eglDestroyContext(sys->display, sys->context);
         if (sys->surface != EGL_NO_SURFACE)
             eglDestroySurface(sys->display, sys->surface);
-        eglTerminate(sys->display);
+
+        /* Kill the egl state only if we own it. */
+        if (!sys->prevent_terminate)
+            eglTerminate(sys->display);
+        eglReleaseThread();
     }
 #ifdef USE_PLATFORM_X11
     if (sys->x11 != NULL)
@@ -223,6 +229,10 @@ static int Open(vlc_gl_t *gl, const struct gl_api *api,
     EGLSurface (*createSurface)(EGLDisplay, EGLConfig, void *, const EGLint *)
         = CreateWindowSurface;
     void *window;
+
+    /* Window providers can prevent the EGL implementation from destroying
+     * the associated EGL display. */
+    sys->prevent_terminate = var_GetBool(wnd, "egl-prevent-terminate");
 
 #ifdef USE_PLATFORM_X11
     sys->x11 = NULL;
@@ -319,6 +329,7 @@ static int Open(vlc_gl_t *gl, const struct gl_api *api,
     EGLint major, minor;
     if (eglInitialize(sys->display, &major, &minor) != EGL_TRUE)
         goto error;
+
     msg_Dbg(obj, "EGL version %s by %s",
             eglQueryString(sys->display, EGL_VERSION),
             eglQueryString(sys->display, EGL_VENDOR));
