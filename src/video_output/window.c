@@ -376,7 +376,7 @@ static const struct vout_window_callbacks vout_display_window_cbs = {
 /**
  * Creates a video window, initially without any attached display.
  */
-vout_window_t *vout_display_window_New(vout_thread_t *vout)
+vout_window_t *vout_display_window_NewFromModule(vout_thread_t *vout)
 {
     vout_display_window_t *state = malloc(sizeof (*state));
     if (state == NULL)

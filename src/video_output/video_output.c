@@ -1872,7 +1872,7 @@ vout_thread_t *vout_Create(vlc_object_t *object,
     vlc_mutex_init(&sys->display_lock);
 
     /* Window */
-    sys->display_cfg.window = vout_display_window_New(vout);
+    sys->display_cfg.window = vout_display_window_NewFromModule(vout);
     if (sys->display_cfg.window == NULL) {
         if (sys->spu)
             spu_Destroy(sys->spu);
