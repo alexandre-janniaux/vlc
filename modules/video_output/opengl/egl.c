@@ -58,6 +58,7 @@ typedef struct vlc_gl_sys_t
     PFNEGLDESTROYIMAGEKHRPROC   eglDestroyImageKHR;
 
     bool prevent_terminate;
+    bool has_display_reference;
 } vlc_gl_sys_t;
 
 static int MakeCurrent (vlc_gl_t *gl)
@@ -188,8 +189,10 @@ static void Close(vlc_gl_t *gl)
         if (sys->surface != EGL_NO_SURFACE)
             eglDestroySurface(sys->display, sys->surface);
 
-        /* Kill the egl state only if we own it. */
-        if (!sys->prevent_terminate)
+        /* If has_display_reference == true, sys->display is refcounted by
+         * eglInitialize and eglTerminate, so call it anyway.
+         * Otherwise, kill the egl state only if we own it. */
+        if (sys->has_display_reference || !sys->prevent_terminate)
             eglTerminate(sys->display);
         eglReleaseThread();
     }
@@ -224,6 +227,7 @@ static int Open(vlc_gl_t *gl, const struct gl_api *api,
     sys->surface = EGL_NO_SURFACE;
     sys->eglCreateImageKHR = NULL;
     sys->eglDestroyImageKHR = NULL;
+    sys->has_display_reference = false;
 
     vout_window_t *wnd = gl->surface;
     EGLSurface (*createSurface)(EGLDisplay, EGLConfig, void *, const EGLint *)
@@ -233,6 +237,21 @@ static int Open(vlc_gl_t *gl, const struct gl_api *api,
     /* Window providers can prevent the EGL implementation from destroying
      * the associated EGL display. */
     sys->prevent_terminate = var_GetBool(wnd, "egl-prevent-terminate");
+
+    /* See https://www.khronos.org/registry/EGL/extensions/KHR/EGL_KHR_display_reference.txt */
+    /* If EGL_KHR_display_reference is not present, eglTerminate will
+     * terminate the EGLDisplay which is shared between all clients.
+     * This extension turns the behaviour of eglTerminate into reference
+     * counting mode and prevents this issues.
+     * TODO: currently, we're using the default behaviour of this extension. */
+#ifdef USE_PLATFORM_ANDROID
+    sys->has_display_reference = true; /* enforced by Android */
+#else
+    /* If we don't conditionnaly add the EGL_TRACK_REFERENCE_KHR, EGL_TRUE
+     * parameter to display query parameters, the default is false for other
+     * platforms. */
+    sys->has_display_reference = false;
+#endif
 
 #ifdef USE_PLATFORM_X11
     sys->x11 = NULL;
