@@ -98,6 +98,7 @@ typedef struct vlc_gl_sys_t
     PFNEGLDESTROYIMAGEKHRPROC   eglDestroyImageKHR;
 
     bool has_display_reference;
+    bool prevent_terminate;
 } vlc_gl_sys_t;
 
 static int MakeCurrent (vlc_gl_t *gl)
@@ -232,7 +233,7 @@ static void Close(vlc_gl_t *gl)
         {
             eglTerminate(sys->display);
         }
-        else
+        else if (!sys->prevent_terminate)
         {
             vlc_mutex_lock(&usage_lock);
             struct display_refcount *refcount =
@@ -293,6 +294,10 @@ static int Open(vlc_gl_t *gl, const struct gl_api *api,
     EGLSurface (*createSurface)(EGLDisplay, EGLConfig, void *, const EGLint *)
         = CreateWindowSurface;
     void *window;
+
+    /* Window providers can prevent the EGL implementation from destroying
+     * the associated EGL display. */
+    sys->prevent_terminate = var_GetBool(wnd, "egl-prevent-terminate");
 
     /* See https://www.khronos.org/registry/EGL/extensions/KHR/EGL_KHR_display_reference.txt */
     /* If EGL_KHR_display_reference is not present, eglTerminate will
@@ -403,7 +408,9 @@ static int Open(vlc_gl_t *gl, const struct gl_api *api,
     if (eglInitialize(sys->display, &major, &minor) != EGL_TRUE)
         goto error;
 
-    if (!sys->has_display_reference)
+    /* There no need for refcounting if either it's done by the underlying EGL
+     * implementation or if we don't need to call eglTerminate here. */
+    if (!sys->has_display_reference && !sys->prevent_terminate)
     {
         vlc_mutex_lock(&usage_lock);
         struct display_refcount *refcount = GetDisplayRefcount(sys->display);
