@@ -707,7 +707,7 @@ vout_OSDMessageVa
 vout_OSDEpg
 vout_OSDSlider
 vout_OSDText
-vout_window_New
+vout_window_NewFromModule
 vout_window_Delete
 vout_window_Enable
 vout_window_Disable

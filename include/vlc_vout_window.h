@@ -425,9 +425,10 @@ vlc_window_provider_OpenWindow(vlc_window_provider_t *provider,
  * \param owner callbacks and private data
  * \return a new window, or NULL on error.
  */
-VLC_API vout_window_t *vout_window_New(vlc_object_t *obj,
-                                       const char *module,
-                                       const vout_window_owner_t *owner);
+VLC_API vout_window_t *
+vout_window_NewFromModule(vlc_object_t *obj, const char *module,
+                          const vout_window_owner_t *owner);
+
 
 /**
  * Deletes a window.
