@@ -1893,6 +1893,16 @@ vout_thread_t *vout_CreateDummy(vlc_object_t *object)
     return vout;
 }
 
+
+static int WindowProviderGetWindow(vlc_object_t *obj, void *userdata,
+                                   vout_window_t *window)
+{
+    VLC_UNUSED(obj);
+
+    vlc_window_provider_t *window_provider = userdata;
+    return vlc_window_provider_OpenWindow(window_provider, window);
+}
+
 vout_thread_t *vout_Create(vlc_object_t *object,
                            vlc_window_provider_t *window_provider)
 {
@@ -1947,7 +1957,20 @@ vout_thread_t *vout_Create(vlc_object_t *object,
     vlc_mutex_init(&sys->display_lock);
 
     /* Window */
-    sys->display_cfg.window = vout_display_window_NewFromModule(vout);
+    if (window_provider != NULL)
+    {
+        sys->display_cfg.window =
+            vout_display_window_NewFromProvider(vout, window_provider,
+                                                WindowProviderGetWindow);
+    }
+
+    if (sys->display_cfg.window == NULL)
+    {
+        /* Using default window providing policy it case we don't have
+         * a window provider or that it failed to create a window. */
+        sys->display_cfg.window = vout_display_window_NewFromModule(vout);
+    }
+
     if (sys->display_cfg.window == NULL) {
         if (sys->spu)
             spu_Destroy(sys->spu);
