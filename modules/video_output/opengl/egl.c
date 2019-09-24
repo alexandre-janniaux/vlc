@@ -30,6 +30,7 @@
 #include <EGL/eglext.h>
 
 #include <vlc_common.h>
+#include <vlc_list.h>
 #include <vlc_plugin.h>
 #include <vlc_opengl.h>
 #include <vlc_vout_window.h>
@@ -42,6 +43,45 @@
 #if defined (USE_PLATFORM_ANDROID)
 # include "../android/utils.h"
 #endif
+
+struct display_refcount
+{
+    EGLDisplay display;
+    int count;
+    struct vlc_list node;
+};
+
+/* Keep track of how many reference to the EGLDisplay we've been using. */
+static vlc_mutex_t     usage_lock  = VLC_STATIC_MUTEX;
+static struct vlc_list usage_count = VLC_LIST_INITIALIZER(&usage_count);
+
+static struct display_refcount *GetDisplayRefcount(EGLDisplay display)
+{
+    vlc_mutex_assert(&usage_lock);
+
+    struct display_refcount *refcount = NULL;
+    vlc_list_foreach(refcount, &usage_count, node)
+    {
+        if (refcount->display == display)
+            return refcount;
+    }
+
+    refcount = malloc(sizeof(refcount));
+    if (refcount == NULL)
+        return NULL;
+    refcount->display = display;
+    refcount->count = 0;
+    vlc_list_append(&refcount->node, &usage_count);
+
+    return refcount;
+}
+
+static void CleanupDisplayRefcount(struct display_refcount *refcount)
+{
+    vlc_mutex_assert(&usage_lock);
+    vlc_list_remove(&refcount->node);
+    free(refcount);
+}
 
 typedef struct vlc_gl_sys_t
 {
@@ -189,8 +229,31 @@ static void Close(vlc_gl_t *gl)
             eglDestroySurface(sys->display, sys->surface);
 
         if (sys->has_display_reference)
+        {
             eglTerminate(sys->display);
+        }
         else
+        {
+            vlc_mutex_lock(&usage_lock);
+            struct display_refcount *refcount =
+                GetDisplayRefcount(sys->display);
+
+            if (refcount != NULL)
+            {
+                if (refcount->count == 0)
+                {
+                    /* The display wasn't initialized, no need to clean up. */
+                    CleanupDisplayRefcount(refcount);
+                }
+                else if (--refcount->count == 0)
+                {
+                    /* We reach the end of the tracking counter. */
+                    CleanupDisplayRefcount(refcount);
+                    eglTerminate(sys->display);
+                }
+            }
+            vlc_mutex_unlock(&usage_lock);
+        }
             eglReleaseThread();
     }
 #ifdef USE_PLATFORM_X11
@@ -339,6 +402,17 @@ static int Open(vlc_gl_t *gl, const struct gl_api *api,
     EGLint major, minor;
     if (eglInitialize(sys->display, &major, &minor) != EGL_TRUE)
         goto error;
+
+    if (!sys->has_display_reference)
+    {
+        vlc_mutex_lock(&usage_lock);
+        struct display_refcount *refcount = GetDisplayRefcount(sys->display);
+        if (refcount == NULL)
+        { /* TODO */ }
+        refcount->count++;
+        vlc_mutex_unlock(&usage_lock);
+    }
+
     msg_Dbg(obj, "EGL version %s by %s",
             eglQueryString(sys->display, EGL_VERSION),
             eglQueryString(sys->display, EGL_VENDOR));
