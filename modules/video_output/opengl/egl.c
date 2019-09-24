@@ -56,6 +56,8 @@ typedef struct vlc_gl_sys_t
 #endif
     PFNEGLCREATEIMAGEKHRPROC    eglCreateImageKHR;
     PFNEGLDESTROYIMAGEKHRPROC   eglDestroyImageKHR;
+
+    bool has_display_reference;
 } vlc_gl_sys_t;
 
 static int MakeCurrent (vlc_gl_t *gl)
@@ -185,7 +187,11 @@ static void Close(vlc_gl_t *gl)
             eglDestroyContext(sys->display, sys->context);
         if (sys->surface != EGL_NO_SURFACE)
             eglDestroySurface(sys->display, sys->surface);
-        eglTerminate(sys->display);
+
+        if (sys->has_display_reference)
+            eglTerminate(sys->display);
+        else
+            eglReleaseThread();
     }
 #ifdef USE_PLATFORM_X11
     if (sys->x11 != NULL)
@@ -218,11 +224,25 @@ static int Open(vlc_gl_t *gl, const struct gl_api *api,
     sys->surface = EGL_NO_SURFACE;
     sys->eglCreateImageKHR = NULL;
     sys->eglDestroyImageKHR = NULL;
+    sys->has_display_reference = false;
 
     vout_window_t *wnd = gl->surface;
     EGLSurface (*createSurface)(EGLDisplay, EGLConfig, void *, const EGLint *)
         = CreateWindowSurface;
     void *window;
+
+    /* See https://www.khronos.org/registry/EGL/extensions/KHR/EGL_KHR_display_reference.txt */
+    /* If EGL_KHR_display_reference is not present, eglTerminate will
+     * terminate the EGLDisplay which is shared between all clients.
+     * This extension turns the behaviour of eglTerminate into reference
+     * counting mode and prevents this issues. */
+#ifdef USE_PLATFORM_ANDROID
+    sys->has_display_reference = true; /* enforced by Android */
+#else
+    /* TODO: The extension should be checked and the attributes
+     * conditionnaly added to display query parameters. */
+    sys->has_display_reference = false;
+#endif
 
 #ifdef USE_PLATFORM_X11
     sys->x11 = NULL;
