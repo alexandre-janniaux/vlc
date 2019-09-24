@@ -59,9 +59,10 @@ static int vout_window_start(void *func, bool forced, va_list ap)
     return ret;
 }
 
-vout_window_t *vout_window_NewFromModule(vlc_object_t *obj,
-                                         const char *module,
-                                         const vout_window_owner_t *owner)
+vout_window_t *vout_window_NewFromProvider(vlc_object_t *obj,
+                                           void *userdata,
+                                           vlc_window_load_cb activate,
+                                           const vout_window_owner_t *owner)
 {
     window_t *w = vlc_custom_create(obj, sizeof(*w), "window");
     vout_window_t *window = &w->wnd;
@@ -80,12 +81,10 @@ vout_window_t *vout_window_NewFromModule(vlc_object_t *obj,
     w->fullscreen = false;
     vlc_mutex_init(&w->lock);
 
-    w->module = vlc_module_load(window, "vout window", module, false,
-                                vout_window_start, window);
-    if (!w->module) {
+    if (activate(obj, userdata, window) != VLC_SUCCESS)
+    {
         vlc_mutex_destroy(&w->lock);
         vlc_object_delete(window);
-        return NULL;
     }
 
     /* Hook for screensaver inhibition */
@@ -97,6 +96,30 @@ vout_window_t *vout_window_NewFromModule(vlc_object_t *obj,
         vlc_mutex_unlock(&w->lock);
     }
     return window;
+
+}
+
+static int LoadVoutWindowFromModule(vlc_object_t *obj,
+                                    void *userdata,
+                                    vout_window_t *window)
+{
+    (void)obj;
+
+    char *module = userdata;
+    window_t *w = container_of(window, window_t, wnd);
+
+    w->module = vlc_module_load(window, "vout window", module, false,
+                                vout_window_start, window);
+
+    return w->module != NULL ? VLC_SUCCESS : VLC_EGENERIC;
+}
+
+vout_window_t *vout_window_NewFromModule(vlc_object_t *obj, const char *module,
+                                         const vout_window_owner_t *owner)
+{
+    /* Module is not modified in LoadVoutWindowFromModule. */
+    return vout_window_NewFromProvider(obj, (void*)module,
+                                       LoadVoutWindowFromModule, owner);
 }
 
 int vout_window_Enable(vout_window_t *window,

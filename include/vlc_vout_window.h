@@ -429,6 +429,13 @@ VLC_API vout_window_t *
 vout_window_NewFromModule(vlc_object_t *obj, const char *module,
                           const vout_window_owner_t *owner);
 
+typedef int (*vlc_window_load_cb)(vlc_object_t *, void *, vout_window_t *);
+
+VLC_API vout_window_t *
+vout_window_NewFromProvider(vlc_object_t *obj, void *userdata,
+                            vlc_window_load_cb activate,
+                            const vout_window_owner_t *owner);
+
 
 /**
  * Deletes a window.
