@@ -19,4 +19,9 @@
  *****************************************************************************/
 
 vout_window_t *vout_display_window_NewFromModule(vout_thread_t *);
+
+vout_window_t *
+vout_display_window_NewFromProvider(vout_thread_t *, void *,
+                                    vlc_window_load_cb activate);
+
 void vout_display_window_Delete(vout_window_t *);

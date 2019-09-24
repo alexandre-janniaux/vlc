@@ -376,7 +376,10 @@ static const struct vout_window_callbacks vout_display_window_cbs = {
 /**
  * Creates a video window, initially without any attached display.
  */
-vout_window_t *vout_display_window_NewFromModule(vout_thread_t *vout)
+
+vout_window_t *
+vout_display_window_NewFromProvider(vout_thread_t *vout, void *userdata,
+                                    vlc_window_load_cb activate)
 {
     vout_display_window_t *state = malloc(sizeof (*state));
     if (state == NULL)
@@ -386,7 +389,6 @@ vout_window_t *vout_display_window_NewFromModule(vout_thread_t *vout)
     state->last_left_press = INT64_MIN;
     state->vout = vout;
 
-    char *modlist = var_InheritString(vout, "window");
     vout_window_owner_t owner = {
         .cbs = &vout_display_window_cbs,
         .sys = state,
@@ -397,10 +399,20 @@ vout_window_t *vout_display_window_NewFromModule(vout_thread_t *vout)
     var_Create(vout, "window-fullscreen", VLC_VAR_BOOL);
     var_Create(vout, "window-fullscreen-output", VLC_VAR_STRING);
 
-    window = vout_window_NewFromModule((vlc_object_t *)vout, modlist, &owner);
-    free(modlist);
+    window = vout_window_NewFromProvider((vlc_object_t *)vout, userdata,
+                                         activate, &owner);
     if (window == NULL)
         free(state);
+    return window;
+}
+
+vout_window_t *vout_display_window_NewFromModule(vout_thread_t *vout)
+{
+    char *modlist = var_InheritString(vout, "window");
+    vout_window_t *window = vout_display_window_NewFromProvider(
+            vout, modlist, LoadVoutWindowFromModule);
+    free(modlist);
+
     return window;
 }
 
