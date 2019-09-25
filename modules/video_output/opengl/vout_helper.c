@@ -628,6 +628,33 @@ opengl_init_program(vout_display_opengl_t *vgl, vlc_video_context *context,
     return VLC_SUCCESS;
 }
 
+#if !defined(USE_OPENGL_ES2)
+static void GLAPIENTRY
+OpenglMessageCallback(GLenum source,
+                      GLenum type,
+                      GLuint id,
+                      GLenum severity,
+                      GLsizei length,
+                      const GLchar* message,
+                      const void* userdata)
+{
+    vout_display_opengl_t *vgl = userdata;
+
+    const char *format = "OpenGL Debug callback: "
+        "type = 0x%x, severity = 0x%x, message = %s";
+
+    if (type == GL_DEBUG_TYPE_ERROR)
+        msg_Err(vgl->gl, format, type, severity, message);
+    else
+        msg_Dbg(vgl->gl, format, type, severity, message );
+
+    VLC_UNUSED(source);
+    VLC_UNUSED(id);
+    VLC_UNUSED(length);
+}
+#endif
+
+
 static void
 ResizeFormatToGLMaxTexSize(video_format_t *fmt, unsigned int max_tex_size)
 {
@@ -716,6 +743,8 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
 
     GET_PROC_ADDR_CORE_GL(GetTexLevelParameteriv);
     GET_PROC_ADDR_CORE_GL(TexEnvf);
+
+    GET_PROC_ADDR_CORE_GL(DebugMessageCallback);
 
     GET_PROC_ADDR(CreateShader);
     GET_PROC_ADDR(ShaderSource);
@@ -881,6 +910,12 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     vgl->vt.GenBuffers(1, &vgl->index_buffer_object);
     vgl->vt.GenBuffers(vgl->prgm->tc->tex_count, vgl->texture_buffer_object);
 
+#if !defined(USE_OPENGL_ES2)
+    // During init, enable debug output
+    vgl->vt.Enable(GL_DEBUG_OUTPUT);
+    vgl->vt.DebugMessageCallback(OpenglMessageCallback, vgl);
+#endif
+
     /* Initial number of allocated buffer objects for subpictures, will grow dynamically. */
     int subpicture_buffer_object_count = 8;
     vgl->subpicture_buffer_object = vlc_alloc(subpicture_buffer_object_count, sizeof(GLuint));
@@ -915,7 +950,6 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
 void vout_display_opengl_Delete(vout_display_opengl_t *vgl)
 {
     GL_ASSERT_NOERROR();
-
     /* */
     vgl->vt.Finish();
     vgl->vt.Flush();
@@ -947,6 +981,10 @@ void vout_display_opengl_Delete(vout_display_opengl_t *vgl)
     }
     free(vgl->region);
     GL_ASSERT_NOERROR();
+
+#if !defined(USE_OPENGL_ES2)
+    vgl->vt.Disable(GL_DEBUG_OUTPUT);
+#endif
 
     free(vgl);
 }
@@ -1697,4 +1735,3 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
     return VLC_SUCCESS;
 }
-

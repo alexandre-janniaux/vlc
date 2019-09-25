@@ -93,6 +93,10 @@ typedef void (APIENTRY *PFNGLTEXPARAMETERFPROC) (GLenum target, GLenum pname, GL
 typedef void (APIENTRY *PFNGLTEXPARAMETERIPROC) (GLenum target, GLenum pname, GLint param);
 typedef void (APIENTRY *PFNGLTEXSUBIMAGE2DPROC) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
 typedef void (APIENTRY *PFNGLVIEWPORTPROC) (GLint x, GLint y, GLsizei width, GLsizei height);
+typedef void APIENTRY PFNGLDEBUGCALLBACK(GLenum source, GLenum type, GLuint id,
+   GLenum severity, GLsizei length, const GLchar* message, const void* userdata);
+typedef void (APIENTRY *PFNGLDEBUGMESSAGECALLBACK) (PFNGLDEBUGCALLBACK callback, void * userdata);
+
 
 /* The following are defined in glext.h but not for GLES2 or on Apple systems */
 #if defined(USE_OPENGL_ES2) || defined(__APPLE__)
@@ -174,6 +178,8 @@ typedef struct {
     PFNGLTEXPARAMETERIPROC  TexParameteri;
     PFNGLTEXSUBIMAGE2DPROC  TexSubImage2D;
     PFNGLVIEWPORTPROC       Viewport;
+
+    PFNGLDEBUGMESSAGECALLBACK DebugMessageCallback;
 
     /* GL only core functions: NULL for GLES2 */
     PFNGLGETTEXLEVELPARAMETERIVPROC GetTexLevelParameteriv; /* Can be NULL */
