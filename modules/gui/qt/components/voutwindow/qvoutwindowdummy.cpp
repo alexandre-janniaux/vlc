@@ -22,28 +22,25 @@ VideoSurfaceProviderDummy::VideoSurfaceProviderDummy(QVoutWindow *renderer, QObj
     : VideoSurfaceProvider(parent)
 {
     connect(this, &VideoSurfaceProviderDummy::mouseMoved,
-            renderer, &QVoutWindow::onMouseMoved, Qt::QueuedConnection);
+            renderer, &QVoutWindow::onMouseMoved);
 
     connect(this, &VideoSurfaceProviderDummy::mousePressed,
-            renderer, &QVoutWindow::onMousePressed, Qt::QueuedConnection);
+            renderer, &QVoutWindow::onMousePressed);
 
     connect(this, &VideoSurfaceProviderDummy::mouseDblClicked,
-            renderer, &QVoutWindow::onMouseDoubleClick, Qt::QueuedConnection);
+            renderer, &QVoutWindow::onMouseDoubleClick);
 
     connect(this, &VideoSurfaceProviderDummy::mouseReleased,
-            renderer, &QVoutWindow::onMouseReleased, Qt::QueuedConnection);
+            renderer, &QVoutWindow::onMouseReleased);
 
     connect(this, &VideoSurfaceProviderDummy::mouseWheeled,
-            renderer, &QVoutWindow::onMouseWheeled, Qt::QueuedConnection);
+            renderer, &QVoutWindow::onMouseWheeled);
 
     connect(this, &VideoSurfaceProviderDummy::keyPressed,
-            renderer, &QVoutWindow::onKeyPressed, Qt::QueuedConnection);
+            renderer, &QVoutWindow::onKeyPressed);
 
     connect(this, &VideoSurfaceProviderDummy::surfaceSizeChanged,
             renderer, &QVoutWindow::onSurfaceSizeChanged);
-
-    //connect(m_renderer, &QVoutWindowWayland::updated,
-    //        this, &VideoSurfaceWayland::update, Qt::QueuedConnection);
 }
 
 QSGNode*VideoSurfaceProviderDummy::updatePaintNode(QQuickItem* item, QSGNode* oldNode, QQuickItem::UpdatePaintNodeData*)
