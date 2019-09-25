@@ -110,9 +110,11 @@ int WaylandWindowProvider::OpenWindow(vlc_window_provider_t *provider,
     int y = inner.y() - intf->y();
 
     var_Create(window, "window-x", VLC_VAR_INTEGER);
-    var_Create(window, "window-y", VLC_VAR_INTEGER);
     var_SetInteger(window, "window-x", x);
+    var_Create(window, "window-y", VLC_VAR_INTEGER);
     var_SetInteger(window, "window-y", y);
+    var_Create(window, "egl-prevent-terminate", VLC_VAR_BOOL);
+    var_SetBool(window, "egl-prevent-terminate", true);
 
     /* TODO: write helper */
     qtprovider->module = vlc_module_load(vlc_object_logger(window), "vout subwindow",
