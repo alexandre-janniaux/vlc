@@ -135,6 +135,8 @@ static void Resize(vout_window_t *wnd, unsigned width, unsigned height)
 static int Enable(vout_window_t *wnd, const vout_window_cfg_t *restrict cfg)
 {
     vout_window_sys_t *sys = wnd->sys;
+    VLC_UNUSED(cfg);
+
     struct wl_display *display = wnd->display.wl;
 
     wl_surface_commit(wnd->handle.wl);
@@ -255,9 +257,11 @@ static void Close(vout_window_t *wnd)
     vlc_join(sys->thread, NULL);
 
     vlc_mutex_destroy(&sys->lock);
-    wl_surface_destroy(wnd->handle.wl);
+    wl_subsurface_destroy(sys->surface.role);
+    wl_surface_destroy(sys->surface.handle);
     wl_compositor_destroy(sys->compositor);
     wl_registry_destroy(sys->registry);
+    wl_event_queue_destroy(sys->eventq);
     free(sys);
 }
 
