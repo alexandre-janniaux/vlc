@@ -53,7 +53,10 @@ public slots:
     void Resize(unsigned width, unsigned height);
 
 private:
-    vlc_window_provider_t provider;
+    struct WindowProviderWrapper {
+        WaylandWindowProvider *handle;
+        vlc_window_provider_t provider;
+    } provider_wrapper;
     vout_window_t* parent_window;
     vout_window_t* window;
 
