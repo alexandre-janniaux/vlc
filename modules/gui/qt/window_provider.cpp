@@ -45,7 +45,7 @@ const vlc_window_provider_ops windowProviderOps =
 }
 
 WaylandWindowProvider::WaylandWindowProvider(vlc_object_t *obj, MainInterface *intf) :
-    provider { &windowProviderOps },
+    provider_wrapper { this, { &windowProviderOps } },
     parent_window {},
     window {},
     intf(intf),
@@ -92,7 +92,7 @@ int WaylandWindowProvider::OpenWindow(vlc_window_provider_t *provider,
 {
     printf("WINDOW PROVIDER\n");
     WaylandWindowProvider *qtprovider = container_of(
-            provider, WaylandWindowProvider, provider);
+            provider, WindowProviderWrapper, provider)->handle;
 
     QPlatformNativeInterface *platform =
         QGuiApplication::platformNativeInterface();
@@ -138,7 +138,7 @@ int WaylandWindowProvider::OpenWindow(vlc_window_provider_t *provider,
 vlc_window_provider_t *
 WaylandWindowProvider::GetProvider()
 {
-    return &provider;
+    return &provider_wrapper.provider;
 }
 
 void
