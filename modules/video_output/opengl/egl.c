@@ -179,13 +179,22 @@ static void Close(vlc_gl_t *gl)
 {
     vlc_gl_sys_t *sys = gl->sys;
 
+
+    /* Window providers can prevent the EGL implementation from destroying
+     * the associated EGL display. */
+    bool prevent_terminate = gl->surface->info.has_shared_egl;
+
     if (sys->display != EGL_NO_DISPLAY)
     {
         if (sys->context != EGL_NO_CONTEXT)
             eglDestroyContext(sys->display, sys->context);
         if (sys->surface != EGL_NO_SURFACE)
             eglDestroySurface(sys->display, sys->surface);
-        eglTerminate(sys->display);
+
+        /* Kill the egl state only if we own it. */
+        if (!prevent_terminate)
+            eglTerminate(sys->display);
+        eglReleaseThread();
     }
 #ifdef USE_PLATFORM_X11
     if (sys->x11 != NULL)
