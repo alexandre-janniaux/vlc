@@ -381,6 +381,21 @@ typedef struct vout_window_t {
     struct {
         bool has_double_click; /**< Whether double click events are sent,
                                     or need to be emulated */
+        /**
+         * Define whether EGL is used elsewhere within the same display.
+         *
+         * When this flag is set to `true`, the underlying opengl providers
+         * won't terminate EGLDisplay, so the other clients are expected to
+         * terminate the EGLDisplay after all VLC OpenGL providers linked to
+         * this EGLDisplay have been closed.
+         *
+         * \remark {
+         *   The main reason for this flags is to allow embedding a video into
+         *   a client UI which would be using EGL, whenever the window display
+         *   needs to be the same between both the UI and the video.
+         *   In particular, it would happen with Wayland and a QML client. }
+         * */
+        bool has_shared_egl;
     } info;
 
     /* Private place holder for the vout_window_t module (optional)
