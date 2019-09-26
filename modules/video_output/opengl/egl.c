@@ -179,6 +179,20 @@ static void Close(vlc_gl_t *gl)
 {
     vlc_gl_sys_t *sys = gl->sys;
 
+    /* See https://www.khronos.org/registry/EGL/extensions/KHR/EGL_KHR_display_reference.txt */
+    /* If EGL_KHR_display_reference is not present, eglTerminate will
+     * terminate the EGLDisplay which is shared between all clients.
+     * This extension turns the behaviour of eglTerminate into reference
+     * counting mode and prevents this issues.
+     * TODO: Currently, we're using the default behaviour of this extension,
+     *       but this behaviour should be changed whenever possible. */
+#ifdef USE_PLATFORM_ANDROID
+    /* Enforced by Android. */
+    const bool has_display_reference = true;
+#else
+    /* The default is false for all other platforms. */
+    const bool has_display_reference = false;
+#endif
 
     /* Window providers can prevent the EGL implementation from destroying
      * the associated EGL display. */
@@ -191,8 +205,10 @@ static void Close(vlc_gl_t *gl)
         if (sys->surface != EGL_NO_SURFACE)
             eglDestroySurface(sys->display, sys->surface);
 
-        /* Kill the egl state only if we own it. */
-        if (!prevent_terminate)
+        /* If has_display_reference == true, sys->display is refcounted by
+         * eglInitialize and eglTerminate, so call it anyway.
+         * Otherwise, kill the egl state only if we own it. */
+        if (has_display_reference || !prevent_terminate)
             eglTerminate(sys->display);
         eglReleaseThread();
     }
