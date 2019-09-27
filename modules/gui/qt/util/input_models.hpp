@@ -44,6 +44,8 @@
 class TrackListModel : public QAbstractListModel
 {
     Q_OBJECT
+    Q_PROPERTY(int count READ getCount NOTIFY countChanged)
+
 public:
     TrackListModel(vlc_player_t* player, QObject* parent = nullptr);
 
@@ -62,6 +64,11 @@ public:
     void clear();
 
     QHash<int, QByteArray> roleNames() const override;
+
+    inline int getCount() const { return m_data.length(); }
+
+signals:
+    void countChanged();
 
 private:
     vlc_player_t* m_player;

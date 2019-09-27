@@ -31,10 +31,11 @@ Utils.NavigableFocusScope {
     id: rootPlayer
 
     property alias playlistWidget: playlistpopup
+    property bool hasEmbededVideo: player.videoTracks.count
 
     //center image
     Rectangle {
-        visible: false//!rootWindow.hasEmbededVideo
+        visible: !rootPlayer.hasEmbededVideo
         focus: false
         color: VLCStyle.colors.bg
         anchors.fill: parent
@@ -117,7 +118,7 @@ Utils.NavigableFocusScope {
     VideoSurface {
         id: videoSurface
         ctx: mainctx
-        visible: rootWindow.hasEmbededVideo
+        visible: rootPlayer.hasEmbededVideo
         anchors.fill: parent
 
         property point mousePosition: Qt.point(0,0)
@@ -254,7 +255,7 @@ Utils.NavigableFocusScope {
                     focus: true
                     anchors.fill: parent
 
-                    forceNoAutoHide: playlistpopup.state === "visible" || !player.hasVideoOutput || !rootWindow.hasEmbededVideo || controllerMouseArea.containsMouse
+                    forceNoAutoHide: playlistpopup.state === "visible" || !player.hasVideoOutput || !rootPlayer.hasEmbededVideo || controllerMouseArea.containsMouse
                     onNoAutoHideChanged: {
                         if (!noAutoHide)
                             toolbarAutoHide.restart()

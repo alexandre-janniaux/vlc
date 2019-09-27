@@ -83,6 +83,7 @@ void TrackListModel::updateTracks(vlc_player_list_action action, const vlc_playe
         beginInsertRows({}, m_data.size(), m_data.size());
         m_data.append(Data{ track_info });
         endInsertRows();
+        emit countChanged();
         break;
     }
     case VLC_PLAYER_LIST_REMOVED:
@@ -97,6 +98,7 @@ void TrackListModel::updateTracks(vlc_player_list_action action, const vlc_playe
         beginRemoveRows({}, pos, pos);
         m_data.erase(it);
         endRemoveRows();
+        emit countChanged();
         break;
     }
     case VLC_PLAYER_LIST_UPDATED:
