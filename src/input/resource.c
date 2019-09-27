@@ -518,6 +518,7 @@ void input_resource_StopFreeVout(input_resource_t *p_resource)
     {
         msg_Dbg(p_resource->p_vout_free, "stop free vout");
         vout_Stop(p_resource->p_vout_free);
+        DestroyVout( p_resource );
     }
     vlc_mutex_unlock(&p_resource->lock);
 }

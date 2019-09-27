@@ -181,6 +181,8 @@ void PlayerControllerPrivate::UpdateVouts(vout_thread_t **vouts, size_t i_vouts)
     if (m_hasVideo)
         main_vout = vouts[0];
 
+    msg_Info( p_intf, "Vout list changed: %zu vouts", i_vouts );
+
     m_zoom.resetObject( main_vout );
     m_aspectRatio.resetObject( main_vout );
     m_crop.resetObject(  main_vout );
@@ -320,6 +322,7 @@ static void on_player_state_changed(vlc_player_t *, enum vlc_player_state state,
             emit q->ABLoopAChanged(VLC_TICK_INVALID);
             emit q->ABLoopBChanged(VLC_TICK_INVALID);
 
+            msg_Err(that->p_intf, "VOUT LIST CHANGED NULL 0");
             that->UpdateVouts(NULL, 0);
 
             /* Reset all InfoPanels but stats */

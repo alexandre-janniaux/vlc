@@ -230,6 +230,7 @@ vlc_player_destructor_Thread(void *data)
         {
             const bool started = player->started;
             vlc_player_Unlock(player);
+            msg_Err(player, "Running: started = %d", started);
             if (!started)
                 input_resource_StopFreeVout(player->resource);
             if (!keep_sout)
