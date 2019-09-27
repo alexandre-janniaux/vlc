@@ -30,7 +30,7 @@ Utils.NavigableFocusScope{
     property bool noAutoHide: false
 
     property bool noAutoHideInt: !player.hasVideoOutput
-                              || !rootWindow.hasEmbededVideo
+                              || !rootPlayer.hasEmbededVideo
                               || topcontrollerMouseArea.containsMouse || lockAutoHide
     property bool lockAutoHide: false
 

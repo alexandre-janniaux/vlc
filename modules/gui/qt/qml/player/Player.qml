@@ -31,6 +31,9 @@ import "qrc:///menus/" as Menus
 Utils.NavigableFocusScope {
     id: rootPlayer
 
+    property alias playlistWidget: playlistpopup
+    property bool hasEmbededVideo: player.videoTracks.count
+
     //menu/overlay to dismiss
     property var _menu: undefined
 
@@ -68,7 +71,7 @@ Utils.NavigableFocusScope {
 
     //center image
     Rectangle {
-        visible: false//!rootWindow.hasEmbededVideo
+        visible: !rootPlayer.hasEmbededVideo
         focus: false
         color: VLCStyle.colors.bg
         anchors.fill: parent
@@ -151,7 +154,7 @@ Utils.NavigableFocusScope {
     VideoSurface {
         id: videoSurface
         ctx: mainctx
-        visible: rootWindow.hasEmbededVideo
+        visible: rootPlayer.hasEmbededVideo
         anchors.fill: parent
 
         property point mousePosition: Qt.point(0,0)
