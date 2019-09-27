@@ -49,6 +49,9 @@ public:
 
     vlc_window_provider_t *GetProvider();
 
+signals:
+    void hasEmbeddedVideoChanged(bool);
+
 public slots:
     void Resize(unsigned width, unsigned height);
 

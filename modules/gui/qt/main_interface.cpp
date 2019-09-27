@@ -182,6 +182,13 @@ MainInterface::MainInterface( intf_thread_t *_p_intf ) : QVLCMW( _p_intf ),
     // TODO: handle Wayland/X11/Win32 windows
     m_videoRenderer.reset(new QVoutWindowDummy(this));
 
+    connect(&windowProvider, &WaylandWindowProvider::hasEmbeddedVideoChanged,
+            this, [this](bool changed) {
+
+            m_hasEmbededVideo = changed;
+            emit this->hasEmbededVideoChanged(changed);
+    });
+
     vlc_playlist_t *playlist = vlc_intf_GetMainPlaylist(_p_intf);
     vlc_player_t *player = vlc_playlist_GetPlayer(playlist);
     vlc_player_SetWindowProvider(player, windowProvider.GetProvider());
