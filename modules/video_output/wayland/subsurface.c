@@ -202,10 +202,10 @@ static int Open(vout_window_t *wnd, vout_window_t *parent)
         wl_display_get_registry(display);
     if (registry == NULL)
         goto error;
+    sys->registry = registry;
 
     wl_registry_add_listener(registry, &registry_cbs, wnd);
     wl_display_roundtrip(display);
-    wl_registry_destroy(registry);
 
     sys->surface.handle = wl_compositor_create_surface(sys->compositor);
     if (sys->surface.handle == NULL)
