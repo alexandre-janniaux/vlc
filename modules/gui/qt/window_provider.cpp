@@ -131,6 +131,8 @@ int WaylandWindowProvider::OpenWindow(vlc_window_provider_t *provider,
 
     qtprovider->window = window;
 
+    emit qtprovider->hasEmbeddedVideoChanged(true);
+
     return VLC_SUCCESS;
     //emit provider->WindowRequested();
 }
