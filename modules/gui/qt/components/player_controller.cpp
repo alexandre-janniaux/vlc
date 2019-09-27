@@ -319,10 +319,8 @@ static void on_player_state_changed(vlc_player_t *, enum vlc_player_state state,
             emit q->ABLoopStateChanged(PlayerController::ABLOOP_STATE_NONE);
             emit q->ABLoopAChanged(VLC_TICK_INVALID);
             emit q->ABLoopBChanged(VLC_TICK_INVALID);
-            that->m_hasVideo = false;
-            emit q->hasVideoOutputChanged( false );
 
-            emit q->voutListChanged( NULL, 0 );
+            that->UpdateVouts(NULL, 0);
 
             /* Reset all InfoPanels but stats */
             that->m_artUrl = "";
