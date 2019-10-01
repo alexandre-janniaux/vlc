@@ -46,10 +46,17 @@ public:
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-        
+
     void updateCurrent(QString current);
-        
+
     QHash<int, QByteArray> roleNames() const override;
+
+public slots:
+    void selectCurrentDevice(const QString& device_id)
+    {
+        aout_DeviceSet(m_aout, qtu(device_id));
+        updateCurrent(device_id);
+    }
 
 private:
     int m_inputs = 0;

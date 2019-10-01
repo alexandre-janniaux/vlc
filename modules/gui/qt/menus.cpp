@@ -50,7 +50,6 @@
 #include <QMenuBar>
 #include <QAction>
 #include <QActionGroup>
-#include <QSignalMapper>
 #include <QStatusBar>
 
 using namespace vlc::playlist;
@@ -989,8 +988,10 @@ void VLCMenuBar::updateAudioDevice( intf_thread_t * p_intf, QMenu *current )
             action->setChecked( true );
         actionGroup->addAction( action );
         current->addAction( action );
-        connect(action, &QAction::triggered, THEMIM->menusAudioMapper, QOverload<>::of(&QSignalMapper::map));
-        THEMIM->menusAudioMapper->setMapping(action, ids[i]);
+        connect(action, &QAction::triggered, [p_intf, id=QString(ids[i])]()
+        {
+            THEMIM->getAudioDevices()->selectCurrentDevice(id);
+        });
         free( ids[i] );
         free( names[i] );
     }
