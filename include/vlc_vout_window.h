@@ -399,23 +399,17 @@ typedef struct vlc_window_provider_t
     const struct vlc_window_provider_ops *ops;
 } vlc_window_provider_t;
 
-VLC_API vlc_window_provider_t *
-vlc_window_provider_New(void *userdata, const struct window_provider_ops *ops);
-
 struct vlc_window_provider_ops
 {
     /**
      * Used to create a window
      */
-    int (*open_window)(vlc_window_provider_t *provider,
-                       vout_window_t *parent,
-                       void *userdata);
+    int (*open_window)(vlc_window_provider_t *provider, vout_window_t *parent);
 };
 
-VLC_API int
+static inline int
 vlc_window_provider_OpenWindow(vlc_window_provider_t *provider,
-                               vout_window_t *window,
-                               void *userdata);
+                               vout_window_t *window)
 {
     return provider->ops->open_window(provider, window);
 }
