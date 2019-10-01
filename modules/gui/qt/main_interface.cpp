@@ -1066,13 +1066,6 @@ void MainInterface::closeEvent( QCloseEvent *e )
 
     if (m_videoRenderer)
         m_videoRenderer->windowClosed();
-
-    vlc_player_Lock(player);
-    vlc_player_SetVideoEnabled(player, false);
-    vlc_player_TerminateVouts(player);
-    vlc_player_Unlock(player);
-
-    msg_Err(p_intf, "ASKING QT INTERFACE CLOSING");
     //We need to make sure that noting is playing anymore otherwise the vout will be closed
     //after the main interface, and it requires (at least with OpenGL) that the OpenGL context
     //from the main window is still valid.
@@ -1081,7 +1074,6 @@ void MainInterface::closeEvent( QCloseEvent *e )
 
         connect(playerController, &PlayerController::playingStateChanged, [this](PlayerController::PlayingState state){
             if (state == PlayerController::PLAYING_STATE_STOPPED) {
-                msg_Err(p_intf, "QT INTERFACE CLOSING");
                 QMetaObject::invokeMethod(this, &MainInterface::close, Qt::QueuedConnection, nullptr);
             }
         });

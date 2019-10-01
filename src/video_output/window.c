@@ -36,11 +36,6 @@
 #include "inhibit.h"
 #include <libvlc.h>
 
-struct vlc_window_provider_t
-{
-    void *userdata;
-};
-
 typedef struct
 {
     vout_window_t wnd;
@@ -152,8 +147,6 @@ void vout_window_Delete(vout_window_t *window)
 {
     if (!window)
         return;
-
-    msg_Info(window, "Deleting window");
 
     window_t *w = container_of(window, window_t, wnd);
 

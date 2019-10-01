@@ -151,8 +151,6 @@ static void Disable(vout_window_t *wnd)
 {
     struct wl_display *display = wnd->display.wl;
 
-    msg_Err(wnd, "WAYLAND DISABLE");
-
     wl_surface_attach(wnd->handle.wl, NULL, 0, 0);
     wl_surface_commit(wnd->handle.wl);
     wl_display_flush(display);
@@ -254,8 +252,6 @@ error:
 static void Close(vout_window_t *wnd)
 {
     vout_window_sys_t *sys = wnd->sys;
-
-    msg_Err(wnd, "WAYLAND CLOSE");
 
     vlc_cancel(sys->thread);
     vlc_join(sys->thread, NULL);
