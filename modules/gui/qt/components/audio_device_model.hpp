@@ -58,6 +58,9 @@ public slots:
         updateCurrent(device_id);
     }
 
+signals:
+    void deviceSelected(QString name, QString id);
+
 private:
     int m_inputs = 0;
     char **m_names;

@@ -142,7 +142,11 @@ void AudioDeviceModel::updateCurrent(QString current)
     if(oldIndex >= 0)
         emit dataChanged(index(oldIndex), index(oldIndex), { Qt::DisplayRole, Qt::CheckStateRole });
     if(currentIndex >= 0)
+    {
         emit dataChanged(index(currentIndex), index(currentIndex), { Qt::DisplayRole, Qt::CheckStateRole });
+        emit deviceSelected(QString(m_names[currentIndex]),
+                            QString(m_ids[currentIndex]));
+    }
 }
 
 QHash<int, QByteArray> AudioDeviceModel::roleNames() const
