@@ -3,6 +3,10 @@
 JPEG_VERSION := 9b
 JPEG_URL := http://www.ijg.org/files/jpegsrc.v$(JPEG_VERSION).tar.gz
 
+ifeq ($(call need_pkg,"libjpeg"),)
+PKGS_FOUND += jpeg
+endif
+
 $(TARBALLS)/jpegsrc.v$(JPEG_VERSION).tar.gz:
 	$(call download_pkg,$(JPEG_URL),jpeg)
 
