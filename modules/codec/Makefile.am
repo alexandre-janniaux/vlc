@@ -126,7 +126,8 @@ codec_LTLIBRARIES += $(LTLIBpng)
 
 libjpeg_plugin_la_SOURCES = codec/jpeg.c
 libjpeg_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(codecdir)'
-libjpeg_plugin_la_LIBADD = -ljpeg
+libjpeg_plugin_la_LIBADD = $(JPEG_LIBS)
+libjpeg_plugin_la_CFLAGS = $(JPEG_CFLAGS)
 EXTRA_LTLIBRARIES += libjpeg_plugin.la
 codec_LTLIBRARIES += $(LTLIBjpeg)
 

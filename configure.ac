@@ -2963,13 +2963,7 @@ AC_CHECK_HEADERS([png.h], [
 dnl
 dnl  JPEG decoder module
 dnl
-AC_ARG_ENABLE([jpeg],
-  AS_HELP_STRING([--enable-jpeg], [JPEG support (default enabled)]))
-AS_IF([test "${enable_jpeg}" != "no"], [
-AC_CHECK_HEADERS([jpeglib.h], [
-  VLC_ADD_PLUGIN([jpeg])
-  ])
-])
+PKG_ENABLE_MODULES_VLC([JPEG],[jpeg],[libjpeg], [JPEG support], [yes])
 
 dnl
 dnl  BPG decoder module
