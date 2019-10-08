@@ -35,6 +35,7 @@
 #include <QMimeData>
 #include <QList>
 #include <QFile>
+#include <QHBoxLayout>
 #include <QLabel>
 
 #include <assert.h>

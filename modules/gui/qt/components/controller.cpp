@@ -39,6 +39,7 @@
 #include "util/input_slider.hpp"                         /* SeekSlider */
 #include "util/customwidgets.hpp"                       /* qEventToKey */
 
+#include <QDesktopWidget>
 #include <QToolButton>
 #include <QHBoxLayout>
 #include <QRegion>

@@ -31,6 +31,7 @@
 #include <QLabel>
 #include <QTimeEdit>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QDialogButtonBox>
 #include <QPushButton>
 

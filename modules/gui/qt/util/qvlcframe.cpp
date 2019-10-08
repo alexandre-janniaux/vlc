@@ -22,6 +22,10 @@
 
 #include "qvlcframe.hpp"
 
+#include <QStyle>
+#include <QDesktopWidget>
+#include <QKeyEvent>
+
 void QVLCTools::saveWidgetPosition(QSettings *settings, QWidget *widget)
 {
     settings->setValue("geometry", widget->saveGeometry());

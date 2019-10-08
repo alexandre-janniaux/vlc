@@ -76,6 +76,7 @@
 #include <QDate>
 #include <QMimeData>
 
+#include <QDesktopWidget>
 #include <QWindow>
 #include <QMenuBar>
 #include <QStatusBar>
