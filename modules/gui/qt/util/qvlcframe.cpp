@@ -25,6 +25,10 @@
 #include <QStyle>
 #include <QDesktopWidget>
 #include <QKeyEvent>
+#include <QScreen>
+
+#include "qt.hpp"
+#include "main_interface.hpp"
 
 void QVLCTools::saveWidgetPosition(QSettings *settings, QWidget *widget)
 {
@@ -41,15 +45,22 @@ void QVLCTools::saveWidgetPosition(intf_thread_t *p_intf,
 }
 
 bool QVLCTools::restoreWidgetPosition(QSettings *settings, QWidget *widget,
-                                      QSize defSize, QPoint defPos)
+                                      QSize defSize, QPoint defPos,
+                                      QScreen *output)
 {
     if (!widget->restoreGeometry(settings->value("geometry").toByteArray()))
     {
         widget->move(defPos);
         widget->resize(defSize);
 
-        if (defPos.x() == 0 && defPos.y()==0)
-            widget->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, widget->size(), qApp->desktop()->availableGeometry()));
+        if (defPos.x() == 0 && defPos.y() ==0 && output)
+        {
+            auto rect = QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter,
+                                            widget->size(),
+                                            output->availableGeometry());
+            widget->setGeometry(rect);
+        }
+
         return true;
     }
     return false;
@@ -60,9 +71,12 @@ bool QVLCTools::restoreWidgetPosition(intf_thread_t *p_intf,
                                       QWidget *widget, QSize defSize,
                                       QPoint defPos)
 {
+    MainInterface *p_mi = p_intf->p_sys->p_mi;
     getSettings()->beginGroup(configName);
     bool defaultUsed =
-        QVLCTools::restoreWidgetPosition(getSettings(), widget, defSize, defPos);
+        QVLCTools::restoreWidgetPosition(getSettings(), widget,
+                                         defSize, defPos,
+                                         p_mi->windowHandle()->screen());
     getSettings()->endGroup();
 
     return defaultUsed;

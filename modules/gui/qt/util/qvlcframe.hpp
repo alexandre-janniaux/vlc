@@ -32,6 +32,7 @@
 #include "qt.hpp"
 
 struct KeyEvent;
+struct QScreen;
 
 class QVLCTools
 {
@@ -55,7 +56,8 @@ class QVLCTools
        static bool restoreWidgetPosition(QSettings *settings,
                                            QWidget *widget,
                                            QSize defSize = QSize( 0, 0 ),
-                                           QPoint defPos = QPoint( 0, 0 ));
+                                           QPoint defPos = QPoint( 0, 0 ),
+                                           QScreen *output = nullptr);
 
        static bool restoreWidgetPosition( intf_thread_t *p_intf,
                                            const QString& configName,
