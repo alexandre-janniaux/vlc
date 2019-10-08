@@ -54,16 +54,22 @@ class QVLCTools
          windows!
        */
        static bool restoreWidgetPosition(QSettings *settings,
-                                           QWidget *widget,
-                                           QSize defSize = QSize( 0, 0 ),
-                                           QPoint defPos = QPoint( 0, 0 ),
-                                           QScreen *output = nullptr);
+                                         QWidget *widget,
+                                         QScreen *defScreen = nullptr,
+                                         QSize defSize = QSize( 0, 0 ),
+                                         QPoint defPos = QPoint( 0, 0 ));
 
        static bool restoreWidgetPosition( intf_thread_t *p_intf,
                                            const QString& configName,
                                            QWidget *widget,
                                            QSize defSize = QSize( 0, 0 ),
                                            QPoint defPos = QPoint( 0, 0 ) );
+
+       static bool restoreWidgetPosition(intf_thread_t *p_intf,
+                                         const QString& configName,
+                                         QWidget *widget, QScreen *defScreen,
+                                         QSize defSize = QSize( 0, 0 ),
+                                         QPoint defPos = QPoint( 0, 0 ));
 };
 
 class QVLCFrame : public QWidget
@@ -149,30 +155,35 @@ protected:
 
     void readSettings( const QString& name, QSize defSize )
     {
-        QVLCTools::restoreWidgetPosition( p_intf, name, this, defSize);
+        /* Default restoring to primary screen */
+        QScreen *defScreen = QGuiApplication::primaryScreen();
+        QVLCTools::restoreWidgetPosition(p_intf, name, this, defScreen, defSize);
     }
 
     void readSettings( const QString& name )
     {
-        QVLCTools::restoreWidgetPosition( p_intf, name, this);
+        QVLCTools::restoreWidgetPosition(p_intf, name, this,
+                                         QGuiApplication::primaryScreen());
     }
     void readSettings( QSettings *settings )
     {
-        QVLCTools::restoreWidgetPosition(settings, this);
+        QVLCTools::restoreWidgetPosition(settings, this,
+                                         QGuiApplication::primaryScreen());
     }
 
-    void readSettings( QSettings *settings, QSize defSize)
+    void readSettings( QSettings *settings, QSize defSize )
     {
-        QVLCTools::restoreWidgetPosition(settings, this, defSize);
+        QScreen *defScreen = QGuiApplication::primaryScreen();
+        QVLCTools::restoreWidgetPosition(settings, this, defScreen, defSize);
     }
 
     void writeSettings( const QString& name )
     {
-        QVLCTools::saveWidgetPosition( p_intf, name, this);
+        QVLCTools::saveWidgetPosition( p_intf, name, this );
     }
-    void writeSettings(QSettings *settings )
+    void writeSettings(QSettings *settings)
     {
-        QVLCTools::saveWidgetPosition(settings, this);
+        QVLCTools::saveWidgetPosition( settings, this );
     }
 };
 

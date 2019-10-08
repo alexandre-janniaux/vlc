@@ -44,20 +44,23 @@ void QVLCTools::saveWidgetPosition(intf_thread_t *p_intf,
     getSettings()->endGroup();
 }
 
-bool QVLCTools::restoreWidgetPosition(QSettings *settings, QWidget *widget,
-                                      QSize defSize, QPoint defPos,
-                                      QScreen *output)
+bool QVLCTools::restoreWidgetPosition(QSettings *settings,
+                                      QWidget *widget, QScreen *defScreen,
+                                      QSize defSize, QPoint defPos)
 {
+    if (defScreen == nullptr)
+        defScreen = QGuiApplication::primaryScreen();
+
     if (!widget->restoreGeometry(settings->value("geometry").toByteArray()))
     {
         widget->move(defPos);
         widget->resize(defSize);
 
-        if (defPos.x() == 0 && defPos.y() ==0 && output)
+        if (defPos.x() == 0 && defPos.y() ==0 && defScreen)
         {
             auto rect = QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter,
                                             widget->size(),
-                                            output->availableGeometry());
+                                            defScreen->availableGeometry());
             widget->setGeometry(rect);
         }
 
@@ -72,11 +75,22 @@ bool QVLCTools::restoreWidgetPosition(intf_thread_t *p_intf,
                                       QPoint defPos)
 {
     MainInterface *p_mi = p_intf->p_sys->p_mi;
+    QScreen *screen = p_mi->windowHandle()->screen();
+
+    return restoreWidgetPosition(p_intf, configName, widget,
+                                 screen, defSize, defPos);
+}
+
+
+bool QVLCTools::restoreWidgetPosition(intf_thread_t *p_intf,
+                                     const QString& configName,
+                                     QWidget *widget, QScreen *defScreen,
+                                     QSize defSize, QPoint defPos)
+{
     getSettings()->beginGroup(configName);
     bool defaultUsed =
-        QVLCTools::restoreWidgetPosition(getSettings(), widget,
-                                         defSize, defPos,
-                                         p_mi->windowHandle()->screen());
+        QVLCTools::restoreWidgetPosition(getSettings(), widget, defScreen,
+                                         defSize, defPos);
     getSettings()->endGroup();
 
     return defaultUsed;
