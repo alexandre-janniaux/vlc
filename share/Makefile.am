@@ -1,28 +1,45 @@
 all: js css html preserve
-
 CLEANFILES = skins2/default.vlt
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 
-JS_TARGETS = $(shell cat js.manifest.txt)
-JS_VENDORS_TARGETS = $(shell cat js.vendors_manifest.txt)
-CLOSURE = java -jar ../extras/tools/closure_compiler.jar
+JS_TARGETS = --js $(srcdir)/lua/http/src/services/initialize.service.js \
+--js $(srcdir)/lua/http/src/services/command.service.js \
+--js $(srcdir)/lua/http/src/services/bus.service.js \
+--js $(srcdir)/lua/http/src/components/player/plyr.methods.js \
+--js $(srcdir)/lua/http/src/components/controls/sidenav.component.js \
+--js $(srcdir)/lua/http/src/components/playlist/playlist.component.js \
+--js $(srcdir)/lua/http/src/components/playlist/buttons.playlist.component.js \
+--js $(srcdir)/lua/http/src/components/controls/filebrowser.component.js \
+--js $(srcdir)/lua/http/src/components/vlm/vlm.component.js \
+--js $(srcdir)/lua/http/src/components/equalizer/equalizer.component.js \
+--js $(srcdir)/lua/http/src/components/track-synchronisation/tracksync.component.js \
+--js $(srcdir)/lua/http/src/components/sot/stream.manager.component.js \
+--js $(srcdir)/lua/http/src/components/svg-icon/svg-icon.component.js \
+--js $(srcdir)/lua/http/src/assets/compiled-icons/*.js \
+--js_output_file $(srcdir)/lua/http/dist/js/script.min.js
+
+JS_VENDORS_TARGETS = --js $(srcdir)/lua/http/src/vendors/bootstrap/javascripts/bootstrap.js \
+--js $(srcdir)/lua/http/src/vendors/vue/vue.js \
+--js $(srcdir)/lua/http/src/vendors/plyr/plyr.js \
+--js $(srcdir)/lua/http/src/vendors/jstree/jstree.js \
+--js_output_file $(srcdir)/lua/http/dist/js/vendors.min.js
+
+CLOSURE = java -jar $(srcdir)/../extras/tools/closure_compiler.jar
 CLOSURE_FLAGS =
-JS_DIST_DIR := lua/http/dist/js
-FRONT_INDEX = lua/http/index.html
-FRONT_HEAD = lua/http/head.html
-FRONT_BODY = lua/http/body.html
-FRONT_FOOT = lua/http/foot.html
+JS_DIST_DIR := $(srcdir)/lua/http/dist/js
+FRONT_INDEX = $(srcdir)/lua/http/index.html
+FRONT_HEAD = $(srcdir)/lua/http/head.html
+FRONT_BODY = $(srcdir)/lua/http/body.html
+FRONT_FOOT = $(srcdir)/lua/http/foot.html
 
-MKDIR_P := mkdir -p
-
-SASS_TARGETS = lua/http/src/scss/main.scss
-SASS_VENDORS_TARGETS = lua/http/src/scss/vendors.scss
-SASS_DIST_DIR = lua/http/dist/css
+SASS_TARGETS = $(srcdir)/lua/http/src/scss/main.scss
+SASS_VENDORS_TARGETS = $(srcdir)/lua/http/src/scss/vendors.scss
+SASS_DIST_DIR = $(srcdir)/lua/http/dist/css
 SASSC = sassc $(SASS_TARGETS) $(SASS_DIST_DIR)/style.css
 SASSC_FLAGS =
 SASSC_VENDORS = sassc $(SASS_VENDORS_TARGETS) $(SASS_DIST_DIR)/vendors.min.css --style compressed
-SASSC_VENDORS_FLAGS = -I lua/http/src/vendors/bootstrap/stylesheets/
+SASSC_VENDORS_FLAGS = -I $(srcdir)/lua/http/src/vendors/bootstrap/stylesheets/
 
 desktopdir = $(datadir)/applications
 if !HAVE_WIN32
@@ -152,13 +169,13 @@ css:
 
 html:
 	cat $(FRONT_HEAD) $(FRONT_BODY) > $(FRONT_INDEX)
-	find lua/http -name '*.component.html' -print | xargs cat >> $(FRONT_INDEX)
+	find $(srcdir)/lua/http -name '*.component.html' -print | xargs cat >> $(FRONT_INDEX)
 	cat $(FRONT_FOOT) >> $(FRONT_INDEX)
 
 preserve:
-	cp -r lua/http/src/vendors lua/http/dist/
-	cp -r lua/http/src/assets lua/http/dist/
-	cp -r icons/ lua/http/dist/assets/vlc-icons
+	cp -r $(srcdir)/lua/http/src/vendors $(srcdir)/lua/http/dist/
+	cp -r $(srcdir)/lua/http/src/assets $(srcdir)/lua/http/dist/
+	cp -r $(srcdir)/icons/ $(srcdir)/lua/http/dist/assets/vlc-icons
 
 if BUILD_LUA
 nobase_pkglibexec_SCRIPTS += \
@@ -220,77 +237,7 @@ nobase_doc_DATA = \
 	lua/sd/icast.lua \
 	$(NULL)
 
-if BUILD_HTTPD
-nobase_vlclib_DATA += \
-	lua/intf/http.luac \
-	lua/intf/modules/httprequests.luac \
-	$(NULL)
-nobase_vlcdata_DATA += $(DIST_http_lua)
-nobase_doc_DATA += lua/http/requests/README.txt
-endif
-endif
-MOSTLYCLEANFILES += $(nobase_vlclib_DATA)
-
-EXTRA_DIST += \
-	lua/README.txt \
-	lua/extensions/README.txt \
-	lua/extensions/VLSub.lua \
-	lua/intf/README.txt \
-	lua/intf/cli.lua \
-	lua/intf/dummy.lua \
-	lua/intf/dumpmeta.lua \
-	lua/intf/http.lua \
-	lua/intf/luac.lua \
-	lua/intf/modules/host.lua \
-	lua/intf/modules/httprequests.lua \
-	lua/intf/telnet.lua \
-	lua/meta/README.txt \
-	lua/meta/art/README.txt \
-	lua/meta/art/02_frenchtv.lua \
-	lua/meta/art/03_lastfm.lua \
-	lua/meta/art/01_googleimage.lua \
-	lua/meta/art/00_musicbrainz.lua \
-	lua/meta/fetcher/README.txt \
-	lua/meta/reader/README.txt \
-	lua/meta/reader/filename.lua \
-	lua/modules/common.lua \
-	lua/modules/dkjson.lua \
-	lua/modules/sandbox.lua \
-	lua/modules/simplexml.lua \
-	lua/playlist/README.txt \
-	lua/playlist/anevia_streams.lua \
-	lua/playlist/anevia_xml.lua \
-	lua/playlist/appletrailers.lua \
-	lua/playlist/bbc_co_uk.lua \
-	lua/playlist/break.lua \
-	lua/playlist/canalplus.lua \
-	lua/playlist/cue.lua \
-	lua/playlist/dailymotion.lua \
-	lua/playlist/extreme.lua \
-	lua/playlist/france2.lua \
-	lua/playlist/jamendo.lua \
-	lua/playlist/katsomo.lua \
-	lua/playlist/koreus.lua \
-	lua/playlist/lelombrik.lua \
-	lua/playlist/liveleak.lua \
-	lua/playlist/metacafe.lua \
-	lua/playlist/mpora.lua \
-	lua/playlist/newgrounds.lua \
-	lua/playlist/pinkbike.lua \
-	lua/playlist/pluzz.lua \
-	lua/playlist/rockbox_fm_presets.lua \
-	lua/playlist/soundcloud.lua \
-	lua/playlist/vimeo.lua \
-	lua/playlist/vocaroo.lua \
-	lua/playlist/youtube.lua \
-	lua/playlist/zapiks.lua \
-	lua/sd/README.txt \
-	lua/sd/fmc.lua \
-	lua/sd/icecast.lua \
-	lua/sd/icast.lua \
-	lua/sd/jamendo.lua
-
-DIST_http_lua = \
+nobase_dist_pkgdata_DATA += \
 	lua/http/requests/playlist.xml \
     lua/http/requests/playlist.json \
     lua/http/requests/README.txt \
@@ -304,6 +251,9 @@ DIST_http_lua = \
 	lua/http/custom.lua \
 	lua/http/favicon.ico \
 	lua/http/index.html
+
+endif
+MOSTLYCLEANFILES += $(nobase_pkgdata_DATA)
 
 EXTRA_DIST += \
 	lua/README.txt \
