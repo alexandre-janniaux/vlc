@@ -2963,7 +2963,21 @@ AC_CHECK_HEADERS([png.h], [
 dnl
 dnl  JPEG decoder module
 dnl
-PKG_ENABLE_MODULES_VLC([JPEG],[jpeg],[libjpeg], [JPEG support], [yes])
+AC_ARG_ENABLE([jpeg],
+  AS_HELP_STRING([--enable-jpeg], [JPEG support (default enabled)]))
+AS_IF([test "${enable_jpeg}" != "no"]), [
+  PKG_CHECK_MODULES([JPEG], [libjpeg], [
+    VLC_ADD_PLUGIN([jpeg])
+  ], [
+    AC_CHECK_HEADERS([jpeglib.h], [
+      VLC_ADD_PLUGIN([jpeg])
+      JPEG_LIBS="-ljpeg"
+    ], [
+      if test "x${enable_jpeg}" == "xyes"; then
+        AC_MSG_ERROR([Could not find jpeg])
+      fi
+    ])
+ ])
 
 dnl
 dnl  BPG decoder module
