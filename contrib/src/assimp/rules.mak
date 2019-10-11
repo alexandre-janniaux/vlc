@@ -21,7 +21,9 @@ endif
 $(TARBALLS)/assimp-$(ASSIMP_VERSION).tar.gz:
 	$(call download_pkg,$(ASSIMP_URL),assimp)
 
-assimp: assimp-$(ASSIMP_VERSION).tar.gz
+.sum-assimp: $(TARBALLS)/assimp-$(ASSIMP_VERSION).tar.gz
+
+assimp: $(TARBALLS)/assimp-$(ASSIMP_VERSION).tar.gz .sum-assimp
 	$(UNPACK)
 	$(APPLY) $(SRC)/assimp/0001-FBXConverter-fix-light-and-camera-position-convertio.patch
 	$(MOVE)
@@ -31,4 +33,3 @@ assimp: assimp-$(ASSIMP_VERSION).tar.gz
 	cd $< && $(HOSTVARS) $(CMAKE) $(ASSIMP_OPTIONS) -DCMAKE_INSTALL_PREFIX:PATH=$(PREFIX)
 	cd $< && $(MAKE) install
 	touch $@
-
