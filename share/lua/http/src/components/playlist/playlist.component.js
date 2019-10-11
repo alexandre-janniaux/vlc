@@ -38,12 +38,13 @@ Vue.component('playlist', {
                 return;
             }
             this.$parent.playlistItems = [];
-            for (let i = 0; i < playlistData.children[0].children.length; i++) {
+            for (let i = 0; i < playlistData.length; i++) {
+                let data = playlistData[i];
                 this.addItem(
                     0,
-                    playlistData.children[0].children[i].id,
-                    playlistData.children[0].children[i].name,
-                    playlistData.children[0].children[i].uri
+                    data.id,
+                    data.name,
+                    data.uri
                 );
             }
         },
