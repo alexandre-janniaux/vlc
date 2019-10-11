@@ -254,8 +254,8 @@ int main( void )
 {
     test_init();
 
-    test_conversion_euler_quaternion();
     test_conversion_viewpoint_mat4x4();
+    test_conversion_euler_quaternion();
 
     return 0;
 }
