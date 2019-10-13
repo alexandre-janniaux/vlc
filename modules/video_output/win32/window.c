@@ -37,6 +37,7 @@
 #include <vlc_actions.h>
 
 #include <shellapi.h>                                         /* ExtractIcon */
+#include <vlc_charset.h>                                      /* FromWide */
 
 #define RECTWidth(r)   (LONG)((r).right - (r).left)
 #define RECTHeight(r)  (LONG)((r).bottom - (r).top)
@@ -153,9 +154,37 @@ static void SetTitle(vout_window_t *wnd, const char *title)
     PostMessage( sys->hwnd, WM_VLC_CHANGE_TEXT, 0, 0 );
 }
 
+typedef struct enum_monitors_callback_params_t {
+    bool is_monitor_found;
+    const char *psz_name_to_find;
+    MONITORINFOEX *found_monitor_info;
+} enum_monitors_callback_params_t;
+
+static BOOL CALLBACK EnumDisplayMonitorsCallback(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData)
+{
+    /* this is called for each active monitor */
+
+    VLC_UNUSED(hdcMonitor);
+    VLC_UNUSED(lprcMonitor);
+
+    MONITORINFOEX mi;
+    mi.cbSize = sizeof(MONITORINFOEX);
+    if (!GetMonitorInfo(hMonitor, (LPMONITORINFO) &mi)) return true;
+
+    enum_monitors_callback_params_t *params = (enum_monitors_callback_params_t*) dwData;
+    char *psz_monitor_name = FromWide(mi.szDevice);
+    if (!strcmp(psz_monitor_name, params->psz_name_to_find))
+    {
+        /* the monitor name matches what we're looking for */
+        params->is_monitor_found = true;
+        params->found_monitor_info = &mi;
+    }
+    free(psz_monitor_name);
+    return !params->is_monitor_found;
+}
+
 static void SetFullscreen(vout_window_t *wnd, const char *id)
 {
-    VLC_UNUSED(id);
     msg_Dbg(wnd, "entering fullscreen mode");
     vout_window_sys_t *sys = wnd->sys;
 
@@ -167,12 +196,41 @@ static void SetFullscreen(vout_window_t *wnd, const char *id)
     /* Change window style, no borders and no title bar */
     SetWindowLong(sys->hwnd, GWL_STYLE, WS_CLIPCHILDREN | WS_VISIBLE);
 
-    /* Retrieve current window position so fullscreen will happen
-     * on the right screen */
-    HMONITOR hmon = MonitorFromWindow(sys->hwnd, MONITOR_DEFAULTTONEAREST);
-    MONITORINFO mi;
-    mi.cbSize = sizeof(MONITORINFO);
-    if (GetMonitorInfo(hmon, &mi))
+    /* Figure out which monitor we should be using */
+    MONITORINFOEX mi;
+    bool is_monitor_found = false;
+
+    if (id)
+    {
+        /* We're being told to use a specific monitor, so see if we can find an
+         * active monitor with the same name */
+        enum_monitors_callback_params_t params = {
+            .is_monitor_found = false,
+            .psz_name_to_find = id
+        };
+        EnumDisplayMonitors(NULL, NULL, &EnumDisplayMonitorsCallback, (LPARAM) &params);
+
+        if (params.is_monitor_found)
+        {
+            is_monitor_found = true;
+            mi = *(params.found_monitor_info);
+        }
+        else
+        {
+            msg_Dbg(wnd, "display device with name \"%s\" was requested, but no such device exists. Falling back to primary", id);
+        }
+    }
+
+    if (!is_monitor_found)
+    {
+        /* fall back to using the screen the window is currently mostly on */
+        HMONITOR hmon;
+        hmon = MonitorFromWindow(sys->hwnd, MONITOR_DEFAULTTONEAREST);
+        mi.cbSize = sizeof(MONITORINFOEX);
+        is_monitor_found = GetMonitorInfo(hmon, (LPMONITORINFO) &mi);
+    }
+    
+    if (is_monitor_found)
         SetWindowPos(sys->hwnd, 0,
                      mi.rcMonitor.left,
                      mi.rcMonitor.top,
