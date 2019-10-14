@@ -14,7 +14,7 @@ endif
 endif
 
 ifdef HAVE_WIN32
-DEPS_openhmd = hidapi $(DEPS_hidapi) winpthread $(DEPS_winpthread)
+DEPS_openhmd = hidapi $(DEPS_hidapi) pthreads $(DEPS_pthreads)
 endif
 
 ifdef HAVE_ANDROID
