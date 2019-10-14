@@ -3,6 +3,7 @@
 OPENHMD_VERSION := 80d51bea575a5bf71bb3a0b9683b80ac3146596a
 OPENHMD_GITURL = https://github.com/OpenHMD/OpenHMD.git
 OPENHMD_BRANCH = master
+OPENHMD_TARBALL = $(TARBALLS)/openhmd-git-$(OPENHMD_VERSION).tar.xz
 
 OPENHMD_DRIVERS = rift,vive,deepoon,psvr,nolo,external
 
@@ -28,23 +29,23 @@ ifeq ($(call need_pkg,"openhmd"),)
 PKGS_FOUND += openhmd
 endif
 
-$(TARBALLS)/openhmd-git.tar.xz:
+$(OPENHMD_TARBALL):
 	$(call download_git,$(OPENHMD_GITURL),,$(OPENHMD_VERSION))
 
-.sum-openhmd: openhmd-git.tar.xz
+.sum-openhmd: $(OPENHMD_TARBALL)
 	$(call check_githash,$(OPENHMD_VERSION))
 	touch $@
 
-openhmd: openhmd-git.tar.xz .sum-openhmd
+openhmd: $(OPENHMD_TARBALL) .sum-openhmd
 	$(UNPACK)
 	$(APPLY) $(SRC)/openhmd/0001-Commits-for-vive-values.patch
 	$(MOVE)
 
 OPENHMD_CONFIG = \
 	-Ddrivers="$(OPENHMD_DRIVERS)" \
-	-Dexamples= 
+	-Dexamples=
 
-.openhmd: openhmd
+.openhmd: openhmd crossfile.meson
 	cd $< && rm -rf build
 	cd $< && $(HOSTVARS_MESON) $(MESON) build $(OPENHMD_CONFIG)
 	cd $< && ninja -C build install
