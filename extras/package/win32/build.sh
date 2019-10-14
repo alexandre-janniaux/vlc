@@ -121,7 +121,8 @@ mkdir -p contrib/contrib-$SHORTARCH && cd contrib/contrib-$SHORTARCH
 if [ ! -z "$BREAKPAD" ]; then
      CONTRIBFLAGS="$CONTRIBFLAGS --enable-breakpad"
 fi
-../bootstrap --host=$TRIPLET $CONTRIBFLAGS
+
+../bootstrap --host=$TRIPLET $CONTRIBFLAGS --enable-openhmd
 
 # Rebuild the contribs or use the prebuilt ones
 if [ "$PREBUILT" != "yes" ]; then

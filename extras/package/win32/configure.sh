@@ -21,6 +21,7 @@ OPTIONS="
       --enable-libcddb
       --enable-zvbi --disable-telx
       --disable-chromecast
+      --enable-openhmd
       --enable-nls"
 
 sh "$(dirname $0)"/../../../configure ${OPTIONS}  "$@"
