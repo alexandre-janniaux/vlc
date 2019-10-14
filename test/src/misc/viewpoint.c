@@ -81,9 +81,9 @@ reciprocal_euler(float epsilon, float yaw, float pitch, float roll)
     fprintf(stderr, "converted:  yaw=%f, pitch=%f, roll=%f\n", yaw2, pitch2, roll2);
     fprintf(stderr, "==========================================\n");
 
-    float d1 = fmodf(fabs(yaw   - yaw2),   360.f);
-    float d2 = fmodf(fabs(pitch - pitch2), 180.f);
-    float d3 = fmodf(fabs(roll  - roll2),  360.f);
+    float d1 = fmodf(360.f + (yaw   - yaw2),   360.f);
+    float d2 = fmodf(180.f + (pitch - pitch2), 180.f);
+    float d3 = fmodf(360.f + (roll  - roll2),  360.f);
 
     /* Check the two borders of the tore, 0.f and 180.f or 360.f
      * depending on the range of the compared value. */
@@ -241,6 +241,13 @@ test_conversion_viewpoint_mat4x4()
 
         float expect_mat[16];
         mat4x4_for_angles(expect_mat, ex->angles);
+
+        //float transpose[16];
+        //for (int j=0; j<4; ++j)
+        //    for (int k=0; k<4; ++k)
+        //        transpose[4*k+j] = expect_mat[4*j+k];
+        //memcpy(expect_mat, transpose, sizeof(expect_mat));
+
         bool diff = fuzzy_memcmp(mat, expect_mat,
                                  ARRAY_SIZE(mat), epsilon);
         //printmat("EXPECT", ex->mat);
