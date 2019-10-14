@@ -91,8 +91,8 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
 
 static void EulerToQuaternion(float *q, float yaw, float pitch, float roll)
 {
-    yaw *= -1;
-    pitch *= -1;
+    //yaw   *= -1;
+    //pitch *= -1;
 
     const float c_yaw   = cos(yaw / 2.f);
     const float s_yaw   = sin(yaw / 2.f);
@@ -101,10 +101,15 @@ static void EulerToQuaternion(float *q, float yaw, float pitch, float roll)
     const float c_roll  = cos(roll / 2.f);
     const float s_roll  = sin(roll / 2.f);
 
-    q[3] = c_yaw * c_pitch * c_roll + s_yaw * s_pitch * s_roll;
-    q[0] = c_yaw * s_pitch * c_roll + s_yaw * c_pitch * s_roll;
-    q[1] = s_yaw * c_pitch * c_roll - c_yaw * s_pitch * s_roll;
-    q[2] = s_yaw * s_pitch * c_roll - c_yaw * c_pitch * s_roll;
+    q[3] = c_pitch*c_roll*c_yaw - s_pitch*s_roll*s_yaw;
+    q[0] = c_pitch*s_roll*s_yaw - c_roll*c_yaw*s_pitch;
+    q[1] = -c_pitch*c_roll*s_yaw - c_yaw*s_pitch*s_roll;
+    q[2] = c_pitch*c_yaw*s_roll + c_roll*s_pitch*s_yaw;
+
+    //q[3] = c_yaw * c_pitch * c_roll + s_yaw * s_pitch * s_roll;
+    //q[0] = c_yaw * s_pitch * c_roll + s_yaw * c_pitch * s_roll;
+    //q[1] = s_yaw * c_pitch * c_roll - c_yaw * s_pitch * s_roll;
+    //q[2] = s_yaw * s_pitch * c_roll - c_yaw * c_pitch * s_roll;
 }
 
 void vlc_viewpoint_to_4x4( const vlc_viewpoint_t *vp, float *m )
@@ -151,6 +156,13 @@ void vlc_viewpoint_to_4x4( const vlc_viewpoint_t *vp, float *m )
     //SWP(m[1], m[8]);
     //SWP(m[2], m[4]);
     //SWP(m[5], m[10]);
+
+    float transpose[16];
+    for (int j=0; j<4; ++j)
+        for (int k=0; k<4; ++k)
+            transpose[4*k+j] = m[4*j+k];
+    memcpy(m, transpose, sizeof(transpose));
+
 }
 
 void vlc_viewpoint_from_euler(vlc_viewpoint_t *vp,
