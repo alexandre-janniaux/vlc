@@ -226,7 +226,8 @@ test_conversion_viewpoint_mat4x4()
            mat[8],  mat[9],  mat[10], mat[11], \
            mat[12], mat[13], mat[14], mat[15]);
 
-    for (int i=0; i<ARRAY_SIZE(examples_mat4x4); ++i)
+    bool success = true;
+    for (size_t i=0; i<ARRAY_SIZE(examples_mat4x4); ++i)
     {
         struct example_mat4x4 *ex = &examples_mat4x4[i];
         vlc_viewpoint_from_euler(&vp,
@@ -240,14 +241,18 @@ test_conversion_viewpoint_mat4x4()
 
         float expect_mat[16];
         mat4x4_for_angles(expect_mat, ex->angles);
+        bool diff = fuzzy_memcmp(mat, expect_mat,
+                                 ARRAY_SIZE(mat), epsilon);
         //printmat("EXPECT", ex->mat);
+        if (!diff)
+            continue;
+
         printmat("EXPECT COMPUTED", expect_mat);
         printmat("RESULT", mat);
-        !fuzzy_memcmp(mat, expect_mat,
-                             ARRAY_SIZE(mat), epsilon);
-
-
+        success = false;
     }
+
+    assert(success);
 }
 
 int main( void )
