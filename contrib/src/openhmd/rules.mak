@@ -38,7 +38,6 @@ $(OPENHMD_TARBALL):
 
 openhmd: $(OPENHMD_TARBALL) .sum-openhmd
 	$(UNPACK)
-	$(APPLY) $(SRC)/openhmd/0001-Commits-for-vive-values.patch
 	$(MOVE)
 
 OPENHMD_CONFIG = \
