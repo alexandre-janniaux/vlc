@@ -14,11 +14,10 @@ endif
 endif
 
 ifdef HAVE_WIN32
-DEPS_openhmd = hidapi
+DEPS_openhmd = hidapi $(DEPS_hidapi) winpthread $(DEPS_winpthread)
 endif
 
 ifdef HAVE_ANDROID
-D
 #OPENHMD_DRIVER_CONFIG = --disable-driver-oculus-rift --disable-driver-htc-vive --disable-driver-deepoon --disable-driver-psvr --disable-driver-nolo --disable-driver-external --disable-driver-wmr --enable-driver-android
 OPENHMD_DRIVERS = android
 endif
