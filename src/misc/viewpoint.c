@@ -91,6 +91,9 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
 
 static void EulerToQuaternion(float *q, float yaw, float pitch, float roll)
 {
+    yaw *= -1;
+    pitch *= -1;
+
     const float c_yaw   = cos(yaw / 2.f);
     const float s_yaw   = sin(yaw / 2.f);
     const float c_pitch = cos(pitch / 2.f);
@@ -98,10 +101,10 @@ static void EulerToQuaternion(float *q, float yaw, float pitch, float roll)
     const float c_roll  = cos(roll / 2.f);
     const float s_roll  = sin(roll / 2.f);
 
-    q[0] = c_yaw * c_pitch * s_roll - s_yaw * s_pitch * c_roll;
-    q[1] = c_yaw * s_pitch * c_roll + s_yaw * c_pitch * s_roll;
-    q[2] = s_yaw * c_pitch * c_roll - c_yaw * s_pitch * s_roll;
     q[3] = c_yaw * c_pitch * c_roll + s_yaw * s_pitch * s_roll;
+    q[0] = c_yaw * s_pitch * c_roll + s_yaw * c_pitch * s_roll;
+    q[1] = s_yaw * c_pitch * c_roll - c_yaw * s_pitch * s_roll;
+    q[2] = s_yaw * s_pitch * c_roll - c_yaw * c_pitch * s_roll;
 }
 
 void vlc_viewpoint_to_4x4( const vlc_viewpoint_t *vp, float *m )
@@ -154,9 +157,9 @@ void vlc_viewpoint_from_euler(vlc_viewpoint_t *vp,
                               float yaw, float pitch, float roll)
 {
     /* convert angles from degrees into radians */
-    yaw   =  yaw   * (float)M_PI / 180.f + (float)M_PI_2;
-    pitch = -pitch * (float)M_PI / 180.f;
-    roll  = -roll  * (float)M_PI / 180.f;
+    yaw   = yaw   * (float)M_PI / 180.f + (float)M_PI_2;
+    pitch = pitch * (float)M_PI / 180.f;
+    roll  = roll  * (float)M_PI / 180.f;
 
     EulerToQuaternion(vp->quat, yaw, pitch, roll);
 }
@@ -167,7 +170,7 @@ void vlc_viewpoint_to_euler(const vlc_viewpoint_t *vp,
     QuaternionToEuler(yaw, pitch, roll, vp->quat);
 
     /* convert angles from radian into degrees */
-    *yaw   =  180.f / (float)M_PI * (*yaw - (float)M_PI_2);
-    *pitch = -180.f / (float)M_PI * (*pitch);
-    *roll  = -180.f / (float)M_PI * (*roll);
+    *yaw   = 180.f / (float)M_PI * (*yaw - (float)M_PI_2);
+    *pitch = 180.f / (float)M_PI * (*pitch);
+    *roll  = 180.f / (float)M_PI * (*roll);
 }
