@@ -98,7 +98,7 @@ static int Control(vout_display_t *vd, int query, va_list ap)
         else if (c.align.vertical == VLC_VIDEO_ALIGN_BOTTOM)
             c.align.vertical = VLC_VIDEO_ALIGN_TOP;
 
-        vout_display_PlacePicture (&place, src, &c, false);
+        vout_display_PlacePicture (&place, src, &c);
         vlc_gl_Resize (sys->gl, place.width, place.height);
         if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
             return VLC_EGENERIC;
@@ -114,7 +114,7 @@ static int Control(vout_display_t *vd, int query, va_list ap)
         const vout_display_cfg_t *cfg = vd->cfg;
         vout_display_place_t place;
 
-        vout_display_PlacePicture (&place, &vd->source, cfg, false);
+        vout_display_PlacePicture (&place, &vd->source, cfg);
         if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
             return VLC_EGENERIC;
         vout_display_opengl_SetWindowAspectRatio(sys->vgl, (float)place.width / place.height);
@@ -125,16 +125,6 @@ static int Control(vout_display_t *vd, int query, va_list ap)
       case VOUT_DISPLAY_CHANGE_VIEWPOINT:
         return vout_display_opengl_SetViewpoint (sys->vgl,
             &va_arg (ap, const vout_display_cfg_t* )->viewpoint);
-      case VOUT_DISPLAY_CHANGE_HMD_CONFIGURATION:
-      {
-        if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
-            return VLC_EGENERIC;
-        if (vout_display_opengl_ChangeHMDConfiguration(sys->vgl,
-            va_arg(ap, const vout_hmd_cfg_t*)) != VLC_SUCCESS)
-            return VLC_EGENERIC;
-        vlc_gl_ReleaseCurrent (sys->gl);
-        return VLC_SUCCESS;
-      }
     case VOUT_DISPLAY_CHANGE_HMD_CONTROLLER:
     {
       if (vlc_gl_MakeCurrent (sys->gl) != VLC_SUCCESS)
@@ -217,7 +207,7 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
     if (vlc_gl_MakeCurrent (sys->gl))
         goto error;
     sys->vgl = vout_display_opengl_New(&fmt, &subpicture_chromas, sys->gl,
-                                       &cfg->viewpoint, cfg->hmd);
+                                       &cfg->viewpoint, false);
     vlc_gl_ReleaseCurrent (sys->gl);
     if (!sys->vgl)
         goto error;
