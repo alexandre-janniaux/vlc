@@ -133,36 +133,22 @@ void vlc_viewpoint_to_4x4( const vlc_viewpoint_t *vp, float *m )
     /* The quaternion is the opposite rotation of the view.
      * We need to inverse the matrix at the same time. */
     m[0]  = xx + ww - yy - zz;
-    m[4]  = 2 * (xy + zw);
-    m[8]  = 2 * (xz - yw);
+    m[1]  = 2 * (xy + zw);
+    m[2]  = 2 * (xz - yw);
     m[3]  = 0;
 
-    m[1]  = 2 * (xy - zw);
+    m[4]  = 2 * (xy - zw);
     m[5]  = 1 - 2 * (xx + zz);
-    m[9]  = 2 * (yz + xw);
+    m[6]  = 2 * (yz + xw);
     m[7]  = 0;
 
-    m[2]  = 2 * (xz + yw);
-    m[6]  = 2 * (yz - xw);
+    m[8]  = 2 * (xz + yw);
+    m[9]  = 2 * (yz - xw);
     m[10] = 1 - 2 * (xx + yy);
     m[11] = 0;
 
     m[12] = m[13] = m[14] = 0;
     m[15] = 1;
-
-#define SWP(x, y) \
-    do { float tmp = x; x = y; y = tmp;} while(0)
-
-    //SWP(m[1], m[8]);
-    //SWP(m[2], m[4]);
-    //SWP(m[5], m[10]);
-
-    float transpose[16];
-    for (int j=0; j<4; ++j)
-        for (int k=0; k<4; ++k)
-            transpose[4*k+j] = m[4*j+k];
-    memcpy(m, transpose, sizeof(transpose));
-
 }
 
 void vlc_viewpoint_from_euler(vlc_viewpoint_t *vp,
