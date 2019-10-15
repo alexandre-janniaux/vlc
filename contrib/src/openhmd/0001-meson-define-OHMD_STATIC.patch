@@ -1,0 +1,25 @@
+From 512b5ad0a408f478f0ba7a844c4b67408a46fd2b Mon Sep 17 00:00:00 2001
+From: Alexandre Janniaux <ajanni@videolabs.io>
+Date: Tue, 15 Oct 2019 11:47:33 +0200
+Subject: [PATCH] meson: define OHMD_STATIC
+
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index 1bad579..31ea0ea 100644
+--- a/meson.build
++++ b/meson.build
+@@ -157,7 +157,7 @@ openhmd_lib = library(
+ 	'openhmd',
+ 	sources,
+ 	include_directories: include_directories('./include'),
+-	c_args: c_args,
++	c_args: c_args + ['-DOHMD_STATIC'],
+ 	dependencies: deps,
+ 	install: true,
+ 	version: library_version,
+-- 
+2.23.0
+
