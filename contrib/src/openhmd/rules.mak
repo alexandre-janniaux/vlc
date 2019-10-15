@@ -1,11 +1,11 @@
 # OpenHMD
 
-OPENHMD_VERSION := d337a154ad1d156722499234c205a9c2e5d3f4f9
+OPENHMD_VERSION := 7fa69411b8edb436da052aab19678506052e4866
 OPENHMD_GITURL = https://github.com/OpenHMD/OpenHMD.git
-OPENHMD_BRANCH = master
+OPENHMD_BRANCH = 0.3
 OPENHMD_TARBALL = $(TARBALLS)/openhmd-git-$(OPENHMD_VERSION).tar.xz
 
-OPENHMD_DRIVERS = rift,vive,deepoon,psvr,nolo,external
+OPENHMD_DRIVERS = rift,vive,deepoon,nolo,external
 
 ifdef HAVE_LINUX
 ifndef HAVE_ANDROID
@@ -29,7 +29,7 @@ PKGS_FOUND += openhmd
 endif
 
 $(OPENHMD_TARBALL):
-	$(call download_git,$(OPENHMD_GITURL),,$(OPENHMD_VERSION))
+	$(call download_git,$(OPENHMD_GITURL),$(OPENHMD_BRANCH),$(OPENHMD_VERSION))
 
 .sum-openhmd: $(OPENHMD_TARBALL)
 	$(call check_githash,$(OPENHMD_VERSION))
@@ -37,7 +37,7 @@ $(OPENHMD_TARBALL):
 
 openhmd: $(OPENHMD_TARBALL) .sum-openhmd
 	$(UNPACK)
-	$(APPLY) $(SRC)/openhmd/0001-disable-test.patch
+	#$(APPLY) $(SRC)/openhmd/0001-disable-test.patch
 	$(APPLY) $(SRC)/openhmd/0001-meson-define-OHMD_STATIC.patch
 	$(MOVE)
 
