@@ -768,5 +768,5 @@ static int WindowOpen( vout_window_t *p_wnd )
     //vout_thread_t *vout = vout_Request( p_intf, &cfg, NULL );
     //vout_window_t *window = vout_display_NewWindow();
 
-    return VLC_SUCCESS;
+    return p_mi->getVideo( p_wnd ) ? VLC_SUCCESS : VLC_EGENERIC;
 }
