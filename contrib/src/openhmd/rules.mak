@@ -41,11 +41,12 @@ openhmd: $(OPENHMD_TARBALL) .sum-openhmd
 	$(MOVE)
 
 OPENHMD_CONFIG = \
-	-Ddrivers="$(OPENHMD_DRIVERS)" \
-	-Dexamples=
+	-DOPENHMD_EXAMPLE_SIMPLE=OFF \
+	-DBUILD_SHARED_LIBS=OFF \
 
-.openhmd: openhmd crossfile.meson
+
+.openhmd: openhmd toolchain.cmake
 	cd $< && rm -rf build
-	cd $< && $(HOSTVARS_MESON) $(MESON) build $(OPENHMD_CONFIG)
+	cd $< && $(HOSTVARS) $(CMAKE) -S . -B build $(OPENHMD_CONFIG) -G "Ninja"
 	cd $< && ninja -C build install
 	touch $@
