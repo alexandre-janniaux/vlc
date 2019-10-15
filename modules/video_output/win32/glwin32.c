@@ -221,6 +221,7 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
     var_AddCallback (playlist, "hmd-device-data", OnHmdDeviceStateChanged, vd);
 
     vlc_hmd_device_t *hmd_device = var_GetAddress (playlist, "hmd-device-data");
+    assert(hmd_device);
     if (hmd_device)
         vout_display_opengl_UpdateHMD (sys->vgl, hmd_device);
 

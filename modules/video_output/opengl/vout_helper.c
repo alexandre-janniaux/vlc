@@ -2967,6 +2967,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
     if (vgl->close_hmd)
     {
+        msg_Info(vgl->gl, "Closing HMD mapping");
         vlc_hmd_UnmapDevice(vgl->hmd);
         vgl->hmd = NULL;
     }
@@ -2974,6 +2975,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     if (vgl->hmd)
     {
         vlc_viewpoint_t vp = vlc_hmd_ReadViewpoint(vgl->hmd);
+        msg_Dbg(vgl->gl, "viewpoint is %f %f %f %f", vp.quat[0], vp.quat[1], vp.quat[2], vp.quat[3]);
         UpdateViewpoint(vgl, &vp);
     }
     vlc_mutex_unlock (&vgl->hmd_lock);
@@ -3092,8 +3094,8 @@ static void HmdStateChanged(vlc_hmd_interface_t *hmd,
         if (vgl->p_objDisplay == NULL)
         {
             msg_Warn(vgl->gl, "Could not load the virtual theater");
-            vgl->b_sideBySide = false;
-            return;
+            /*vgl->b_sideBySide = false;
+            return;*/
         }
 
         vgl->b_sideBySide = true;
