@@ -218,7 +218,7 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
 
     //var_Create (vd, "hmd-device-data", VLC_VAR_ADDRESS | VLC_VAR_DOINHERIT);
     vlc_object_t *playlist = vd->obj.parent->obj.parent; // TODO: HACK, UGLY XXX
-    var_AddCallback (playlist, "hmd-device-data", OnHmdDeviceStateChanged, NULL);
+    var_AddCallback (playlist, "hmd-device-data", OnHmdDeviceStateChanged, vd);
 
     vlc_hmd_device_t *hmd_device = var_GetAddress (playlist, "hmd-device-data");
     if (hmd_device)
@@ -333,9 +333,9 @@ static int OnHmdDeviceStateChanged(vlc_object_t *p_this, char const *name,
                                    void *userdata)
 {
     /* We only bind to hmd-device-data so these variable are not used */
-    (void) name; (void) userdata;
+    (void) name;
 
-    vout_display_t *vd = p_this;
+    vout_display_t *vd = userdata;
     vout_display_sys_t *sys = vd->sys;
 
     msg_Err(vd, "Updating HMD status from display");
