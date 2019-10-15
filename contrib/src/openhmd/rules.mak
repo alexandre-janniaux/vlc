@@ -37,6 +37,7 @@ $(OPENHMD_TARBALL):
 
 openhmd: $(OPENHMD_TARBALL) .sum-openhmd
 	$(UNPACK)
+	$(APPLY) $(SRC)/openhmd/0001-disable-test.patch
 	$(MOVE)
 
 OPENHMD_CONFIG = \
