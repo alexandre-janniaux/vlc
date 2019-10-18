@@ -1890,8 +1890,8 @@ static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, s
             bottom[j] = (source->i_y_offset + source->i_visible_height) * scale_h;
         }
 
-        if (!vgl->b_sideBySide)
-            TextureCropForStereo(vgl, left, top, right, bottom);
+        //if (!vgl->b_sideBySide)
+        TextureCropForStereo(vgl, left, top, right, bottom);
         int ret = SetupCoords(vgl, left, top, right, bottom,
                               (float)source->i_visible_width / source->i_visible_height);
         if (ret != VLC_SUCCESS)
