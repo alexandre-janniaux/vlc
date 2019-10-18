@@ -77,7 +77,7 @@ struct vlc_hmd_cfg_t
  */
 struct vlc_hmd_driver_t
 {
-    struct vlc_common_members obj;
+    vlc_object_t obj;
 
     /* Module */
     module_t* module;
@@ -101,7 +101,7 @@ struct vlc_hmd_driver_t
  */
 struct vlc_hmd_device_t
 {
-    struct vlc_common_members obj;
+    vlc_object_t obj;
 };
 
 /**
