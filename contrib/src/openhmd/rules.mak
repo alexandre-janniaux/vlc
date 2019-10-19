@@ -36,12 +36,11 @@ $(TARBALLS)/openhmd-git.tar.xz:
 
 openhmd: openhmd-git.tar.xz .sum-openhmd
 	$(UNPACK)
-	$(APPLY) $(SRC)/openhmd/0001-Commits-for-vive-values.patch
 	$(MOVE)
 
 OPENHMD_CONFIG = \
 	-Ddrivers="$(OPENHMD_DRIVERS)" \
-	-Dexamples= 
+	-Dexamples=
 
 .openhmd: openhmd
 	cd $< && rm -rf build
