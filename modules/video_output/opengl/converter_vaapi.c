@@ -35,6 +35,12 @@
 #include "converter.h"
 #include "../../hw/vaapi/vlc_vaapi.h"
 
+/* From https://www.khronos.org/registry/OpenGL/extensions/OES/OES_EGL_image.txt
+ * The extension is an OpenGL ES extension but can (and usually is) available on
+ * OpenGL implementations. */
+typedef void *GLeglImageOES;
+typedef void (*PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)(GLenum target, GLeglImageOES image);
+
 struct priv
 {
     VADisplay vadpy;
