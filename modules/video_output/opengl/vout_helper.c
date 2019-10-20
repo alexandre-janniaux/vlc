@@ -1257,8 +1257,8 @@ static void UpdateFOVy(vout_display_opengl_t *vgl)
     vgl->f_fovy = 2 * atanf(tanf(vgl->f_fovx / 2) / vgl->f_sar);
 }
 
-int vout_display_opengl_SetViewpoint(vout_display_opengl_t *vgl,
-                                     const vlc_viewpoint_t *p_vp)
+static int UpdateViewpoint(vout_display_opengl_t *vgl,
+                           const vlc_viewpoint_t *p_vp)
 {
     if (p_vp->fov > FIELD_OF_VIEW_DEGREES_MAX
             || p_vp->fov < FIELD_OF_VIEW_DEGREES_MIN)
@@ -1280,6 +1280,18 @@ int vout_display_opengl_SetViewpoint(vout_display_opengl_t *vgl,
     getViewpointMatrixes(vgl, vgl->fmt.projection_mode, vgl->prgm);
 
     return VLC_SUCCESS;
+}
+
+int vout_display_opengl_SetViewpoint(vout_display_opengl_t *vgl,
+                                     const vlc_viewpoint_t *p_vp)
+{
+    if (vgl->b_sideBySide)
+    {
+        /* The viewpoint values are updated by a callback at display time */
+        return VLC_SUCCESS;
+    }
+
+    return UpdateViewpoint(vgl, p_vp);
 }
 
 
