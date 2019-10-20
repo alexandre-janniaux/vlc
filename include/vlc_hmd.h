@@ -94,6 +94,7 @@ struct vlc_hmd_driver_t
     vlc_viewpoint_t (*get_viewpoint)(vlc_hmd_driver_t *driver);
     vlc_hmd_state_e (*get_state)(vlc_hmd_driver_t *driver);
     vlc_hmd_cfg_t   (*get_config)(vlc_hmd_driver_t *driver);
+    void            (*close)(vlc_hmd_driver_t *driver);
 };
 
 /**
@@ -192,6 +193,12 @@ vlc_hmd_FindDevice(vlc_object_t *parent,
                    const char *modules,
                    const char *name) VLC_USED;
 
+
+VLC_API void
+vlc_hmd_device_Release(vlc_hmd_device_t *device);
+
+VLC_API void
+vlc_hmd_driver_Release(vlc_hmd_driver_t *driver);
 /** @} */
 
 #ifdef __cplusplus

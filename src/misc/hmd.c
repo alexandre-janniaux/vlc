@@ -31,14 +31,26 @@
 #include <vlc_threads.h>
 #include <vlc_viewpoint.h>
 #include <vlc_modules.h>
+#include <vlc_atomic.h>
 
 #include "../libvlc.h"
 
+struct vlc_hmd_driver_owner
+{
+    vlc_hmd_driver_t driver;
+
+    vlc_atomic_rc_t refcount;
+};
+
 struct vlc_hmd_device_owner
 {
+    /* Keep this member as first member. */
     vlc_hmd_device_t device;
 
     vlc_hmd_driver_t *driver;
+
+    /* Usage reference counting before vlc_object_delete. */
+    vlc_atomic_rc_t refcount;
 
     vlc_mutex_t lock;
     bool dead;
@@ -65,6 +77,41 @@ struct vlc_hmd_interface_t
     } current_state;
 };
 
+static struct vlc_hmd_driver_owner *
+vlc_hmd_driver_GetOwner(vlc_hmd_driver_t *driver)
+{
+    return container_of(driver, struct vlc_hmd_driver_owner, driver);
+}
+
+static struct vlc_hmd_device_owner *
+vlc_hmd_device_GetOwner(vlc_hmd_device_t *device)
+{
+    return container_of(device, struct vlc_hmd_device_owner, device);
+}
+
+void vlc_hmd_driver_Release(vlc_hmd_driver_t *driver)
+{
+    // TODO release
+    struct vlc_hmd_driver_owner *owner = vlc_hmd_driver_GetOwner(driver);
+
+    if (vlc_atomic_rc_dec(&owner->refcount))
+    {
+        driver->close(driver);
+        vlc_object_delete(driver);
+    }
+}
+
+void vlc_hmd_device_Release(vlc_hmd_device_t *device)
+{
+    struct vlc_hmd_device_owner *owner = vlc_hmd_device_GetOwner(device);
+
+    if (vlc_atomic_rc_dec(&owner->refcount))
+    {
+        /* The device is not used anymore, release it. */
+        vlc_hmd_driver_Release(owner->driver);
+        vlc_object_delete(device);
+    }
+}
 
 int vlc_hmd_ReadEvents(struct vlc_hmd_interface_t *hmd)
 {
@@ -154,7 +201,9 @@ vlc_hmd_MapDevice(vlc_hmd_device_t *device,
 {
     struct vlc_hmd_interface_t *hmd = calloc(1, sizeof(*hmd));
 
-    vlc_object_hold(VLC_OBJECT(device));
+    struct vlc_hmd_device_owner *device_owner = vlc_hmd_device_GetOwner(device);
+    vlc_atomic_rc_inc(&device_owner->refcount);
+
     hmd->device = device;
     hmd->userdata = userdata;
     hmd->cbs = cbs;
@@ -165,13 +214,16 @@ vlc_hmd_MapDevice(vlc_hmd_device_t *device,
 void vlc_hmd_UnmapDevice(vlc_hmd_interface_t *hmd)
 {
     hmd->current_state.dead = true;
-    vlc_object_release(hmd->device);
+
+    /* Notify that we don't use the headset device anymore. */
+    vlc_hmd_device_Release(hmd->device);
 
     free(hmd);
 }
 
-static int ActivateHmdDriver(void *func, va_list args)
+static int ActivateHmdDriver(void *func, bool force, va_list args)
 {
+    VLC_UNUSED(force);
     int (*activate)(vlc_hmd_driver_t *) = func;
     vlc_hmd_driver_t *driver = va_arg(args, vlc_hmd_driver_t*);
 
@@ -190,26 +242,47 @@ vlc_hmd_FindDevice(vlc_object_t *parent,
     assert(parent);
     assert(modules);
 
-    vlc_hmd_driver_t *driver =
-        vlc_custom_create(parent, sizeof(*driver), "HMD driver");
+    struct vlc_hmd_driver_owner *driver_owner = NULL;
+    struct vlc_hmd_device_owner *device_owner = NULL;
+    vlc_hmd_driver_t *driver = NULL;
 
+    driver_owner = vlc_custom_create(parent, sizeof(*driver_owner), "HMD driver");
+    if (driver_owner == NULL)
+        goto error;
+
+    driver = &driver_owner->driver;
+
+    // TODO loading parameters are probably wrong
     driver->module = vlc_module_load(driver, "hmd driver", modules,
                                      false, ActivateHmdDriver, driver);
 
+    if (driver->module == NULL)
+        goto error;
+
+    /* Check that HMD driver public interface is valid. */
     assert(driver->get_viewpoint);
     assert(driver->get_state);
     assert(driver->get_config);
+    assert(driver->close);
 
-    if (!driver->module)
-    {
-        vlc_object_release(driver);
-        return NULL;
-    }
-
-    struct vlc_hmd_device_owner *device_owner =
+    /* Create the device associated with the driver. */
+    device_owner =
         vlc_custom_create(driver, sizeof(*device_owner), "HMD device");
+
+    if (device_owner == NULL)
+        goto error;
 
     device_owner->driver = driver;
 
     return &device_owner->device;
+
+error:
+    // TODO: refactor into dedicated load/close functions
+    if (driver && driver->module)
+        driver->close(driver);
+
+    if (driver_owner)
+        vlc_object_delete(driver);
+
+    return NULL;
 }

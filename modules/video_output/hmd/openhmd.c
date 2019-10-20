@@ -45,6 +45,7 @@
  *****************************************************************************/
 static int  Open (vlc_object_t *p_this);
 static void Close(vlc_object_t *);
+
 static int headTrackingCallback(vlc_object_t *p_this, char const *psz_var,
                                 vlc_value_t oldval, vlc_value_t newval,
                                 void *p_data);
@@ -70,7 +71,7 @@ vlc_module_begin()
              HEAD_TRACKING_TEXT, HEAD_TRACKING_LONGTEXT, false)
 
     add_shortcut("openhmd")
-    set_callbacks(Open, Close)
+    set_callback(Open)
 vlc_module_end()
 
 
@@ -159,15 +160,15 @@ static int Open(vlc_object_t *p_this)
     p_hmd->get_viewpoint = GetViewpoint;
     p_hmd->get_state = GetState;
     p_hmd->get_config = GetConfig;
+    p_hmd->close = Close;
 
     return i_ret;
 }
 
 
-static void Close(vlc_object_t *p_this)
+static void Close(vlc_hmd_driver_t *driver)
 {
-    vlc_hmd_driver_t* p_hmd = (vlc_hmd_driver_t*)p_this;
-    struct vlc_hmd_driver_sys_t* sys = p_hmd->sys;
+    struct vlc_hmd_driver_sys_t* sys = driver->sys;
 
     vlc_mutex_lock(&sys->lock);
     sys->b_thread_running = false;
@@ -175,7 +176,7 @@ static void Close(vlc_object_t *p_this)
     vlc_mutex_unlock(&sys->lock);
     vlc_join(sys->thread, NULL);
 
-    Release(p_hmd);
+    Release(driver);
 }
 
 
