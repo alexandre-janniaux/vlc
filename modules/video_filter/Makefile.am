@@ -22,6 +22,7 @@ liberase_plugin_la_SOURCES = video_filter/erase.c
 libextract_plugin_la_SOURCES = video_filter/extract.c
 libextract_plugin_la_LIBADD = $(LIBM)
 libfps_plugin_la_SOURCES = video_filter/fps.c
+libopengl_fps_plugin_la_SOURCES = video_filter/opengl_fps.c
 libfreeze_plugin_la_SOURCES = video_filter/freeze.c
 libgaussianblur_plugin_la_SOURCES = video_filter/gaussianblur.c
 libgaussianblur_plugin_la_LIBADD = $(LIBM)
@@ -103,6 +104,7 @@ video_filter_LTLIBRARIES = \
 	liboldmovie_plugin.la \
 	libvhs_plugin.la \
 	libfps_plugin.la \
+	libopengl_fps_plugin.la \
 	libfreeze_plugin.la \
 	libpuzzle_plugin.la \
 	librotate_plugin.la
