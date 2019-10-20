@@ -112,4 +112,13 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 void vout_display_opengl_UpdateHMD(vout_display_opengl_t *vgl,
                                    vlc_hmd_device_t *device);
 
+typedef struct
+{
+    bool hmd;
+    bool side_by_side;
+} vout_display_opengl_params_t;
+
+void vout_display_opengl_SetParameters(vout_display_opengl_t *vgl,
+                                       const vout_display_opengl_params_t *params);
+
 #endif

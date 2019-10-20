@@ -2180,3 +2180,9 @@ void vout_display_opengl_UpdateHMD(vout_display_opengl_t *vgl,
 
     vlc_mutex_unlock(&vgl->hmd_lock);
 }
+
+void vout_display_opengl_SetParameters(vout_display_opengl_t *vgl,
+                                       const vout_display_opengl_params_t *params)
+{
+    vgl->b_sideBySide = params->side_by_side;
+}
