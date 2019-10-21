@@ -189,6 +189,8 @@ static void Release(vlc_hmd_driver_t* p_hmd)
 
     vlc_mutex_destroy(&sys->lock);
     vlc_cond_destroy(&sys->thread_cond);
+
+    vlc_obj_free(VLC_OBJECT(p_hmd), sys);
 }
 
 
