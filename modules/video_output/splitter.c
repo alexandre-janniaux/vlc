@@ -65,6 +65,8 @@ struct vout_display_sys_t {
     vlc_sem_t prepare_done;
     vlc_sem_t display_wait;
     vlc_sem_t display_done;
+
+    vlc_hmd_device_t *hmd_device;
 };
 
 ///* Callback for vlc_object, to copy the new HMD device to the displays. */
@@ -226,6 +228,11 @@ static void vlc_vidsplit_Close(vout_display_t *vd)
 {
     vout_display_sys_t *sys = vd->sys;
     int n = sys->splitter.i_output;
+
+    msg_Err(vd, "Closing splitter");
+
+    if (sys->hmd_device)
+        vlc_hmd_device_Release(sys->hmd_device);
 
     for (int i = 0; i < n; i++) {
         struct vlc_vidsplit_part *part = &sys->parts[i];
@@ -390,14 +397,8 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
     vlc_sem_init(&sys->display_wait, 0);
     vlc_sem_init(&sys->display_done, 0);
 
+    vlc_hmd_device_t *device = NULL;
     bool use_hmd = var_InheritBool(vd, "splitter-hmd");
-    if (use_hmd)
-    {
-        vlc_hmd_device_t *device =
-            vlc_hmd_FindDevice(VLC_OBJECT(vd), "any", NULL);
-
-        var_SetAddress(vlc_object_instance(vd), "hmd-device-data", device);
-    }
 
     for (int i = 0; i < splitter->i_output; i++) {
         const video_splitter_output_t *output = &splitter->p_output[i];
@@ -420,7 +421,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         if (part->window == NULL) {
             splitter->i_output = i;
             vlc_vidsplit_Close(vd);
-            return VLC_EGENERIC;
+            goto error;
         }
 
         var_Destroy(obj, "side-by-side");
@@ -439,7 +440,8 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
             vlc_sem_destroy(&part->lock);
             splitter->i_output = i;
             vlc_vidsplit_Close(vd);
-            return VLC_EGENERIC;
+
+            goto error;
         }
 
         vlc_sem_wait(&part->lock);
@@ -460,12 +462,24 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         }
     }
 
+    if (use_hmd)
+    {
+        device = vlc_hmd_FindDevice(VLC_OBJECT(vd), "any", NULL);
+
+        var_SetAddress(vlc_object_instance(vd), "hmd-device-data", device);
+    }
+    sys->hmd_device = device;
+
     vd->prepare = vlc_vidsplit_Prepare;
     vd->display = vlc_vidsplit_Display;
     vd->control = vlc_vidsplit_Control;
     vd->close = vlc_vidsplit_Close;
     (void) fmtp;
     return VLC_SUCCESS;
+
+error:
+    if (device) vlc_hmd_device_Release(device);
+    return VLC_EGENERIC;
 }
 
 vlc_module_begin()

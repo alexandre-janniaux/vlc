@@ -956,3 +956,5 @@ vlc_hmd_MapDevice
 vlc_hmd_UnmapDevice
 vlc_hmd_ReadEvents
 vlc_hmd_ReadViewpoint
+vlc_hmd_device_Release
+vlc_hmd_driver_Release
