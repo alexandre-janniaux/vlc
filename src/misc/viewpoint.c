@@ -91,9 +91,6 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
 
 static void EulerToQuaternion(float *q, float yaw, float pitch, float roll)
 {
-    //yaw   *= -1;
-    //pitch *= -1;
-
     const float c_yaw   = cos(yaw / 2.f);
     const float s_yaw   = sin(yaw / 2.f);
     const float c_pitch = cos(pitch / 2.f);
