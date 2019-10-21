@@ -176,6 +176,14 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
     if (hmd)
         vout_display_opengl_UpdateHMD(sys->vgl, hmd);
 
+    bool side_by_side = var_InheritBool(vd, "side-by-side");
+
+    vout_display_opengl_SetParameters(sys->vgl,
+        &(const vout_display_opengl_params_t) {
+            .hmd = hmd != NULL,
+            .side_by_side = side_by_side,
+        });
+
     vd->sys = sys;
     vd->info.subpicture_chromas = spu_chromas;
     vd->pool    = vout_display_opengl_HasPool(sys->vgl) ? Pool : NULL;
