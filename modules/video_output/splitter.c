@@ -64,29 +64,37 @@ struct vout_display_sys_t {
     vlc_sem_t barrier_done;
 };
 
-/* Callback for vlc_object, to copy the new HMD device to the displays. */
-static int OnHmdDeviceStateChanged(vlc_object_t *p_this, char const *name,
-                                   vlc_value_t old_val, vlc_value_t new_val,
-                                   void *userdata)
-{
-    /* We only bind to hmd-device-data so these variable are not used */
-    VLC_UNUSED(name);
-
-    vout_display_t *vd = userdata;
-    vout_display_sys_t *sys = vd->sys;
-    video_splitter_t *splitter = &sys->splitter;
-
-    msg_Err(vd, "Updating current HMD device from splitter");
-    for (int i=0; i < splitter->i_output; ++i)
-    {
-        struct vlc_vidsplit_part *part = sys->parts[i];
-        if (part->display == NULL)
-            continue;
-        var_SetAddress(part->display, new_val.p_address);
-    }
-
-    return VLC_SUCCESS;
-}
+///* Callback for vlc_object, to copy the new HMD device to the displays. */
+//static int OnHmdDeviceStateChanged(vlc_object_t *p_this, char const *name,
+//                                   vlc_value_t old_val, vlc_value_t new_val,
+//                                   void *userdata)
+//{
+//    /* We only bind to hmd-device-data so these variable are not used */
+//    VLC_UNUSED(name);
+//    VLC_UNUSED(p_this);
+//
+//    if (old_val.p_address == new_val.p_address)
+//        return VLC_SUCCESS;
+//
+//    vout_display_t *vd = userdata;
+//    vout_display_sys_t *sys = vd->sys;
+//    video_splitter_t *splitter = &sys->splitter;
+//
+//    msg_Err(vd, "Updating current HMD device from splitter");
+//    sys->hmd = new_val.p_address;
+//
+//    vlc_mutex_lock(&sys->lock);
+//    for (int i=0; i < splitter->i_output; ++i)
+//    {
+//        struct vlc_vidsplit_part *part = &sys->parts[i];
+//        if (part->display == NULL)
+//            continue;
+//        var_SetAddress(part->display, "hmd-device-data", new_val.p_address);
+//    }
+//    vlc_mutex_unlock(&sys->lock);
+//
+//    return VLC_SUCCESS;
+//}
 
 static void* vlc_vidsplit_ThreadDisplay(void *data)
 {
