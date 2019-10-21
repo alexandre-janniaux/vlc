@@ -537,7 +537,7 @@ opengl_link_program(struct prgm *prgm)
     GET_ULOC(ProjectionMatrix, "ProjectionMatrix");
     GET_ULOC(ViewMatrix, "ViewMatrix");
     GET_ULOC(ZoomMatrix, "ZoomMatrix");
-    GET_ULOC(ZoomMatrix, "HmdModelMatrix");
+    GET_ULOC(HmdModelMatrix, "HmdModelMatrix");
 
     GET_ALOC(VertexPosition, "VertexPosition");
     GET_ALOC(MultiTexCoord[0], "MultiTexCoord0");
@@ -1967,7 +1967,7 @@ static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, s
         1.f,    0.f, 0.f, 0.f,
         0.f,    1.f, 0.f, 0.f,
         0.f,    0.f, 1.f, 0.f,
-        0.f,    0.f, 0.f, 1.f };
+        offset,    0.f, 0.f, 1.f };
 
     memcpy(vgl->prgm->var.HmdModelMatrix, HmdModelMatrix, sizeof(HmdModelMatrix));
     memcpy(vgl->sub_prgm->var.HmdModelMatrix, HmdModelMatrix, sizeof(HmdModelMatrix));
