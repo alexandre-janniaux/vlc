@@ -168,6 +168,8 @@ static void Close(vlc_hmd_driver_t *driver)
 {
     struct vlc_hmd_driver_sys_t* sys = driver->sys;
 
+    msg_Info(VLC_OBJECT(driver), "Closing driver OpenHMD");
+
     vlc_mutex_lock(&sys->lock);
     sys->b_thread_running = false;
     vlc_cond_signal(&sys->thread_cond);
