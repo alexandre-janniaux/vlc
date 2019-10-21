@@ -1164,8 +1164,8 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     if (vgl->fmt.projection_mode != PROJECTION_MODE_RECTANGULAR
      && vout_display_opengl_SetViewpoint(vgl, viewpoint) != VLC_SUCCESS)
     {
-        vout_display_opengl_Delete(vgl);
-        return NULL;
+        //vout_display_opengl_Delete(vgl);
+        //return NULL;
     }
 
     *fmt = vgl->fmt;
