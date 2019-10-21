@@ -49,6 +49,10 @@ typedef struct
      */
     char *psz_module;
 
+    char *psz_class;
+
+    config_chain_t *config_chain;
+
 } video_splitter_output_t;
 
 /** Structure describing a video splitter
@@ -138,4 +142,3 @@ static inline int video_splitter_Mouse(video_splitter_t *splitter, int index,
 }
 
 #endif /* VLC_VIDEO_SPLITTER_H */
-

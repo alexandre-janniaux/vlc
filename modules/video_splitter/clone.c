@@ -146,6 +146,18 @@ static int Open( vlc_object_t *p_this )
     {
         video_splitter_output_t *p_cfg = &p_splitter->p_output[i];
         video_format_Copy( &p_cfg->fmt, &p_splitter->fmt );
+
+	char * name = NULL; config_chain_t *cfg;
+
+	config_ChainCreate(&name, &cfg, p_cfg->psz_module);
+
+	if (name != NULL)
+	{
+		char *module = p_cfg->psz_module;
+		p_cfg->psz_module = strdup(name);
+		p_cfg->config_chain = cfg;
+	}
+	msg_Info(p_splitter, "Configuration is %s", p_cfg->psz_module);
     }
 
     /* */
