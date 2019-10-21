@@ -140,7 +140,6 @@ static void vlc_vidsplit_Prepare(vout_display_t *vd, picture_t *pic,
 {
     vout_display_sys_t *sys = vd->sys;
 
-    picture_Hold(pic);
     (void) subpic;
 
     vlc_mutex_lock(&sys->lock);
