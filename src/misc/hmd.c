@@ -239,6 +239,9 @@ vlc_hmd_FindDevice(vlc_object_t *parent,
                    const char *modules,
                    const char *name)
 {
+    /* Currently, there is no device name filtering */
+    VLC_UNUSED(name);
+
     assert(parent);
     assert(modules);
 
@@ -249,6 +252,8 @@ vlc_hmd_FindDevice(vlc_object_t *parent,
     driver_owner = vlc_custom_create(parent, sizeof(*driver_owner), "HMD driver");
     if (driver_owner == NULL)
         goto error;
+
+    vlc_atomic_rc_init(&driver_owner->refcount);
 
     driver = &driver_owner->driver;
 
@@ -272,6 +277,7 @@ vlc_hmd_FindDevice(vlc_object_t *parent,
     if (device_owner == NULL)
         goto error;
 
+    vlc_atomic_rc_init(&device_owner->refcount);
     device_owner->driver = driver;
 
     return &device_owner->device;
