@@ -130,7 +130,7 @@ static int fuzzy_memcmp(const float *a, const float *b,
     {
         if (fabs(a[i]-b[i]) > epsilon)
         {
-            fprintf(stderr, "Difference at %d, a[%d]=%f, b[%d]=%f\n",
+            fprintf(stderr, "Difference at %zu, a[%zu]=%f, b[%zu]=%f\n",
                     i, i, a[i], i, b[i]);
             return a[i] < b[i] ? -1 : 1;
         }
