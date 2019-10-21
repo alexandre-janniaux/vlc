@@ -66,6 +66,8 @@ vlc_module_begin ()
     add_module("gl", "opengl", NULL, GL_TEXT, PROVIDER_LONGTEXT)
 #endif
     add_glopts ()
+    add_bool("side-by-side", false, "Enable side by side rendering",
+             "Enable side-by-side, for example when using an HMD", false)
 vlc_module_end ()
 
 struct vout_display_sys_t
