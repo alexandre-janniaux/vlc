@@ -34,6 +34,7 @@
 #include <vlc_codec.h>
 #include <vlc_vout_display.h>
 #include <vlc_video_splitter.h>
+#include <vlc_hmd.h>
 
 struct vlc_vidsplit_part {
     vout_window_t *window;
@@ -386,7 +387,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
     vlc_sem_init(&sys->barrier_wait, 0);
     vlc_sem_init(&sys->barrier_done, 0);
 
-    bool use_hmd = var_InheritBool(vd, "hmd");
+    bool use_hmd = var_InheritBool(vd, "splitter-hmd");
     if (use_hmd)
     {
         vlc_hmd_device_t *device =
@@ -419,10 +420,12 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
             return VLC_EGENERIC;
         }
 
+        var_Destroy(obj, "side-by-side");
+
         static const char * const ppsz_display_options[] = {
             "side-by-side", NULL };
 
-        config_ChainParse(part->display, "", ppsz_display_options, output->config_chain);
+        config_ChainParse(obj, "", ppsz_display_options, output->config_chain);
 
         vdcfg.window = part->window;
         vout_display_t *display = vout_display_New(obj, &output->fmt, ctx, &vdcfg,
@@ -470,4 +473,5 @@ vlc_module_begin()
     set_callback_display(vlc_vidsplit_Open, 0)
     add_module("video-splitter", "video splitter", NULL,
                N_("Video splitter module"), N_("Video splitter module"))
+    add_bool("splitter-hmd", false, "Use hmd with splitter", "Use hmd with splitter", false)
 vlc_module_end()
