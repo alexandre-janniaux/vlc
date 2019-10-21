@@ -71,6 +71,7 @@ struct vlc_hmd_cfg_t
 
     float warp_scale;
     float warp_adj;
+    float separator;
 };
 
 /**

@@ -104,6 +104,7 @@ struct prgm
         GLfloat ProjectionMatrix[16];
         GLfloat ZoomMatrix[16];
         GLfloat ViewMatrix[16];
+        GLfloat HmdModelMatrix[16];
     } var;
 
     struct { /* UniformLocation */
@@ -111,6 +112,7 @@ struct prgm
         GLint ProjectionMatrix;
         GLint ViewMatrix;
         GLint ZoomMatrix;
+        GLint HmdModelMatrix;
     } uloc;
     struct { /* AttribLocation */
         GLint MultiTexCoord[3];
@@ -369,10 +371,11 @@ static GLuint BuildVertexShader(const opengl_tex_converter_t *tc,
         "uniform mat4 ProjectionMatrix;\n"
         "uniform mat4 ZoomMatrix;\n"
         "uniform mat4 ViewMatrix;\n"
+        "uniform mat4 HmdModelMatrix;\n"
         "void main() {\n"
         " TexCoord0 = vec4(OrientationMatrix * MultiTexCoord0).st;\n"
         "%s%s"
-        " gl_Position = ProjectionMatrix * ZoomMatrix * ViewMatrix\n"
+        " gl_Position = ProjectionMatrix * ZoomMatrix * HmdModelMatrix * ViewMatrix\n"
         "               * vec4(VertexPosition, 1.0);\n"
         "}";
 
@@ -534,6 +537,7 @@ opengl_link_program(struct prgm *prgm)
     GET_ULOC(ProjectionMatrix, "ProjectionMatrix");
     GET_ULOC(ViewMatrix, "ViewMatrix");
     GET_ULOC(ZoomMatrix, "ZoomMatrix");
+    GET_ULOC(ZoomMatrix, "HmdModelMatrix");
 
     GET_ALOC(VertexPosition, "VertexPosition");
     GET_ALOC(MultiTexCoord[0], "MultiTexCoord0");
@@ -1295,6 +1299,7 @@ static int UpdateViewpoint(vout_display_opengl_t *vgl,
     }
     getViewpointMatrixes(vgl, vgl->fmt.projection_mode, vgl->prgm);
 
+
     return VLC_SUCCESS;
 }
 
@@ -1830,6 +1835,8 @@ static void DrawWithShaders(vout_display_opengl_t *vgl, struct prgm *prgm,
                              prgm->var.ViewMatrix);
     vgl->vt.UniformMatrix4fv(prgm->uloc.ZoomMatrix, 1, GL_FALSE,
                              prgm->var.ZoomMatrix);
+    vgl->vt.UniformMatrix4fv(prgm->uloc.HmdModelMatrix, 1, GL_FALSE,
+                             prgm->var.HmdModelMatrix);
 
     vgl->vt.DrawElements(GL_TRIANGLES, vgl->nb_indices, GL_UNSIGNED_SHORT, 0);
 }
@@ -1942,6 +1949,29 @@ static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, s
         vgl->last_source.i_visible_height = source->i_visible_height;
         vgl->b_lastSideBySide = vgl->b_sideBySide;
     }
+
+    float offset = 0.f;
+    if (vgl->b_sideBySide)
+    {
+        float center = vgl->hmd_cfg.viewport_scale[0] / 2.f;
+        float shift = center - vgl->hmd_cfg.separator / 2.f;
+        float proj_offset = fabs(2.0f *  shift / vgl->hmd_cfg.viewport_scale[0]);
+
+        if (eye == LEFT_EYE)
+            offset = proj_offset;
+        else if (eye == RIGHT_EYE)
+            offset = -proj_offset;
+    }
+
+    const GLfloat HmdModelMatrix[16] = {
+        1.f,    0.f, 0.f, 0.f,
+        0.f,    1.f, 0.f, 0.f,
+        0.f,    0.f, 1.f, 0.f,
+        0.f,    0.f, 0.f, 1.f };
+
+    memcpy(vgl->prgm->var.HmdModelMatrix, HmdModelMatrix, sizeof(HmdModelMatrix));
+    memcpy(vgl->sub_prgm->var.HmdModelMatrix, HmdModelMatrix, sizeof(HmdModelMatrix));
+
     DrawWithShaders(vgl, vgl->prgm, eye);
 
     /* Draw the subpictures */
@@ -2012,6 +2042,8 @@ static int drawScene(vout_display_opengl_t *vgl, const video_format_t *source, s
                                  prgm->var.ViewMatrix);
         vgl->vt.UniformMatrix4fv(prgm->uloc.ZoomMatrix, 1, GL_FALSE,
                                   prgm->var.ZoomMatrix);
+        vgl->vt.UniformMatrix4fv(prgm->uloc.HmdModelMatrix, 1, GL_FALSE,
+                                  prgm->var.HmdModelMatrix);
 
         vgl->vt.DrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
@@ -2050,20 +2082,19 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     }
     vlc_mutex_unlock (&vgl->hmd_lock);
 
-    if (vgl->b_sideBySide) {
+    if (vgl->b_sideBySide ) {
 
         // Draw scene into framebuffers.
         vgl->vt.UseProgram(vgl->prgm->id);
 
-        GLint previousFramebuffer = -1;
-        vgl->vt.GetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFramebuffer);
+        GLint previousFramebuffer = 0;
+        //vgl->vt.GetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFramebuffer);
 
         vgl->vt.Viewport(0, 0, vgl->i_displayWidth/2, vgl->i_displayHeight);
         // Left eye
         vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, vgl->leftFBO);
         vgl->vt.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         drawScene(vgl, source, LEFT_EYE);
-
         // Right eye
         vgl->vt.BindFramebuffer(GL_FRAMEBUFFER, vgl->rightFBO);
         vgl->vt.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -2119,11 +2150,8 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
         if (vgl->use_hmd_config)
         {
-            leftCenter[0] = vgl->hmd_cfg.i_screen_width / 4;
-            leftCenter[1] = vgl->hmd_cfg.i_screen_height / 2;
-
-            rightCenter[0] = vgl->hmd_cfg.i_screen_width / 4 * 3;
-            rightCenter[1] = vgl->hmd_cfg.i_screen_height / 2;
+            memcpy(leftCenter, vgl->hmd_cfg.left.lens_center, sizeof(leftCenter));
+            memcpy(rightCenter, vgl->hmd_cfg.right.lens_center, sizeof(rightCenter));
 
             warp_scale = vgl->hmd_cfg.warp_scale * vgl->hmd_cfg.warp_adj;
 
@@ -2198,6 +2226,7 @@ static void HmdConfigChanged(vlc_hmd_interface_t *hmd,
     vgl->use_hmd_config = true;
     if (vgl->use_hmd_config)
     {
+        getViewpointMatrixes(vgl, vgl->fmt.projection_mode, vgl->prgm);
     }
 }
 

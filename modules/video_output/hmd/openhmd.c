@@ -291,13 +291,14 @@ static void* HMDThread(void *p_data)
 
         float sep;
         ohmd_device_getf(sys->hmd, OHMD_LENS_HORIZONTAL_SEPARATION, &sep);
+        p_hmd->cfg.separator = sep;
 
         p_hmd->cfg.left.lens_center[0] =
             p_hmd->cfg.viewport_scale[0] - sep / 2.0f;
         ohmd_device_getf(sys->hmd, OHMD_LENS_VERTICAL_POSITION,
                          &p_hmd->cfg.left.lens_center[1]);
 
-        p_hmd->cfg.right.lens_center[0] = sep / 2.0f;
+        p_hmd->cfg.right.lens_center[0] = sep/2.f;//p_hmd->cfg.viewport_scale[0] + sep / 2.0f;
         ohmd_device_getf(sys->hmd, OHMD_LENS_VERTICAL_POSITION,
                          &p_hmd->cfg.right.lens_center[1]);
 
