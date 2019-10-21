@@ -43,8 +43,8 @@
 /*****************************************************************************
  * Module descriptor
  *****************************************************************************/
-static int  Open (vlc_object_t *p_this);
-static void Close(vlc_object_t *);
+static int  Open (vlc_hmd_driver_t *driver);
+static void Close(vlc_hmd_driver_t *driver);
 
 static int headTrackingCallback(vlc_object_t *p_this, char const *psz_var,
                                 vlc_value_t oldval, vlc_value_t newval,
@@ -99,12 +99,10 @@ static void Release(vlc_hmd_driver_t *p_hmd);
 static void *HMDThread(void *p_data);
 
 
-static int Open(vlc_object_t *p_this)
+static int Open(vlc_hmd_driver_t *p_hmd)
 {
-    vlc_hmd_driver_t *p_hmd = p_this;
-
     struct vlc_hmd_driver_sys_t *sys =
-    p_hmd->sys = vlc_obj_calloc(p_this, 1, sizeof(*sys));
+    p_hmd->sys = vlc_obj_calloc(&p_hmd->obj, 1, sizeof(*sys));
 
     if (unlikely(p_hmd->sys == NULL))
         return VLC_ENOMEM;
@@ -396,7 +394,8 @@ static vlc_viewpoint_t GetViewpoint(vlc_hmd_driver_t *driver)
 
 static vlc_hmd_state_e GetState(vlc_hmd_driver_t *driver)
 {
-    struct vlc_hmd_driver_sys_t *sys = driver->sys;
+    VLC_UNUSED(driver);
+    //struct vlc_hmd_driver_sys_t *sys = driver->sys;
 
     // TODO
     return VLC_HMD_STATE_ENABLED;
