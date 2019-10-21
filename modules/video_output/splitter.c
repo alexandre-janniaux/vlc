@@ -61,8 +61,10 @@ struct vout_display_sys_t {
     struct vlc_vidsplit_part *parts;
     struct vlc_vidsplit_thread *threads;
 
-    vlc_sem_t barrier_wait;
-    vlc_sem_t barrier_done;
+    vlc_sem_t prepare_wait;
+    vlc_sem_t prepare_done;
+    vlc_sem_t display_wait;
+    vlc_sem_t display_done;
 };
 
 ///* Callback for vlc_object, to copy the new HMD device to the displays. */
@@ -106,14 +108,14 @@ static void* vlc_vidsplit_ThreadDisplay(void *data)
 
     for (;;)
     {
-        sem_wait(&sys->barrier_wait);
+        sem_wait(&sys->prepare_wait);
 
         /* We might need to stop the prepare just after the barrier
          * and we were not supposed to take the semaphore token. */
         if (part->display == NULL)
         {
             /* If we don't have a display, we can early exist. */
-            sem_post(&sys->barrier_done);
+            sem_post(&sys->prepare_done);
             continue;
         }
 
@@ -122,14 +124,14 @@ static void* vlc_vidsplit_ThreadDisplay(void *data)
                                              part->date);
 
         /* notify readiness */
-        sem_post(&sys->barrier_done);
+        sem_post(&sys->prepare_done);
 
-        sem_wait(&sys->barrier_wait);
+        sem_wait(&sys->display_wait);
         if (part->picture)
             vout_display_Display(part->display, part->picture);
 
         /* notify that image has been displayed */
-        sem_post(&sys->barrier_done);
+        sem_post(&sys->display_done);
     }
 
     return NULL;
@@ -176,12 +178,12 @@ static void vlc_vidsplit_Prepare(vout_display_t *vd, picture_t *pic,
     /* Start preparing each vout display.  */
     for (int i = 0; i < sys->splitter.i_output; ++i)
         if (sys->parts[i].display != NULL)
-            vlc_sem_post(&sys->barrier_wait);
+            vlc_sem_post(&sys->prepare_wait);
 
     /* Wait for each vout display to have finished. */
     for (int i = 0; i < sys->splitter.i_output; ++i)
         if (sys->parts[i].display != NULL)
-            vlc_sem_wait(&sys->barrier_done);
+            vlc_sem_wait(&sys->prepare_done);
 }
 
 static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
@@ -191,12 +193,12 @@ static void vlc_vidsplit_Display(vout_display_t *vd, picture_t *picture)
     /* Request each output to display the picture. */
     for (int i = 0; i < sys->splitter.i_output; i++)
         if (sys->parts[i].display != NULL)
-            vlc_sem_post(&sys->barrier_wait);
+            vlc_sem_post(&sys->display_wait);
 
     /* Wait until every output has displayed a picture. */
     for (int i = 0; i < sys->splitter.i_output; i++)
         if (sys->parts[i].display != NULL)
-            vlc_sem_wait(&sys->barrier_done);
+            vlc_sem_wait(&sys->display_done);
 
     /* Release parts lock, we can't read sys->parts[i] after that. */
     for (int i = 0; i < sys->splitter.i_output; i++)
@@ -383,8 +385,10 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         return VLC_ENOMEM;
     }
 
-    vlc_sem_init(&sys->barrier_wait, 0);
-    vlc_sem_init(&sys->barrier_done, 0);
+    vlc_sem_init(&sys->prepare_wait, 0);
+    vlc_sem_init(&sys->prepare_done, 0);
+    vlc_sem_init(&sys->display_wait, 0);
+    vlc_sem_init(&sys->display_done, 0);
 
     bool use_hmd = var_InheritBool(vd, "splitter-hmd");
     if (use_hmd)

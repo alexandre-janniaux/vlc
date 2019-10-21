@@ -196,7 +196,7 @@ static int Filter( video_splitter_t *p_splitter,
                    picture_t *pp_dst[], picture_t *p_src )
 {
     for( int i = 0; i < p_splitter->i_output; i++ )
-        pp_dst[i] = picture_Hold( p_src );
+        pp_dst[i] = picture_Clone( p_src );
 
     return VLC_SUCCESS;
 }
