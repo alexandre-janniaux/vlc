@@ -83,6 +83,27 @@ static void PictureRender (vout_display_t *, picture_t *, subpicture_t *, vlc_ti
 static void PictureDisplay (vout_display_t *, picture_t *);
 static int Control (vout_display_t *, int, va_list);
 
+/* Callback for vlc_object, to copy the new HMD device to the displays. */
+static int OnHmdDeviceStateChanged(vlc_object_t *p_this, char const *name,
+                                   vlc_value_t old_val, vlc_value_t new_val,
+                                   void *userdata)
+{
+    /* We only bind to hmd-device-data so these variable are not used */
+    VLC_UNUSED(name);
+    VLC_UNUSED(p_this);
+
+    if (old_val.p_address == new_val.p_address)
+        return VLC_SUCCESS;
+
+    vout_display_t *vd = userdata;
+    vout_display_sys_t *sys = vd->sys;
+    vlc_hmd_device_t *device = new_val.p_address;
+
+    vout_display_opengl_UpdateHMD(sys->vgl, device);
+
+    return VLC_SUCCESS;
+}
+
 /**
  * Allocates a surface and an OpenGL context for video output.
  */
@@ -143,6 +164,15 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
 
     if (sys->vgl == NULL)
         goto error;
+
+    var_AddCallback(vlc_object_instance(vd), "hmd-device-data",
+                    OnHmdDeviceStateChanged, vd);
+
+    vlc_hmd_device_t *hmd =
+        var_GetAddress(vlc_object_instance(vd), "hmd-device-data");
+
+    if (hmd)
+        vout_display_opengl_UpdateHMD(sys->vgl, hmd);
 
     vd->sys = sys;
     vd->info.subpicture_chromas = spu_chromas;
