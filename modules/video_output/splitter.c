@@ -386,6 +386,15 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
     vlc_sem_init(&sys->barrier_wait, 0);
     vlc_sem_init(&sys->barrier_done, 0);
 
+    bool use_hmd = var_InheritBool(vd, "hmd");
+    if (use_hmd)
+    {
+        vlc_hmd_device_t *device =
+            vlc_hmd_FindDevice(VLC_OBJECT(vd), "any", NULL);
+
+        var_SetAddress(vlc_object_instance(vd), "hmd-device-data", device);
+    }
+
     for (int i = 0; i < splitter->i_output; i++) {
         const video_splitter_output_t *output = &splitter->p_output[i];
         vout_display_cfg_t vdcfg = {
