@@ -248,6 +248,9 @@ int libvlc_InternalInit( libvlc_int_t *p_libvlc, int i_argc,
     if( !priv->media_source_provider )
         goto error;
 
+    /* variable for transferring the HMD device */
+    var_Create( p_libvlc, "hmd-device-data", VLC_VAR_ADDRESS );
+
     /* variables for signalling creation of new files */
     var_Create( p_libvlc, "snapshot-file", VLC_VAR_STRING );
     var_Create( p_libvlc, "record-file", VLC_VAR_STRING );
