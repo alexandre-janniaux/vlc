@@ -66,6 +66,7 @@ struct vlc_hmd_cfg_t
         float projection[16];
         float modelview[16];
         float lens_center[2];
+        float fov;
     } left, right;
 
     float warp_scale;

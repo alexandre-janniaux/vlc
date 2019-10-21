@@ -190,6 +190,10 @@ struct vout_display_opengl_t {
     GLuint vertex_buffer_object_stereo;
     GLuint index_buffer_object_stereo;
     GLuint texture_buffer_object_stereo;
+
+    /* HMD */
+    bool use_hmd_config;
+    vlc_hmd_cfg_t hmd_cfg;
 };
 
 static const vlc_fourcc_t gl_subpicture_chromas[] = {
@@ -249,7 +253,16 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
     if (projection_mode == PROJECTION_MODE_EQUIRECTANGULAR
         || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD)
     {
-        getProjectionMatrix(vgl->f_sar, vgl->f_fovy, prgm->var.ProjectionMatrix);
+        float fovy = vgl->f_fovy;
+        float sar  = vgl->f_sar;
+
+        if (vgl->use_hmd_config)
+        {
+            fovy = vgl->hmd_cfg.left.fov;
+            sar  = vgl->hmd_cfg.viewport_scale[0] / vgl->hmd_cfg.viewport_scale[1];
+}
+
+        getProjectionMatrix(sar, fovy, prgm->var.ProjectionMatrix);
         // TODO: is f_sar correct ?
         //getProjectionMatrix(vgl->f_sar, FIELD_OF_VIEW_DEGREES_DEFAULT / 180.f * M_PI, prgm->var.ProjectionMatrix);
         getZoomMatrix(vgl->f_z, prgm->var.ZoomMatrix);
@@ -2089,20 +2102,39 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
             0, 1,
         };
 
-        const float leftCenter[] = { vgl->i_displayWidth / 4,
-                                     vgl->i_displayHeight / 2 };
-        const float rightCenter[] = { 3 * vgl->i_displayWidth / 4,
-                                      vgl->i_displayHeight / 2 };
-        const float defaultDistorsionCoefs[] = { 0, 0, 0, 1 };
-        const float defaultAberrationCoefs[] = { 1.f, 1.f, 1.f };
+        float leftCenter[] = { vgl->i_displayWidth / 4,
+                               vgl->i_displayHeight / 2 };
+        float rightCenter[] = { 3 * vgl->i_displayWidth / 4,
+                                vgl->i_displayHeight / 2 };
 
-        const float viewportScale[] = { vgl->i_displayWidth / 2, vgl->i_displayHeight };
+        /* Default values */
+        float distorsionCoefs[] = { 0, 0, 0, 1 };
+        float aberrationCoefs[] = { 1.f, 1.f, 1.f };
+        float viewportScale[] = { vgl->i_displayWidth / 2, vgl->i_displayHeight };
+
+        float warp_scale = 1.f;
+
+        if (vgl->use_hmd_config)
+        {
+            leftCenter[0] = vgl->hmd_cfg.i_screen_width / 4;
+            leftCenter[1] = vgl->hmd_cfg.i_screen_height / 2;
+
+            rightCenter[0] = vgl->hmd_cfg.i_screen_width / 4 * 3;
+            rightCenter[1] = vgl->hmd_cfg.i_screen_height / 2;
+
+            warp_scale = vgl->hmd_cfg.warp_scale * vgl->hmd_cfg.warp_adj;
+
+            memcpy(distorsionCoefs, vgl->hmd_cfg.distorsion_coefs, sizeof(distorsionCoefs));
+            memcpy(aberrationCoefs, vgl->hmd_cfg.aberr_scale, sizeof(distorsionCoefs));
+            memcpy(viewportScale, vgl->hmd_cfg.viewport_scale, sizeof(viewportScale));
+        }
+
         vgl->vt.Uniform2fv(vgl->vt.GetUniformLocation(program, "ViewportScale"), 1, viewportScale);
-        vgl->vt.Uniform1f(vgl->vt.GetUniformLocation(program, "WarpScale"), rightCenter[0]);
+        vgl->vt.Uniform1f(vgl->vt.GetUniformLocation(program, "WarpScale"), warp_scale);
         vgl->vt.Uniform4fv(vgl->vt.GetUniformLocation(program, "HmdWarpParam"),
-                           1, defaultDistorsionCoefs);
+                           1, distorsionCoefs);
         vgl->vt.Uniform3fv(vgl->vt.GetUniformLocation(program, "aberr"),
-                           1, defaultAberrationCoefs);
+                           1, aberrationCoefs);
 
         vgl->vt.BindBuffer(GL_ELEMENT_ARRAY_BUFFER, vgl->index_buffer_object_stereo);
         vgl->vt.BufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -2152,6 +2184,19 @@ static void HmdStateChanged(vlc_hmd_interface_t *hmd,
                             void *userdata)
 {
 
+}
+
+static void HmdConfigChanged(vlc_hmd_interface_t *hmd,
+                             vlc_hmd_cfg_t cfg,
+                             void *userdata)
+{
+    vout_display_opengl_t *vgl = userdata;
+    vgl->hmd_cfg = cfg;
+
+    if (vgl->use_hmd_config)
+    {
+
+    }
 }
 
 static const struct vlc_hmd_interface_cbs_t vout_hmd_cbs =

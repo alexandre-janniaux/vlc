@@ -318,6 +318,9 @@ static void* HMDThread(void *p_data)
                          p_hmd->cfg.left.modelview);
         ohmd_device_getf(sys->hmd, OHMD_RIGHT_EYE_GL_MODELVIEW_MATRIX,
                          p_hmd->cfg.right.modelview);
+
+        ohmd_device_getf(sys->hmd, OHMD_LEFT_EYE_FOV, &p_hmd->cfg.left.fov);
+        ohmd_device_getf(sys->hmd, OHMD_RIGHT_EYE_FOV, &p_hmd->cfg.right.fov);
     }
 
     vlc_mutex_lock(&sys->lock);
