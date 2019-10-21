@@ -260,7 +260,10 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
         {
             fovy = vgl->hmd_cfg.left.fov;
             sar  = vgl->hmd_cfg.viewport_scale[0] / vgl->hmd_cfg.viewport_scale[1];
-}
+        }
+
+        msg_Info(vgl->gl, "SAR=%f, fov=%f", sar, fovy);
+
 
         getProjectionMatrix(sar, fovy, prgm->var.ProjectionMatrix);
         // TODO: is f_sar correct ?
@@ -2125,7 +2128,7 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
             warp_scale = vgl->hmd_cfg.warp_scale * vgl->hmd_cfg.warp_adj;
 
             memcpy(distorsionCoefs, vgl->hmd_cfg.distorsion_coefs, sizeof(distorsionCoefs));
-            memcpy(aberrationCoefs, vgl->hmd_cfg.aberr_scale, sizeof(distorsionCoefs));
+            memcpy(aberrationCoefs, vgl->hmd_cfg.aberr_scale, sizeof(aberrationCoefs));
             memcpy(viewportScale, vgl->hmd_cfg.viewport_scale, sizeof(viewportScale));
         }
 
@@ -2192,16 +2195,16 @@ static void HmdConfigChanged(vlc_hmd_interface_t *hmd,
 {
     vout_display_opengl_t *vgl = userdata;
     vgl->hmd_cfg = cfg;
-
+    vgl->use_hmd_config = true;
     if (vgl->use_hmd_config)
     {
-
     }
 }
 
 static const struct vlc_hmd_interface_cbs_t vout_hmd_cbs =
 {
-    .state_changed = HmdStateChanged
+    .state_changed = HmdStateChanged,
+    .config_changed = HmdConfigChanged,
 };
 
 void vout_display_opengl_UpdateHMD(vout_display_opengl_t *vgl,
