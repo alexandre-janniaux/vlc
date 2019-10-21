@@ -44,6 +44,7 @@ struct vlc_vidsplit_part {
     vlc_sem_t lock;
     unsigned width;
     unsigned height;
+    char *psz_class;
 };
 
 struct vlc_vidsplit_thread
@@ -416,20 +417,37 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         part->width = 1;
         part->height = 1;
 
+        var_Destroy(obj, "side-by-side");
+
+        var_Create(obj, "fullscreen", VLC_VAR_BOOL);
+        var_Create(obj, "screen", VLC_VAR_STRING);
+
+        static const char * const ppsz_display_options[] = {
+            "side-by-side", "", NULL };
+
+        config_ChainParse(obj, "", ppsz_display_options, output->config_chain);
+
+        bool fullscreen = var_GetBool(obj, "fullscreen");
+        char *screen = var_GetString(obj, "screen");
+
+        var_Destroy(obj, "fullscreen");
+        var_Destroy(obj, "screen");
+
+        part->psz_class = screen;
+
+        /* Create vout window. */
         part->window = video_splitter_CreateWindow(obj, &vdcfg, &output->fmt,
                                                    part);
         if (part->window == NULL) {
+            free(screen);
             splitter->i_output = i;
             vlc_vidsplit_Close(vd);
             goto error;
         }
 
-        var_Destroy(obj, "side-by-side");
-
-        static const char * const ppsz_display_options[] = {
-            "side-by-side", NULL };
-
-        config_ChainParse(obj, "", ppsz_display_options, output->config_chain);
+        if (fullscreen)
+            vout_window_SetFullScreen(part->window, screen);
+        free(screen);
 
         vdcfg.window = part->window;
         vout_display_t *display = vout_display_New(obj, &output->fmt, ctx, &vdcfg,
