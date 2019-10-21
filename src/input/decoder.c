@@ -1552,7 +1552,7 @@ static void DecoderThread_Flush( struct decoder_owner *p_owner )
     }
     else if( p_dec->fmt_out.i_cat == VIDEO_ES )
     {
-        if( p_owner->p_vout )
+        if( p_owner->p_vout && p_owner->vout_thread_started )
             vout_FlushAll( p_owner->p_vout );
     }
     else if( p_dec->fmt_out.i_cat == SPU_ES )
