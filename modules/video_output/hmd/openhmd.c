@@ -193,47 +193,6 @@ static void Release(vlc_hmd_driver_t* p_hmd)
     vlc_obj_free(VLC_OBJECT(p_hmd), sys);
 }
 
-
-/* Quaternion to Euler conversion.
- * Original code from:
- * http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToEuler/ */
-static void quaternionToEuler(float *q, vlc_viewpoint_t *vp)
-{
-    float sqx = q[0] * q[0];
-    float sqy = q[1] * q[1];
-    float sqz = q[2] * q[2];
-    float sqw = q[3] * q[3];
-
-    float unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
-    float test = q[0] * q[1] + q[2] * q[3];
-
-    if (test > 0.499 * unit)
-    {
-        // singularity at north pole
-        vp->yaw = 2 * atan2(q[0], q[3]);
-        vp->roll = M_PI / 2;
-        vp->pitch = 0;
-    }
-    else if (test < -0.499 * unit)
-    {
-        // singularity at south pole
-        vp->yaw = -2 * atan2(q[0], q[3]);
-        vp->roll = -M_PI / 2;
-        vp->pitch = 0;
-    }
-    else
-    {
-        vp->yaw = atan2(2 * q[1] * q[3] - 2 * q[0] * q[2], sqx - sqy - sqz + sqw);
-        vp->roll = asin(2 * test / unit);
-        vp->pitch = atan2(2 * q[0] * q[3] - 2 * q[1] * q[2], -sqx + sqy - sqz + sqw);
-    }
-
-    vp->yaw = -vp->yaw * 180 / M_PI;
-    vp->pitch = -vp->pitch * 180 / M_PI;
-    vp->roll = vp->roll * 180 / M_PI;
-    vp->fov = FIELD_OF_VIEW_DEGREES_DEFAULT;
-}
-
 static void* HMDThread(void *p_data)
 {
     vlc_hmd_driver_t* p_hmd = (vlc_hmd_driver_t*)p_data;
@@ -339,12 +298,16 @@ static void* HMDThread(void *p_data)
     {
         ohmd_ctx_update(sys->ctx);
 
-        float quat[] = {0, 0, 0, 1};
         vlc_viewpoint_t vp;
         if (sys->b_headTracking)
-            ohmd_device_getf(sys->hmd, OHMD_ROTATION_QUAT, quat);
+            ohmd_device_getf(sys->hmd, OHMD_ROTATION_QUAT, vp.quat);
 
-        quaternionToEuler(quat, &vp);
+        fprintf(stderr, "Quaternion: %f / %f / %f / %f\n",
+                vp.quat[0], vp.quat[1], vp.quat[2], vp.quat[3]);
+
+        float yaw, pitch, roll;
+        vlc_viewpoint_to_euler(&vp, &yaw, &pitch, &roll);
+        fprintf(stderr, "Angle: %f, %f, %f\n", yaw, pitch, roll);
 
         vlc_mutex_lock(&sys->vp_lock);
         sys->vp = vp;
