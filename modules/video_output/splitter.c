@@ -417,19 +417,15 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         part->width = 1;
         part->height = 1;
 
-        var_Destroy(obj, "side-by-side");
-
-        var_Create(obj, "fullscreen", VLC_VAR_BOOL);
-        var_Create(obj, "screen", VLC_VAR_STRING);
-
         static const char * const ppsz_display_options[] = {
-            "side-by-side", "", NULL };
+            "side-by-side", "fullscreen", "screen" };
 
         config_ChainParse(obj, "", ppsz_display_options, output->config_chain);
 
         bool fullscreen = var_GetBool(obj, "fullscreen");
         char *screen = var_GetString(obj, "screen");
 
+        var_Destroy(obj, "side-by-side");
         var_Destroy(obj, "fullscreen");
         var_Destroy(obj, "screen");
 
@@ -509,4 +505,7 @@ vlc_module_begin()
     add_module("video-splitter", "video splitter", NULL,
                N_("Video splitter module"), N_("Video splitter module"))
     add_bool("splitter-hmd", false, "Use hmd with splitter", "Use hmd with splitter", false)
+    add_bool("fullscreen", false, "Use hmd with splitter", "Use hmd with splitter", false)
+    add_bool("side-by-side", false, "Use hmd with splitter", "Use hmd with splitter", false)
+    add_string("screen", NULL, "screen", "screen", false)
 vlc_module_end()
