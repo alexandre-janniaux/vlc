@@ -302,13 +302,6 @@ static void* HMDThread(void *p_data)
         if (sys->b_headTracking)
             ohmd_device_getf(sys->hmd, OHMD_ROTATION_QUAT, vp.quat);
 
-        fprintf(stderr, "Quaternion: %f / %f / %f / %f\n",
-                vp.quat[0], vp.quat[1], vp.quat[2], vp.quat[3]);
-
-        float yaw, pitch, roll;
-        vlc_viewpoint_to_euler(&vp, &yaw, &pitch, &roll);
-        fprintf(stderr, "Angle: %f, %f, %f\n", yaw, pitch, roll);
-
         vlc_mutex_lock(&sys->vp_lock);
         sys->vp = vp;
         vlc_mutex_unlock(&sys->vp_lock);
