@@ -103,35 +103,37 @@ public:
         HRESULT hr;
         PROPVARIANT pvRot;
 
+        float yaw=0.f, pitch=0.f, roll=0.f;
+
         PropVariantInit(&pvRot);
         hr = pNewData->GetSensorValue(SENSOR_DATA_TYPE_TILT_X_DEGREES, &pvRot);
         if (SUCCEEDED(hr) && pvRot.vt == VT_R4)
         {
-            current_pos.pitch = pvRot.fltVal;
+            pitch = pvRot.fltVal;
             PropVariantClear(&pvRot);
         }
         hr = pNewData->GetSensorValue(SENSOR_DATA_TYPE_TILT_Y_DEGREES, &pvRot);
         if (SUCCEEDED(hr) && pvRot.vt == VT_R4)
         {
-            current_pos.roll = pvRot.fltVal;
+            roll = pvRot.fltVal;
             PropVariantClear(&pvRot);
         }
         hr = pNewData->GetSensorValue(SENSOR_DATA_TYPE_TILT_Z_DEGREES, &pvRot);
         if (SUCCEEDED(hr) && pvRot.vt == VT_R4)
         {
-            current_pos.yaw = pvRot.fltVal;
+            yaw = pvRot.fltVal;
             PropVariantClear(&pvRot);
         }
 
         // TODO: use current_pos directly?
-        vlc_viewpoint_t vp;
-        vlc_viewpoint_init(&vp);
-        vlc_viewpoint_from_euler(&vp,
-            old_pos.yaw   - current_pos.yaw,
-            old_pos.pitch - current_pos.pitch,
-            old_pos.roll  - current_pos.roll);
+        //vlc_viewpoint_t vp;
+        //vlc_viewpoint_init(&vp);
+        //vlc_viewpoint_from_euler(&vp,
+        //    old_pos.yaw   - current_pos.yaw,
+        //    old_pos.pitch - current_pos.pitch,
+        //    old_pos.roll  - current_pos.roll);
 
-        vout_display_SendEventViewpointMoved(vd, &vp);
+        //vout_display_SendEventViewpointMoved(vd, &vp);
         return S_OK;
     }
 
@@ -162,6 +164,7 @@ void *HookWindowsSensors(vout_display_t *vd, HWND hwnd)
     HRESULT hr = CoCreateInstance( CLSID_SensorManager,
                       NULL, CLSCTX_INPROC_SERVER,
                       IID_ISensorManager, (void**)&pSensorManager );
+
     if (SUCCEEDED(hr))
     {
         ISensorCollection *pInclinometers;
@@ -186,27 +189,29 @@ void *HookWindowsSensors(vout_display_t *vd, HWND hwnd)
                         if (SUCCEEDED(hr))
                         {
                             vlc_viewpoint_t start_viewpoint;
-                            vlc_viewpoint_init(&start_viewpoint);
+                            float yaw=0.f, pitch=0.f, roll=0.f;
                             PROPVARIANT pvRot;
                             PropVariantInit(&pvRot);
                             hr = pSensor->GetProperty(SENSOR_DATA_TYPE_TILT_X_DEGREES, &pvRot);
                             if (SUCCEEDED(hr) && pvRot.vt == VT_R4)
                             {
-                                start_viewpoint.pitch = pvRot.fltVal;
+                                pitch = pvRot.fltVal;
                                 PropVariantClear(&pvRot);
                             }
                             hr = pSensor->GetProperty(SENSOR_DATA_TYPE_TILT_Y_DEGREES, &pvRot);
                             if (SUCCEEDED(hr) && pvRot.vt == VT_R4)
                             {
-                                start_viewpoint.roll = pvRot.fltVal;
+                                roll = pvRot.fltVal;
                                 PropVariantClear(&pvRot);
                             }
                             hr = pSensor->GetProperty(SENSOR_DATA_TYPE_TILT_Z_DEGREES, &pvRot);
                             if (SUCCEEDED(hr) && pvRot.vt == VT_R4)
                             {
-                                start_viewpoint.yaw = pvRot.fltVal;
+                                yaw = pvRot.fltVal;
                                 PropVariantClear(&pvRot);
                             }
+
+                            vlc_viewpoint_from_euler(&start_viewpoint, yaw, pitch, roll);
 
                             SensorReceiver *received = new(std::nothrow) SensorReceiver(vd, start_viewpoint);
                             if (received)
