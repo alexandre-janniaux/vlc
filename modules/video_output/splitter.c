@@ -425,10 +425,6 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         bool fullscreen = var_GetBool(obj, "fullscreen");
         char *screen = var_GetString(obj, "screen");
 
-        var_Destroy(obj, "side-by-side");
-        var_Destroy(obj, "fullscreen");
-        var_Destroy(obj, "screen");
-
         part->psz_class = screen;
 
         /* Create vout window. */
@@ -474,6 +470,10 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         if (ret_clone != VLC_SUCCESS) {
             /* TODO: Abort and cleanup */
         }
+
+        var_Destroy(obj, "side-by-side");
+        var_Destroy(obj, "fullscreen");
+        var_Destroy(obj, "screen");
     }
 
     if (use_hmd)
