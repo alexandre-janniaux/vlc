@@ -610,6 +610,7 @@ static int OpenCommon(vout_window_t *wnd, char *display,
     set_wm_hints(conn, window);
 
     char *name = var_InheritString(wnd, "x11-class-name");
+    msg_Err(wnd, "CLASSNAME=%s", name ? name : "");
     if (name == NULL)
     {
         xcb_change_property(conn, XCB_PROP_MODE_REPLACE, window, XA_WM_CLASS,

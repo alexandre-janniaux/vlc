@@ -421,6 +421,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
             "side-by-side", "fullscreen", "screen" };
 
         config_ChainParse(obj, "", ppsz_display_options, output->config_chain);
+        var_Create(obj, "x11-class-name", VLC_VAR_STRING);
 
         bool fullscreen = var_GetBool(obj, "fullscreen");
         char *screen = var_GetString(obj, "screen");
@@ -429,6 +430,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
 
         if (part->psz_class)
         {
+            msg_Err(obj, "Setting x11-class-name to %s", part->psz_class);
             var_SetString(obj, "x11-class-name", part->psz_class);
         }
         else
