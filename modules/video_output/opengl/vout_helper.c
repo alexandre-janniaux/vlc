@@ -1312,7 +1312,10 @@ int vout_display_opengl_SetViewpoint(vout_display_opengl_t *vgl,
         return VLC_SUCCESS;
     }
 
-    return UpdateViewpoint(vgl, p_vp);
+    vlc_viewpoint_t vp = *p_vp;
+    vp.fov = 60;
+
+    return UpdateViewpoint(vgl, &vp);
 }
 
 
@@ -2078,6 +2081,8 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
     if (vgl->hmd)
     {
         vlc_viewpoint_t vp = vlc_hmd_ReadViewpoint(vgl->hmd);
+        vp.fov = 60;
+
         UpdateViewpoint(vgl, &vp);
     }
     vlc_mutex_unlock (&vgl->hmd_lock);
