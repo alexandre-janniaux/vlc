@@ -216,7 +216,7 @@ static int Open(vlc_gl_t *gl, unsigned width, unsigned height)
     if (vlc_gl_StrHasToken(extensions, "WGL_EXT_swap_control")) {
         PFNWGLSWAPINTERVALEXTPROC SwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
         if (SwapIntervalEXT)
-            SwapIntervalEXT(1);
+            SwapIntervalEXT(0);
     }
 #endif
 

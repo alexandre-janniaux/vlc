@@ -79,6 +79,8 @@ struct vout_thread_sys_t
     float           rate;
     vlc_tick_t      delay;
 
+    vlc_tick_t      last_time;
+
     /* */
     video_format_t  original;   /* Original format ie coming from the decoder */
     struct {

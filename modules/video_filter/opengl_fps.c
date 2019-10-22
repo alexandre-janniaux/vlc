@@ -120,6 +120,8 @@ static picture_t *Filter( filter_t *p_filter, picture_t *p_picture)
         p_tmp->date = date_Get( &p_sys->next_output_pts );
         p_tmp->p_next = NULL;
 
+        msg_Info(p_filter, "NextDate: %" PRId64, MS_FROM_VLC_TICK(p_tmp->date));
+
         last_pic->p_next = p_tmp;
         last_pic = p_tmp;
         date_Increment( &p_sys->next_output_pts, 1 );

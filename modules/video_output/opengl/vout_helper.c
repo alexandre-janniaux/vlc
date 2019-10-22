@@ -264,9 +264,6 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
             sar  = vgl->hmd_cfg.viewport_scale[0] / vgl->hmd_cfg.viewport_scale[1];
         }
 
-        msg_Info(vgl->gl, "SAR=%f, fov=%f", sar, fovy);
-
-
         getProjectionMatrix(sar, fovy, prgm->var.ProjectionMatrix);
         // TODO: is f_sar correct ?
         //getProjectionMatrix(vgl->f_sar, FIELD_OF_VIEW_DEGREES_DEFAULT / 180.f * M_PI, prgm->var.ProjectionMatrix);

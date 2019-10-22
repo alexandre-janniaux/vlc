@@ -63,7 +63,7 @@
 /* Maximum delay between 2 displayed pictures.
  * XXX it is needed for now but should be removed in the long term.
  */
-#define VOUT_REDISPLAY_DELAY VLC_TICK_FROM_MS(80)
+#define VOUT_REDISPLAY_DELAY VLC_TICK_FROM_MS(11)
 
 /**
  * Late pictures having a delay higher than this value are thrashed.
@@ -1228,6 +1228,13 @@ static int ThreadDisplayRenderPicture(vout_thread_t *vout, bool is_forced)
                           frame_rate, frame_rate_base);
 
     /* Display the direct buffer returned by vout_RenderPicture */
+    vlc_tick_t date_current_now = vlc_tick_now();
+    vlc_tick_t date_elapsed = date_current_now - sys->last_time;
+    sys->last_time = date_current_now;
+
+    msg_Info(vd, "Elapsed time: %ld", MS_FROM_VLC_TICK(date_elapsed));
+    msg_Info(vd, "Picture date: %" PRId64, MS_FROM_VLC_TICK(todisplay->date));
+
     vout_display_Display(vd, todisplay);
     vlc_mutex_unlock(&sys->display_lock);
 

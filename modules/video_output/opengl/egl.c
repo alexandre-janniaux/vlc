@@ -392,6 +392,15 @@ static int Open(vlc_gl_t *gl, const struct gl_api *api,
         gl->egl.destroyImageKHR = DestroyImageKHR;
     }
 
+    EGLBoolean (*eglSwapInterval)(EGLDisplay, EGLint interval) =
+        (void*)eglGetProcAddress("eglSwapInterval");
+
+    if (eglSwapInterval)
+    {
+        msg_Info(gl, "Disabling swap interval");
+        eglSwapInterval(sys->display, 0);
+    }
+
     return VLC_SUCCESS;
 
 error:
