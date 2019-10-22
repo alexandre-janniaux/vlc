@@ -1,0 +1,58 @@
+From 150be7901e9c18ff5498721c009c915ed1ee9332 Mon Sep 17 00:00:00 2001
+From: Alexandre Janniaux <ajanni@videolabs.io>
+Date: Tue, 15 Oct 2019 10:55:00 +0200
+Subject: [PATCH] disable test
+
+---
+ meson.build | 38 +++++++++++++++++++-------------------
+ 1 file changed, 19 insertions(+), 19 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 46c1ba3..1bad579 100644
+--- a/meson.build
++++ b/meson.build
+@@ -237,22 +237,22 @@ install_headers('include/openhmd.h', subdir: 'openhmd')
+ #
+ # Unit tests
+ #
+-
+-unittests_sources = [
+-	'src/omath.c',
+-	'tests/unittests/highlevel.c',
+-	'tests/unittests/main.c',
+-	'tests/unittests/quat.c',
+-	'tests/unittests/tests.h',
+-	'tests/unittests/vec.c'
+-]
+-
+-unittests = executable(
+-	'openhmd_unittests',
+-	unittests_sources,
+-	include_directories: include_directories('./include', './src'),
+-	link_with: [openhmd_lib],
+-	dependencies: [dep_libm, dep_threads]
+-)
+-
+-test('unittests', unittests)
++#
++#unittests_sources = [
++#	'src/omath.c',
++#	'tests/unittests/highlevel.c',
++#	'tests/unittests/main.c',
++#	'tests/unittests/quat.c',
++#	'tests/unittests/tests.h',
++#	'tests/unittests/vec.c'
++#]
++#
++#unittests = executable(
++#	'openhmd_unittests',
++#	unittests_sources,
++#	include_directories: include_directories('./include', './src'),
++#	link_with: [openhmd_lib],
++#	dependencies: [dep_libm, dep_threads]
++#)
++#
++#test('unittests', unittests)
+-- 
+2.23.0
+
