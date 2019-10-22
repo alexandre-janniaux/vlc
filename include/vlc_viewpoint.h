@@ -37,24 +37,28 @@
 /**
  * Viewpoints
  */
+
 struct vlc_viewpoint_t {
-    float yaw;   /* yaw in degrees */
-    float pitch; /* pitch in degrees */
-    float roll;  /* roll in degrees */
+    /**
+     * orientation quaternion with the following properties:
+     *  1/ use ijk = -1 for the operations
+     *  2/ memory layout is [x, y, z, w] (like GLSL)
+     *  3/ system is right-handed
+     */
+    float quat[4];
     float fov;   /* field of view in degrees */
 };
 
 static inline void vlc_viewpoint_init( vlc_viewpoint_t *p_vp )
 {
-    p_vp->yaw = p_vp->pitch = p_vp->roll = 0.0f;
+    p_vp->quat[0] = 1;
+    p_vp->quat[1] = p_vp->quat[2] = p_vp->quat[3] = 0;
     p_vp->fov = FIELD_OF_VIEW_DEGREES_DEFAULT;
 }
 
 static inline void vlc_viewpoint_clip( vlc_viewpoint_t *p_vp )
 {
-    p_vp->yaw = fmodf( p_vp->yaw, 360.f );
-    p_vp->pitch = fmodf( p_vp->pitch, 360.f );
-    p_vp->roll = fmodf( p_vp->roll, 360.f );
+    // TODO: normalize quaternion
     p_vp->fov = VLC_CLIP( p_vp->fov, FIELD_OF_VIEW_DEGREES_MIN,
                           FIELD_OF_VIEW_DEGREES_MAX );
 }
@@ -71,9 +75,11 @@ static inline void vlc_viewpoint_clip( vlc_viewpoint_t *p_vp )
 static inline void vlc_viewpoint_reverse( vlc_viewpoint_t *dst,
                                           const vlc_viewpoint_t *src )
 {
-    dst->yaw   = -src->yaw;
-    dst->pitch = -src->pitch;
-    dst->roll  = -src->roll;
+    /* reverse x, y, z but not w */
+    dst->quat[0] =  src->quat[0];
+    dst->quat[1] = -src->quat[1];
+    dst->quat[2] = -src->quat[2];
+    dst->quat[3] = -src->quat[3];
 
     dst->fov   = src->fov;
 }
