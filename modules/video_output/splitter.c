@@ -35,6 +35,7 @@
 #include <vlc_vout_display.h>
 #include <vlc_video_splitter.h>
 #include <vlc_hmd.h>
+#include <vlc_threads.h>
 
 struct vlc_vidsplit_part {
     vout_window_t *window;
@@ -111,14 +112,14 @@ static void* vlc_vidsplit_ThreadDisplay(void *data)
 
     for (;;)
     {
-        sem_wait(&sys->prepare_wait);
+        vlc_sem_wait(&sys->prepare_wait);
 
         /* We might need to stop the prepare just after the barrier
          * and we were not supposed to take the semaphore token. */
         if (part->display == NULL)
         {
             /* If we don't have a display, we can early exist. */
-            sem_post(&sys->prepare_done);
+            vlc_sem_post(&sys->prepare_done);
             continue;
         }
 
@@ -127,14 +128,14 @@ static void* vlc_vidsplit_ThreadDisplay(void *data)
                                              part->date);
 
         /* notify readiness */
-        sem_post(&sys->prepare_done);
+        vlc_sem_post(&sys->prepare_done);
 
-        sem_wait(&sys->display_wait);
+        vlc_sem_wait(&sys->display_wait);
         if (part->picture)
             vout_display_Display(part->display, part->picture);
 
         /* notify that image has been displayed */
-        sem_post(&sys->display_done);
+        vlc_sem_post(&sys->display_done);
     }
 
     return NULL;
