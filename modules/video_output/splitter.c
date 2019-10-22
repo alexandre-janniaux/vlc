@@ -402,6 +402,17 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
     vlc_hmd_device_t *device = NULL;
     bool use_hmd = var_InheritBool(vd, "splitter-hmd");
 
+    if (use_hmd)
+    {
+        device = vlc_hmd_FindDevice(VLC_OBJECT(vd), "any", NULL);
+
+        var_SetAddress(vlc_object_instance(vd), "hmd-device-data", device);
+    }
+    sys->hmd_device = device;
+
+    for(int i=0; i<10; ++i)
+        vlc_tick_sleep(VLC_TICK_FROM_MS(1000));
+
     for (int i = 0; i < splitter->i_output; i++) {
         const video_splitter_output_t *output = &splitter->p_output[i];
         vout_display_cfg_t vdcfg = {
@@ -492,13 +503,6 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         var_Destroy(obj, "x11-class-name");
     }
 
-    if (use_hmd)
-    {
-        device = vlc_hmd_FindDevice(VLC_OBJECT(vd), "any", NULL);
-
-        var_SetAddress(vlc_object_instance(vd), "hmd-device-data", device);
-    }
-    sys->hmd_device = device;
 
     vd->prepare = vlc_vidsplit_Prepare;
     vd->display = vlc_vidsplit_Display;
@@ -509,6 +513,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
 
 error:
     if (device) vlc_hmd_device_Release(device);
+    vlc_tick_sleep(VLC_TICK_FROM_MS(1000));
     return VLC_EGENERIC;
 }
 
