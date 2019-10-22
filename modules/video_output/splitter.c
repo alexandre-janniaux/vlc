@@ -427,6 +427,18 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
 
         part->psz_class = screen;
 
+        if (part->psz_class)
+        {
+            var_SetString(obj, "x11-class-name", part->psz_class);
+        }
+        else
+        {
+            char *class_name;
+            asprintf(&class_name, "vlc-clone-%d", i);
+            var_SetString(obj, "x11-class-name", class_name);
+            free(class_name);
+        }
+
         /* Create vout window. */
         part->window = video_splitter_CreateWindow(obj, &vdcfg, &output->fmt,
                                                    part);
@@ -474,6 +486,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         var_Destroy(obj, "side-by-side");
         var_Destroy(obj, "fullscreen");
         var_Destroy(obj, "screen");
+        var_Destroy(obj, "x11-class-name");
     }
 
     if (use_hmd)
