@@ -419,7 +419,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         part->height = 1;
 
         static const char * const ppsz_display_options[] = {
-            "side-by-side", "fullscreen", "screen" };
+            "side-by-side", "fullscreen", "screen", NULL };
 
         config_ChainParse(obj, "", ppsz_display_options, output->config_chain);
         var_Create(obj, "x11-class-name", VLC_VAR_STRING);
