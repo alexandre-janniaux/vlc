@@ -51,8 +51,8 @@ struct vlc_viewpoint_t {
 
 static inline void vlc_viewpoint_init( vlc_viewpoint_t *p_vp )
 {
-    p_vp->quat[0] = 1;
-    p_vp->quat[1] = p_vp->quat[2] = p_vp->quat[3] = 0;
+    p_vp->quat[3] = 1;
+    p_vp->quat[0] = p_vp->quat[1] = p_vp->quat[2] = 0;
     p_vp->fov = FIELD_OF_VIEW_DEGREES_DEFAULT;
 }
 
@@ -76,10 +76,10 @@ static inline void vlc_viewpoint_reverse( vlc_viewpoint_t *dst,
                                           const vlc_viewpoint_t *src )
 {
     /* reverse x, y, z but not w */
-    dst->quat[0] =  src->quat[0];
+    dst->quat[0] = -src->quat[0];
     dst->quat[1] = -src->quat[1];
     dst->quat[2] = -src->quat[2];
-    dst->quat[3] = -src->quat[3];
+    dst->quat[3] =  src->quat[3];
 
     dst->fov   = src->fov;
 }
