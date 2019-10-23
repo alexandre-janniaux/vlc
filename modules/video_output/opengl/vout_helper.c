@@ -196,6 +196,8 @@ struct vout_display_opengl_t {
     /* HMD */
     bool use_hmd_config;
     vlc_hmd_cfg_t hmd_cfg;
+    float fov;
+    bool force_fov;
 };
 
 static const vlc_fourcc_t gl_subpicture_chromas[] = {
@@ -263,6 +265,9 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
             fovy = vgl->hmd_cfg.left.fov;
             sar  = vgl->hmd_cfg.viewport_scale[0] / vgl->hmd_cfg.viewport_scale[1];
         }
+
+        if (vgl->force_fov)
+            fovy = vgl->fov * M_PI / 180.f;
 
         getProjectionMatrix(sar, fovy, prgm->var.ProjectionMatrix);
         // TODO: is f_sar correct ?
@@ -1193,6 +1198,9 @@ vout_display_opengl_t *vout_display_opengl_New(video_format_t *fmt,
     CreateFBO(vgl, &vgl->leftFBO, &vgl->leftColorTex, &vgl->leftDepthTex);
     CreateFBO(vgl, &vgl->rightFBO, &vgl->rightColorTex, &vgl->rightDepthTex);
     vlc_mutex_init(&vgl->hmd_lock);
+
+    vgl->fov = var_InheritFloat(vgl->gl, "field-of-view");
+    vgl->force_fov = var_InheritBool(vgl->gl, "force-fov");
 
     GL_ASSERT_NOERROR();
     return vgl;

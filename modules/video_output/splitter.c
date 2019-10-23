@@ -430,7 +430,7 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         part->height = 1;
 
         static const char * const ppsz_display_options[] = {
-            "side-by-side", "fullscreen", "screen", NULL };
+            "side-by-side", "fullscreen", "screen", "field-of-view", "force-fov", NULL };
 
         config_ChainParse(obj, "", ppsz_display_options, output->config_chain);
         var_Create(obj, "x11-class-name", VLC_VAR_STRING);
@@ -505,6 +505,8 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
         var_Destroy(obj, "fullscreen");
         var_Destroy(obj, "screen");
         var_Destroy(obj, "x11-class-name");
+        var_Destroy(obj, "field-of-view");
+        var_Destroy(obj, "force-fov");
     }
 
 
@@ -533,4 +535,6 @@ vlc_module_begin()
     add_bool("fullscreen", false, "Use hmd with splitter", "Use hmd with splitter", false)
     add_bool("side-by-side", false, "Use hmd with splitter", "Use hmd with splitter", false)
     add_string("screen", NULL, "screen", "screen", false)
+    add_float("field-of-view", 60.f, "Field of view", "Field of view", false)
+    add_bool("force-fov", false, "Force field of view", "Force field of view", false)
 vlc_module_end()
