@@ -463,6 +463,10 @@ static int vlc_vidsplit_Open(vout_display_t *vd,
             goto error;
         }
 
+        static const char * const ppsz_window_options[] = {
+            "width", "height", NULL };
+        config_ChainParse(part->window, "", ppsz_window_options, output->config_chain);
+
         if (fullscreen)
             vout_window_SetFullScreen(part->window, screen);
         free(screen);
