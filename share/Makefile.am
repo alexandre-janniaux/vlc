@@ -19,7 +19,8 @@ JS_TARGETS = --js $(srcdir)/lua/http/src/services/initialize.service.js \
 --js $(srcdir)/lua/http/src/assets/compiled-icons/*.js \
 --js_output_file $(srcdir)/lua/http/dist/js/script.min.js
 
-JS_VENDORS_TARGETS = --js $(srcdir)/lua/http/src/vendors/bootstrap/javascripts/bootstrap.js \
+JS_VENDORS_TARGETS = --js $(srcdir)/lua/http/src/vendors/jquery/jquery.js \
+--js $(srcdir)/lua/http/src/vendors/bootstrap/javascripts/bootstrap.js \
 --js $(srcdir)/lua/http/src/vendors/vue/vue.js \
 --js $(srcdir)/lua/http/src/vendors/plyr/plyr.js \
 --js $(srcdir)/lua/http/src/vendors/jstree/jstree.js \
