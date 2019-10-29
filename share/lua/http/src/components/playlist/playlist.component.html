@@ -9,7 +9,7 @@
                 </div>
                 <playlist-buttons></playlist-buttons>
                 <div id="playlist">
-                    <playlist-item v-bind:item="item" v-for="item in playlist"></playlist-item>
+                    <playlist-item key="item.id" v-bind:item="item" v-for="item in playlist"></playlist-item>
                 </div>
                 <div class="playlistNavMobile" id="mobilePlaylistNavButton">
                     <center><svg-icon name="format-list-bulleted"></svg-icon></center>
