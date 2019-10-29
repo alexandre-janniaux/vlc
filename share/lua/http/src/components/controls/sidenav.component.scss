@@ -48,3 +48,12 @@
 #openNavButton{
    color: $primary-bg-color;
 }
+
+#closeNavButton {
+    position: absolute;
+    right: 10px;
+}
+
+#close-icon {
+    transform: rotate(45deg);
+}

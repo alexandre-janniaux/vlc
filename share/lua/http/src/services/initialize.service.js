@@ -52,10 +52,6 @@ function vueInit() {
                     }
                 });
 
-                $('#closeNavButton').on('click', () => {
-                    this.$store.dispatch('layout/closeNavbar');
-                });
-
                 const container = $('#playlistNav');
                 if ($(window).width() <= 480 && !container.is(e.target) && container.has(e.target).length === 0 && container.css('width') !== '0px') {
                     this.$store.dispatch('layout/closePlaylist');

@@ -2,9 +2,10 @@
 <script type="text/x-template" id="sidenav-template">
     <div>
         <div id="sideNav" class="sideNav">
-            <a href="javascript:void(0)" class="closebtn" id="closeNavButton">
-                Menu
-            </a>
+            <button id="closeNavButton" class="btn btn-link" v-on:click="closeNav()">
+                <svg-icon id="close-icon" name="plus"></svg-icon>
+            </button>
+            Menu
             <a href="#" data-toggle="modal" data-target="#fileModal">
                 Open File
             </a>
