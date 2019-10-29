@@ -2,6 +2,7 @@ Vue.component('sidenav', {
     template: '#sidenav-template',
     methods: {
         openNav() {
+            $('#sideNav').addClass('opened');
             if (window.screen.width <= 480) {
                 $('#sideNav').width('60%');
             } else {
@@ -9,7 +10,7 @@ Vue.component('sidenav', {
             }
         },
         closeNav() {
-            $('#sideNav').width('0');
+            $('#sideNav').removeClass('opened');
         }
     },
     created() {

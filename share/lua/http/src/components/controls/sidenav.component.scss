@@ -9,7 +9,18 @@
     background-color: $primary-bg-color;
     overflow-x: hidden;
     padding-top: 60px;
-    transition: 0.5s;
+    transition: opacity 0.3s ease, visibility 0.3s ease, width 0.2s ease;
+    visibility: hidden;
+    opacity: 0;
+    width: 0;
+    .header {
+        padding-left: 5px;
+    }
+}
+
+.sideNav.opened {
+    visibility: visible;
+    opacity: 1;
 }
 
 /* The navigation menu links */
