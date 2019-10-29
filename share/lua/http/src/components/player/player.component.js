@@ -1,5 +1,3 @@
-let player;
-
 Vue.component('player', {
     template: '#player-template',
     computed: {
@@ -22,7 +20,7 @@ Vue.component('player', {
             }, 1000);
         },
         setVideo(videoSrc, type) {
-            player[0].source({
+            this.player.source({
                 type: 'video',
                 title: '',
                 sources: [{
@@ -34,27 +32,27 @@ Vue.component('player', {
         },
         playItem(src, id) {
             setVideo(src, 'video/mp4', id);
-            player[0].play();
+            this.player.play();
         },
         plyrInit() {
-            player = plyr.setup({
+            let player = plyr.setup({
                 showPosterOnEnd: true
             });
-            player = player[0];
+            this.player = player[0];
             // setVideo('S6IP_6HG2QE','youtube');
-            player.on('pause', () => {
+            this.player.on('pause', () => {
                 if (this.status && this.status.state !== 'paused') {
                     this.$store.dispatch('status/pause');
                 }
             });
 
-            player.on('play', () => {
+            this.player.on('play', () => {
                 if (this.status && this.status.state !== 'playing') {
                     this.$store.dispatch('status/play', this.status.currentplid);
                 }
             });
 
-            player.on('volumechange', (event) => {
+            this.player.on('volumechange', (event) => {
                 const volume = event.detail.plyr.getVolume() * 255;
                 this.$store.dispatch('status/updateVolume', volume);
             });
@@ -66,13 +64,13 @@ Vue.component('player', {
             this.previousState = state;
             switch (state) {
                 case 'playing':
-                    player.play();
+                    this.player.play();
                     break;
                 case 'paused':
-                    player.pause();
+                    this.player.pause();
                     break;
                 case 'stopped':
-                    player.stop();
+                    this.player.stop();
                     break;
             }
         }
