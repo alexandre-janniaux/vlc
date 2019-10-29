@@ -66,6 +66,9 @@ typedef struct
 {
     int              i_id;
     sout_stream_id_sys_t **id;
+
+    vlc_tick_t last_pts;
+    vlc_tick_t offset_pts;
 } sout_stream_sys_t;
 
 /*****************************************************************************
@@ -79,6 +82,9 @@ static int Open( vlc_object_t *p_this )
     p_stream->p_sys = p_sys = malloc( sizeof( sout_stream_sys_t ) );
     if( p_sys == NULL )
         return VLC_EGENERIC;
+
+    p_sys->last_pts = VLC_TICK_INVALID;
+    p_sys->offset_pts = 0;
 
     if( !p_stream->p_next )
     {
@@ -207,11 +213,25 @@ static void Del( sout_stream_t *p_stream, void *_id )
  *****************************************************************************/
 static int Send( sout_stream_t *p_stream, void *_id, block_t *p_buffer )
 {
+    sout_stream_sys_t *sys = p_stream->p_sys;
     sout_stream_id_sys_t *id = (sout_stream_id_sys_t *)_id;
+
     if ( id->b_streamswap )
     {
         id->b_streamswap = false;
         p_buffer->i_flags |= BLOCK_FLAG_DISCONTINUITY;
+
+        /* XXX: First frame is probably a keyframe */
+        sys->offset_pts = sys->last_pts;
     }
+
+    p_buffer->i_pts += sys->offset_pts;
+
+    msg_Warn(p_stream, "NewBlock");
+    msg_Info(p_stream, "PTS is %" PRId64, p_buffer->i_pts);
+    msg_Info(p_stream, "DTS is %" PRId64, p_buffer->i_pts);
+
+    sys->last_pts = p_buffer->i_pts;
+
     return sout_StreamIdSend( p_stream->p_next, id->id, p_buffer );
 }
