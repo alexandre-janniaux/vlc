@@ -1,29 +1,19 @@
-import { bus } from '../../services/bus.service.js';
-import { sendCommand } from '../../services/command.service.js';
-import { playItem } from '../player/plyr.methods.js';
-
 Vue.component('playlist', {
     template: '#playlist-template',
+    computed: {
+        ...Vuex.mapState({
+            playlist: state => state.playlist.items
+        }),
+    },
     methods: {
         addItem(mode, id, title, src) {
-            if (mode === 0) {
-                this.$parent.playlistItems.push({
-                    id,
-                    title,
-                    src
-                });
-            } else if (mode === 1) {
-                sendCommand(0, `command=in_enqueue&input=${src}`);
-                this.clearPlaylist();
-                bus.$emit('refreshPlaylist');
-            }
+            this.$store.dispatch('playlist/addItem', src);
         },
         removeItem(id) {
-            sendCommand(0, `command=pl_delete&id=${id}`);
-            this.$parent.playlistItems.splice({
-                id
-            });
-            sendCommand(1);
+            this.$store.dispatch('playlist/removeItem', id);
+        },
+        fetchPlaylist() {
+            this.$store.dispatch('playlist/fetchPlaylist');
         },
         openPlaylist() {
             $('#playlistNav').width('60%');
@@ -33,71 +23,31 @@ Vue.component('playlist', {
             $('#playlistNav').width('0%');
             $('#mobilePlaylistNavButton').width('10%');
         },
-        populatePlaylist(playlistData) {
-            if (!playlistData) {
-                return;
-            }
-            this.$parent.playlistItems = [];
-            for (let i = 0; i < playlistData.length; i++) {
-                let data = playlistData[i];
-                this.addItem(
-                    0,
-                    data.id,
-                    data.name,
-                    data.uri
-                );
-            }
-        },
-        fetchPlaylist() {
-            sendCommand(1)
-                .then(data => this.populatePlaylist(data));
-        },
         refreshPlaylist() {
+            if (this.interval) {
+                clearTimeout(this.interval);
+                this.interval = null;
+            }
             this.fetchPlaylist();
-            setInterval(() => {
+            this.interval = setInterval(() => {
                 this.fetchPlaylist();
             }, 5000);
         },
-        clearPlaylist() {
-            this.$parent.playlistItems = [];
-        },
         play(src, id) {
-            playItem(src,id);
+            this.$store.dispatch('status/play', id);
         }
     },
     created() {
-        bus.$on('openPlaylist', () => {
-            this.openPlaylist();
+        this.$store.subscribeAction((mutation) => {
+            switch (mutation.type) {
+                case 'layout/openPlaylist':
+                    this.openPlaylist();
+                    break;
+                case 'layout/closePlaylist':
+                    this.closePlaylist();
+                    break;
+            }
         });
-
-        bus.$on('closePlaylist', () => {
-            this.closePlaylist();
-        });
-
-        bus.$on('addItem', (params) => {
-            this.addItem(params[0], params[1], params[2], params[3]);
-        });
-
-        bus.$on('removeItem', (id) => {
-            this.removeItem(id);
-        });
-
-        bus.$on('refreshPlaylist', () => {
-            this.refreshPlaylist();
-        });
-
-        bus.$on('play', (arg) => {
-            this.play(arg[0], arg[1]);
-        });
-
         this.refreshPlaylist();
-    }
-});
-
-$(document).click((e) => {
-    const container = $('#playlistNav');
-
-    if ($(window).width() <= 480 && !container.is(e.target) && container.has(e.target).length === 0 && container.css('width') !== '0px') {
-        bus.$emit('closePlaylist');
     }
 });

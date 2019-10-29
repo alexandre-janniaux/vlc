@@ -10,8 +10,8 @@
                 </div>
                 <div id="playlist">
                     <ol type="1">
-                        <li v-for="item in this.$parent.playlistItems">
-                            <button v-on:click="play(item.src, item.id)" class="playlistItem">{{ item.title }}</button>
+                        <li v-for="item in playlist">
+                            <button v-on:click="play(item.uri, item.id)" class="playlistItem">{{ item.name }}</button>
                             <button v-on:click="removeItem(item.id)" type="button" class="btn-circle col-xs">
                                 <svg-icon name="delete"></svg-icon>
                             </button>

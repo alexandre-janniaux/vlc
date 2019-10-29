@@ -4,9 +4,15 @@ MOSTLYCLEANFILES =
 EXTRA_DIST =
 
 JS_TARGETS = --js $(srcdir)/lua/http/src/services/initialize.service.js \
---js $(srcdir)/lua/http/src/services/command.service.js \
---js $(srcdir)/lua/http/src/services/bus.service.js \
---js $(srcdir)/lua/http/src/components/player/plyr.methods.js \
+--js $(srcdir)/lua/http/src/utils/lang/index.js \
+--js $(srcdir)/lua/http/src/services/playlist.service.js \
+--js $(srcdir)/lua/http/src/services/status.service.js \
+--js $(srcdir)/lua/http/src/services/vlm_cmd.service.js \
+--js $(srcdir)/lua/http/src/store/index.js \
+--js $(srcdir)/lua/http/src/store/modules/layout.js \
+--js $(srcdir)/lua/http/src/store/modules/playlist.js \
+--js $(srcdir)/lua/http/src/store/modules/status.js \
+--js $(srcdir)/lua/http/src/store/modules/vlm_cmd.js \
 --js $(srcdir)/lua/http/src/components/controls/sidenav.component.js \
 --js $(srcdir)/lua/http/src/components/playlist/playlist.component.js \
 --js $(srcdir)/lua/http/src/components/playlist/buttons.playlist.component.js \
@@ -15,6 +21,7 @@ JS_TARGETS = --js $(srcdir)/lua/http/src/services/initialize.service.js \
 --js $(srcdir)/lua/http/src/components/equalizer/equalizer.component.js \
 --js $(srcdir)/lua/http/src/components/track-synchronisation/tracksync.component.js \
 --js $(srcdir)/lua/http/src/components/sot/stream.manager.component.js \
+--js $(srcdir)/lua/http/src/components/player/player.component.js \
 --js $(srcdir)/lua/http/src/components/svg-icon/svg-icon.component.js \
 --js $(srcdir)/lua/http/src/assets/compiled-icons/*.js \
 --js_output_file $(srcdir)/lua/http/dist/js/script.min.js

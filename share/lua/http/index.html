@@ -15,6 +15,7 @@
         <sidenav></sidenav>
 
         <playlist></playlist>
+        <player></player>
 
         <!-- Modals -->
         <div id="vlmModal" class="modal fade" role="dialog">
@@ -37,10 +38,6 @@
             <stream-manager-modal></stream-manager-modal>
         </div>
     </div>
-
-    <div id="videoPlayer">
-            <video></video>
-    </div>
 </body>
 <!-- Templates -->
 <!-- Playlist Template -->
@@ -54,8 +51,8 @@
                 </div>
                 <div id="playlist">
                     <ol type="1">
-                        <li v-for="item in this.$parent.playlistItems">
-                            <button v-on:click="play(item.src, item.id)" class="playlistItem">{{ item.title }}</button>
+                        <li v-for="item in playlist">
+                            <button v-on:click="play(item.uri, item.id)" class="playlistItem">{{ item.name }}</button>
                             <button v-on:click="removeItem(item.id)" type="button" class="btn-circle col-xs">
                                 <svg-icon name="delete"></svg-icon>
                             </button>
@@ -74,9 +71,9 @@
     <div>
         <div class="playlistIcons">
             <div class="row">
-                <button type="button" class="btn-circle col-xs" id="randomButton"><svg-icon name="shuffle-variant"></svg-icon></button>
-                <button type="button" class="btn-circle col-xs" id="repeatButton"><svg-icon name="replay"></svg-icon></button>
-                <button type="button" class="btn-circle col-xs" id="playButton"><svg-icon name="play-circle-outline"></svg-icon></button>
+                <button v-on:click="toggleRandom()" type="button" class="btn-circle col-xs" id="randomButton"><svg-icon name="shuffle-variant"></svg-icon></button>
+                <button v-on:click="toggleRepeat()" type="button" class="btn-circle col-xs" id="repeatButton"><svg-icon name="replay"></svg-icon></button>
+                <button v-on:click="startPlaylist()" type="button" class="btn-circle col-xs" id="playButton"><svg-icon name="play-circle-outline"></svg-icon></button>
             </div>
             <div class="row">
                 <button type="button" class="btn-circle col-xs" data-toggle="modal" data-target="#equalizerModal"><svg-icon name="poll"></svg-icon></button>
@@ -122,7 +119,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" id="vlmButton" class="btn btn-default">Submit</button>
+                    <button type="button" v-on:click="executeVLM()" id="vlmButton" class="btn btn-default">Submit</button>
                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                 </div>
             </div>
@@ -226,6 +223,13 @@
                 </div>
             </div>
         </div>
+    </div>
+</script>
+<!-- Templates -->
+<!-- Playlist Template -->
+<script type="text/x-template" id="player-template">
+    <div id="videoPlayer">
+        <video></video>
     </div>
 </script>
 </html>

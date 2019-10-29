@@ -1,5 +1,8 @@
-import { notifyBus } from '../../services/bus.service.js';
-import { VIDEO_TYPES, AUDIO_TYPES, PLAYLIST_TYPES } from '../../services/initialize.service.js';
+import {
+    VIDEO_TYPES,
+    AUDIO_TYPES,
+    PLAYLIST_TYPES
+} from '../../services/initialize.service.js';
 
 Vue.component('file-modal', {
     template: '#file-modal-template',
@@ -71,8 +74,10 @@ Vue.component('file-modal', {
             $('#file-tree').on('select_node.jstree', (e, data) => {
                 node = data.instance.get_node(data.selected[0]);
                 ext = (node.data.uri).substr(node.data.uri.lastIndexOf('.') + 1).toLowerCase();
-                if (node.data.type === 'file' && ($.inArray(ext, VIDEO_TYPES) !== -1 || $.inArray(ext, AUDIO_TYPES) !== -1 || $.inArray(ext, PLAYLIST_TYPES) !== -1)) {
-                    notifyBus('addItem', [1, '', node.data.uri,node.data.uri]);
+                if (node.data.type === 'file' && ($.inArray(ext, VIDEO_TYPES) !== -1
+                    || $.inArray(ext, AUDIO_TYPES) !== -1
+                    || $.inArray(ext, PLAYLIST_TYPES) !== -1)) {
+                    this.$store.dispatch('playlist/addItem', node.data);
                 }
             }).jstree();
         }

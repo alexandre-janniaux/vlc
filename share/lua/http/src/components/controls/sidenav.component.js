@@ -1,5 +1,3 @@
-import { bus } from '../../services/bus.service.js';
-
 Vue.component('sidenav', {
     template: '#sidenav-template',
     methods: {
@@ -15,12 +13,15 @@ Vue.component('sidenav', {
         }
     },
     created() {
-        bus.$on('openNav', () => {
-            this.openNav();
-        });
-
-        bus.$on('closeNav', () => {
-            this.closeNav();
+        this.$store.subscribeAction((mutation) => {
+            switch (mutation.type) {
+                case 'layout/openNavbar':
+                    this.openNav();
+                    break;
+                case 'layout/closeNavbar':
+                    this.closeNav();
+                    break;
+            }
         });
     }
 });

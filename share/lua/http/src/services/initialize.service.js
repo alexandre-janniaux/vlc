@@ -1,6 +1,5 @@
-import { plyrInit } from '../components/player/plyr.methods.js';
-import { notifyBus } from './bus.service.js';
 import { svgIcon } from '../components/svg-icon/svg-icon.component.js';
+import store from '../store/index.js';
 
 export const VIDEO_TYPES = [
     'asf', 'avi', 'bik', 'bin', 'divx', 'drc', 'dv', 'f4v', 'flv', 'gxf', 'iso',
@@ -24,56 +23,48 @@ export const PLAYLIST_TYPES = [
 ];
 
 function vueInit() {
+    Vue.use(svgIcon, {
+        tagName: 'svg-icon'
+    });
     return new Vue({
         el: '#app',
         data: {
             playlistItems: []
+        },
+        store,
+        mounted() {
+            this.$nextTick(() => {
+                $('#openNavButton').on('click', () => {
+                    if ($(window).width() <= 480 && $('#playlistNav').css('width') === '60%') {
+                        this.$store.dispatch('layout/closePlaylist');
+                        this.$store.dispatch('layout/openNavbar');
+                    } else {
+                        this.$store.dispatch('layout/openNavbar');
+                    }
+                });
+
+                $('#mobilePlaylistNavButton').on('click', () => {
+                    if ($(window).width() <= 480 && $('#sideNav').width() === '60%') {
+                        this.$store.dispatch('layout/closeNavbar');
+                        this.$store.dispatch('layout/openPlaylist');
+                    } else {
+                        this.$store.dispatch('layout/openPlaylist');
+                    }
+                });
+
+                $('#closeNavButton').on('click', () => {
+                    this.$store.dispatch('layout/closeNavbar');
+                });
+
+                const container = $('#playlistNav');
+                if ($(window).width() <= 480 && !container.is(e.target) && container.has(e.target).length === 0 && container.css('width') !== '0px') {
+                    this.$store.dispatch('layout/closePlaylist');
+                }
+            });
         }
     });
 }
 
 $(() => {
-    plyrInit();
-    Vue.use(svgIcon, {
-        tagName: 'svg-icon'
-    });
     vueInit();
-
-    $('#openNavButton').on('click', () => {
-        if ($(window).width() <= 480 && $('#playlistNav').css('width') === '60%') {
-            notifyBus('closePlaylist');
-            notifyBus('openNav');
-        } else {
-            notifyBus('openNav');
-        }
-    });
-
-    $('#closeNavButton').on('click', () => {
-        notifyBus('closeNav');
-    });
-
-    $('#vlmButton').on('click', () => {
-        notifyBus('executeVLM');
-    });
-
-    $('#repeatButton').on('click', () => {
-        notifyBus('toggleRepeat');
-    });
-
-    $('#playButton').on('click', () => {
-        notifyBus('startPlaylist');
-    });
-
-    $('#randomButton').on('click', () => {
-        notifyBus('toggleRandom');
-    });
-
-    $('#mobilePlaylistNavButton').on('click', () => {
-        if ($(window).width() <= 480 && $('#sideNav').width() === '60%') {
-            notifyBus('closeNav');
-            notifyBus('openPlaylist');
-        } else {
-            notifyBus('openPlaylist');
-        }
-    });
 });
