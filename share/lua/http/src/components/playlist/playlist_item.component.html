@@ -1,0 +1,9 @@
+<!-- Playlist item Template -->
+<script type="text/x-template" id="playlist-item-template">
+    <div>
+        <button v-on:click="play(item.uri, item.id)" class="playlist-item">{{ item.name }}</button>
+        <button v-on:click="removeItem(item.id)" type="button" class="btn-circle">
+            <svg-icon name="delete"></svg-icon>
+        </button>
+    </div>
+</script>

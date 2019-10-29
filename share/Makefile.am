@@ -15,6 +15,7 @@ JS_TARGETS = --js $(srcdir)/lua/http/src/services/initialize.service.js \
 --js $(srcdir)/lua/http/src/store/modules/vlm_cmd.js \
 --js $(srcdir)/lua/http/src/components/controls/sidenav.component.js \
 --js $(srcdir)/lua/http/src/components/playlist/playlist.component.js \
+--js $(srcdir)/lua/http/src/components/playlist/playlist_item.component.js \
 --js $(srcdir)/lua/http/src/components/playlist/buttons.playlist.component.js \
 --js $(srcdir)/lua/http/src/components/controls/filebrowser.component.js \
 --js $(srcdir)/lua/http/src/components/vlm/vlm.component.js \

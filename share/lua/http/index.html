@@ -50,14 +50,7 @@
                 </div>
                 <playlist-buttons></playlist-buttons>
                 <div id="playlist">
-                    <ol type="1">
-                        <li v-for="item in playlist">
-                            <button v-on:click="play(item.uri, item.id)" class="playlistItem">{{ item.name }}</button>
-                            <button v-on:click="removeItem(item.id)" type="button" class="btn-circle col-xs">
-                                <svg-icon name="delete"></svg-icon>
-                            </button>
-                        </li>
-                    </ol>
+                    <playlist-item v-bind:item="item" v-for="item in playlist"></playlist-item>
                 </div>
                 <div class="playlistNavMobile" id="mobilePlaylistNavButton">
                     <center><svg-icon name="format-list-bulleted"></svg-icon></center>
@@ -70,14 +63,23 @@
 <script type="text/x-template" id="button-template">
     <div>
         <div class="playlistIcons">
-            <div class="row">
+            <div class="d-flex justify-content-between">
                 <button v-on:click="toggleRandom()" type="button" class="btn-circle" id="randomButton"><svg-icon name="shuffle-variant"></svg-icon></button>
                 <button v-on:click="toggleRepeat()" type="button" class="btn-circle" id="repeatButton"><svg-icon name="replay"></svg-icon></button>
                 <button v-on:click="startPlaylist()" type="button" class="btn-circle" id="playButton"><svg-icon name="play-circle-outline"></svg-icon></button>
-                <button type="button" class="btn-circle col-xs" data-toggle="modal" data-target="#equalizerModal"><svg-icon name="poll"></svg-icon></button>
-                <button type="button" class="btn-circle col-xs" data-toggle="modal" data-target="#fileModal"><svg-icon name="plus"></svg-icon></button>
+                <button type="button" class="btn-circle" data-toggle="modal" data-target="#equalizerModal"><svg-icon name="poll"></svg-icon></button>
+                <button type="button" class="btn-circle" data-toggle="modal" data-target="#fileModal"><svg-icon name="plus"></svg-icon></button>
             </div>
         </div>
+    </div>
+</script>
+<!-- Playlist item Template -->
+<script type="text/x-template" id="playlist-item-template">
+    <div>
+        <button v-on:click="play(item.uri, item.id)" class="playlist-item">{{ item.name }}</button>
+        <button v-on:click="removeItem(item.id)" type="button" class="btn-circle">
+            <svg-icon name="delete"></svg-icon>
+        </button>
     </div>
 </script>
 <!-- equalizer modal Template -->
@@ -128,9 +130,10 @@
 <script type="text/x-template" id="sidenav-template">
     <div>
         <div id="sideNav" class="sideNav">
-            <a href="javascript:void(0)" class="closebtn" id="closeNavButton">
-                Menu
-            </a>
+            <button id="closeNavButton" class="btn btn-link" v-on:click="closeNav()">
+                <svg-icon id="close-icon" name="plus"></svg-icon>
+            </button>
+            Menu
             <a href="#" data-toggle="modal" data-target="#fileModal">
                 Open File
             </a>

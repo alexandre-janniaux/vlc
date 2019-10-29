@@ -9,14 +9,7 @@
                 </div>
                 <playlist-buttons></playlist-buttons>
                 <div id="playlist">
-                    <ol type="1">
-                        <li v-for="item in playlist">
-                            <button v-on:click="play(item.uri, item.id)" class="playlistItem">{{ item.name }}</button>
-                            <button v-on:click="removeItem(item.id)" type="button" class="btn-circle col-xs">
-                                <svg-icon name="delete"></svg-icon>
-                            </button>
-                        </li>
-                    </ol>
+                    <playlist-item v-bind:item="item" v-for="item in playlist"></playlist-item>
                 </div>
                 <div class="playlistNavMobile" id="mobilePlaylistNavButton">
                     <center><svg-icon name="format-list-bulleted"></svg-icon></center>
