@@ -5,7 +5,7 @@
     position: fixed;
     z-index: 5;
     top: 0;
-    background-color: orange;
+    background-color: $primary-bg-color;
     overflow-x: hidden;
     padding-top: 2%;
     transition: 0.5s;
@@ -24,7 +24,7 @@
     position: fixed;
     z-index: 5;
     top: 0;
-    background-color: orange;
+    background-color: $primary-bg-color;
     overflow-x: hidden;
     padding-top: 2%;
     transition: 0.5s;
@@ -37,7 +37,7 @@
     padding: 6px 0;
     border-radius: 15px;
     border: 0;
-    background-color: orange;
+    background-color: $primary-bg-color;
 }
 
 .btn-circle.btn-lg {

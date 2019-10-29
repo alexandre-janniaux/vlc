@@ -45,10 +45,10 @@
     <div>
         <div id="playlistNav" class="playlistNav">
             <div class="container">
-                <playlist-buttons></playlist-buttons>
                 <div>
-                    <h1 class="playlistHeader">Playlist</h1>
+                    <span class="playlistHeader">Playlist</span>
                 </div>
+                <playlist-buttons></playlist-buttons>
                 <div id="playlist">
                     <ol type="1">
                         <li v-for="item in playlist">
@@ -71,11 +71,9 @@
     <div>
         <div class="playlistIcons">
             <div class="row">
-                <button v-on:click="toggleRandom()" type="button" class="btn-circle col-xs" id="randomButton"><svg-icon name="shuffle-variant"></svg-icon></button>
-                <button v-on:click="toggleRepeat()" type="button" class="btn-circle col-xs" id="repeatButton"><svg-icon name="replay"></svg-icon></button>
-                <button v-on:click="startPlaylist()" type="button" class="btn-circle col-xs" id="playButton"><svg-icon name="play-circle-outline"></svg-icon></button>
-            </div>
-            <div class="row">
+                <button v-on:click="toggleRandom()" type="button" class="btn-circle" id="randomButton"><svg-icon name="shuffle-variant"></svg-icon></button>
+                <button v-on:click="toggleRepeat()" type="button" class="btn-circle" id="repeatButton"><svg-icon name="replay"></svg-icon></button>
+                <button v-on:click="startPlaylist()" type="button" class="btn-circle" id="playButton"><svg-icon name="play-circle-outline"></svg-icon></button>
                 <button type="button" class="btn-circle col-xs" data-toggle="modal" data-target="#equalizerModal"><svg-icon name="poll"></svg-icon></button>
                 <button type="button" class="btn-circle col-xs" data-toggle="modal" data-target="#fileModal"><svg-icon name="plus"></svg-icon></button>
             </div>
@@ -89,8 +87,8 @@
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                     <h4 class="modal-title">Equalizer</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <input type="range" name="equalizerInput" id="equalizerInput" min="-20" max="20" step="0.1"/>
@@ -109,8 +107,8 @@
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                     <h4 class="modal-title">Write your VLM commands here (seperated by new line)</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <textarea id="vlmCommand"></textarea>
@@ -164,8 +162,8 @@
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                     <h4 class="modal-title">Select your file</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body" id="file-tree">
                 </div>
@@ -182,8 +180,8 @@
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                     <h4 class="modal-title">Set Track Synchronization</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body" id="">
                     Playback Rate
@@ -214,8 +212,8 @@
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                     <h4 class="modal-title">Stream Manager</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
                 </div>

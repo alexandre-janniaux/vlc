@@ -27,7 +27,9 @@ JS_TARGETS = --js $(srcdir)/lua/http/src/services/initialize.service.js \
 --js_output_file $(srcdir)/lua/http/dist/js/script.min.js
 
 JS_VENDORS_TARGETS = --js $(srcdir)/lua/http/src/vendors/jquery/jquery.js \
---js $(srcdir)/lua/http/src/vendors/bootstrap/javascripts/bootstrap.js \
+--js $(srcdir)/lua/http/src/vendors/bootstrap/js/dist/index.js \
+--js $(srcdir)/lua/http/src/vendors/bootstrap/js/dist/util.js \
+--js $(srcdir)/lua/http/src/vendors/bootstrap/js/dist/modal.js \
 --js $(srcdir)/lua/http/src/vendors/vue/vue.js \
 --js $(srcdir)/lua/http/src/vendors/vue/vue-router.js \
 --js $(srcdir)/lua/http/src/vendors/vue/vuex.js \
@@ -49,7 +51,7 @@ SASS_DIST_DIR = $(srcdir)/lua/http/dist/css
 SASSC = sassc $(SASS_TARGETS) $(SASS_DIST_DIR)/style.css
 SASSC_FLAGS =
 SASSC_VENDORS = sassc $(SASS_VENDORS_TARGETS) $(SASS_DIST_DIR)/vendors.min.css --style compressed
-SASSC_VENDORS_FLAGS = -I $(srcdir)/lua/http/src/vendors/bootstrap/stylesheets/
+SASSC_VENDORS_FLAGS = -I $(srcdir)/lua/http/src/vendors/bootstrap/scss/
 
 desktopdir = $(datadir)/applications
 if !HAVE_WIN32
