@@ -7,7 +7,7 @@
     top: 0;
     background-color: $primary-bg-color;
     overflow-x: hidden;
-    padding-top: 2%;
+    padding-top: 10px;
     transition: 0.5s;
 }
 
@@ -31,13 +31,15 @@
 }
 
 .btn-circle {
-    width: 30px;
-    height: 30px;
     text-align: center;
     padding: 6px 0;
     border-radius: 15px;
     border: 0;
     background-color: $primary-bg-color;
+    .svg-icon {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
 }
 
 .btn-circle.btn-lg {
@@ -54,13 +56,6 @@
     padding: 10px 16px;
     font-size: 24px;
     border-radius: 35px;
-}
-
-.playlistItem {
-    text-align: center;
-    border: 0;
-    margin-bottom: 0.2em;
-    background-color: white;
 }
 
 .playlistHeader{
