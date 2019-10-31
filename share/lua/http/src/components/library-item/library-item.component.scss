@@ -1,0 +1,26 @@
+.library-item {
+    display: inline-block;
+    width: 150px;
+    margin: 10px;
+    .library-item-img {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--library-item-bg-color);
+        height: 150px;
+    }
+    .library-item-body {
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 5px;
+        .library-item-name {
+            font-weight: bold;
+        }
+        .library-item-artist {
+            font-weight: normal;
+            color: var(--secondary-text-color);
+            font-size: 0.8rem;
+        }
+    }
+}

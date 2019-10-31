@@ -12,11 +12,8 @@
 </head>
 <body>
     <div id="app">
-        <sidenav></sidenav>
-
-        <playlist></playlist>
-        <player></player>
-
+        <!-- <sidenav></sidenav> -->
+        <main-view></main-view>
         <!-- Modals -->
         <div id="vlmModal" class="modal fade" role="dialog">
             <vlm-modal></vlm-modal>
@@ -42,45 +39,35 @@
 <!-- Templates -->
 <!-- Playlist Template -->
 <script type="text/x-template" id="playlist-template">
-    <div>
-        <div id="playlistNav" class="playlistNav">
-            <div class="container">
-                <div>
-                    <span class="playlistHeader">Playlist</span>
-                </div>
-                <playlist-buttons></playlist-buttons>
-                <div id="playlist">
-                    <playlist-item key="item.id" v-bind:item="item" v-for="item in playlist"></playlist-item>
-                </div>
-                <div class="playlistNavMobile" id="mobilePlaylistNavButton">
-                    <center><svg-icon name="format-list-bulleted"></svg-icon></center>
-                </div>
-            </div>
+    <div id="playlistNav" class="playlistNav h-100">
+        <h6 class="playlist-header font-weight-bold">Playlist</h6>
+        <div class="dropdown-divider"></div>
+        <div id="playlist">
+            <playlist-item :key="item.id" :item="item" v-for="item in playlist.items"></playlist-item>
         </div>
+        <playlist-buttons></playlist-buttons>
     </div>
 </script>
 <!-- Button Template -->
 <script type="text/x-template" id="button-template">
-    <div>
-        <div class="playlistIcons">
-            <div class="d-flex justify-content-between">
-                <button v-on:click="toggleRandom()" type="button" class="btn-circle" id="randomButton"><svg-icon name="shuffle-variant"></svg-icon></button>
-                <button v-on:click="toggleRepeat()" type="button" class="btn-circle" id="repeatButton"><svg-icon name="replay"></svg-icon></button>
-                <button v-on:click="startPlaylist()" type="button" class="btn-circle" id="playButton"><svg-icon name="play-circle-outline"></svg-icon></button>
-                <button type="button" class="btn-circle" data-toggle="modal" data-target="#equalizerModal"><svg-icon name="poll"></svg-icon></button>
-                <button type="button" class="btn-circle" data-toggle="modal" data-target="#fileModal"><svg-icon name="plus"></svg-icon></button>
-            </div>
+    <div class="playlist-actions">
+        <div class="d-flex justify-content-between mx-2" :class="{ disabled: !playlist.activeItem }">
+            <button v-on:click="toggleRepeat()" type="button" class="btn-circle" id="repeatButton"><svg-icon name="repeat"></svg-icon></button>
+            <button v-on:click="toggleRandom()" type="button" class="btn-circle" id="randomButton"><svg-icon name="shuffle"></svg-icon></button>
+            <span>{{ playlist.items.length ? playlist.items.length + ' items': '' }}</span>
+            <button type="button" class="btn-circle" data-toggle="modal" data-target="#equalizerModal"><svg-icon name="sort"></svg-icon></button>
+            <button v-on:click="removeItem(playlist.activeItem.id)" type="button" class="btn-circle"><svg-icon name="delete_outline"></svg-icon></button>
         </div>
     </div>
 </script>
 <!-- Playlist item Template -->
 <script type="text/x-template" id="playlist-item-template">
-    <div>
-        <button v-on:click="play(item.uri, item.id)" class="playlist-item">{{ item.name }}</button>
-        <button v-on:click="removeItem(item.id)" type="button" class="btn-circle">
-            <svg-icon name="delete"></svg-icon>
-        </button>
-    </div>
+    <button v-on:click="setActiveItem(item)" v-on:dblclick="play(item.uri, item.id)" class="btn btn-link p-2 playlist-item d-flex justify-content-between align-items-center"
+        :class="{ current: item.current === 'current', active: item.active }">
+        <img class="img-art" :src="item.src" @error="onImgError(item)">
+        <span class="item-name">{{ item.name }}</span>
+        <span>{{ item.duration | formatDuration }}</span>
+    </button>
 </script>
 <!-- equalizer modal Template -->
 <script type="text/x-template" id="equalizer-modal-template">
@@ -100,6 +87,69 @@
                 </div>
             </div>
         </div>
+    </div>
+</script>
+<script type="text/x-template" id="main-view-template">
+    <div>
+        <div class="container-fluid fixed-top primary-navbar d-flex align-content-center align-items-center text-center justify-content-center">
+            <div v-on:click="setLibraryView()" class="d-flex align-items-center h-100">
+                <button v-on:click="" class="btn btn-icon">
+                    <svg-icon name="local_movies"></svg-icon>
+                    <span>Video</span>
+                </button>
+                <button v-on:click="" class="btn btn-icon">
+                    <svg-icon name="audiotrack"></svg-icon>
+                    <span>Music</span>
+                </button>
+                <button v-on:click="" class="btn btn-icon">
+                    <svg-icon name="settings_input_antenna"></svg-icon>
+                    <span>Network</span>
+                </button>
+            </div>
+        </div>
+        <div class="container-fluid fixed-top secondary-navbar">
+            <div class="d-flex h-100 position-relative show collapse justify-content-between align-items-center">
+                <div class="flex-1 text-left">
+                    <button v-on:click="" class="btn btn-circle"><svg-icon name="sort"></svg-icon></button>
+                </div>
+                <div class="flex-1 text-center">
+                    <button class="btn btn-link">Albums</button>
+                    <button class="btn btn-link">Artists</button>
+                    <button class="btn btn-link">Genres</button>
+                    <button class="btn btn-link">Tracks</button>
+                </div>
+                <div class="flex-1 text-right">
+                    <button v-on:click="" class="btn-circle"><svg-icon name="filter_list_alt"></svg-icon></button>
+                    <a data-toggle="collapse" href="#" data-target=".collapse" role="button" class="text-white toggler px-2">
+                        <svg-icon name="playlist_play"></svg-icon>
+                    </a>
+                    <button v-on:click="" class="btn-circle"><svg-icon name="more-horizontal"></svg-icon></button>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid px-0" :class="mainView === 'player' ? 'overlay': 'push'">
+            <div class="row collapse show no-gutters d-flex h-100 position-relative">
+                <div class="col">
+                    <player v-if="mainView === 'player'"></player>
+                    <library v-else></library>
+                </div>
+                <div class="col-3 p-0 h-100 w-sidebar navbar-collapse collapse d-none d-md-flex sidebar show">
+                    <!-- fixed sidebar -->
+                    <div class="navbar-dark position-fixed h-100 align-self-start w-sidebar">
+                        <h6 class="px-3 pt-3"><a data-toggle="collapse" class="px-1 d-inline d-md-none text-white" href="#" data-target=".collapse">
+                        </a>
+                        </h6>
+                        <playlist></playlist>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+<script type="text/x-template" id="library-template">
+    <div class="library-view container-fluid">
+        <h6 class="font-weight-bold">Library</h6>
+        <library-item></library-item>
     </div>
 </script>
 <!-- vlm modal Template -->
@@ -202,6 +252,17 @@
                 <div class="modal-footer">
                 </div>
             </div>
+        </div>
+    </div>
+</script>
+<script type="text/x-template" id="library-item-template">
+    <div class="library-item">
+        <div class="library-item-img">
+            <img src="http://images.videolan.org/images/VLC-IconSmall.png">
+        </div>
+        <div class="library-item-body">
+            <div class="library-item-name text-truncate">{{ item.name }}</div>
+            <div class="library-item-artist text-truncate">{{ item.artist }}</div>
         </div>
     </div>
 </script>

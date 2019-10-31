@@ -1,9 +1,9 @@
 <!-- Playlist item Template -->
 <script type="text/x-template" id="playlist-item-template">
-    <div>
-        <button v-on:click="play(item.uri, item.id)" class="playlist-item">{{ item.name }}</button>
-        <button v-on:click="removeItem(item.id)" type="button" class="btn-circle">
-            <svg-icon name="delete"></svg-icon>
-        </button>
-    </div>
+    <button v-on:click="setActiveItem(item)" v-on:dblclick="play(item.uri, item.id)" class="btn btn-link p-2 playlist-item d-flex justify-content-between align-items-center"
+        :class="{ current: item.current === 'current', active: item.active }">
+        <img class="img-art" :src="item.src" @error="onImgError(item)">
+        <span class="item-name">{{ item.name }}</span>
+        <span>{{ item.duration | formatDuration }}</span>
+    </button>
 </script>

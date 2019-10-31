@@ -1,20 +1,12 @@
 <!-- Templates -->
 <!-- Playlist Template -->
 <script type="text/x-template" id="playlist-template">
-    <div>
-        <div id="playlistNav" class="playlistNav">
-            <div class="container">
-                <div>
-                    <span class="playlistHeader">Playlist</span>
-                </div>
-                <playlist-buttons></playlist-buttons>
-                <div id="playlist">
-                    <playlist-item key="item.id" v-bind:item="item" v-for="item in playlist"></playlist-item>
-                </div>
-                <div class="playlistNavMobile" id="mobilePlaylistNavButton">
-                    <center><svg-icon name="format-list-bulleted"></svg-icon></center>
-                </div>
-            </div>
+    <div id="playlistNav" class="playlistNav h-100">
+        <h6 class="playlist-header font-weight-bold">Playlist</h6>
+        <div class="dropdown-divider"></div>
+        <div id="playlist">
+            <playlist-item :key="item.id" :item="item" v-for="item in playlist.items"></playlist-item>
         </div>
+        <playlist-buttons></playlist-buttons>
     </div>
 </script>

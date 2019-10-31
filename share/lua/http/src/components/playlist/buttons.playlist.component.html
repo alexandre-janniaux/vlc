@@ -1,14 +1,12 @@
 <!-- Button Template -->
 <script type="text/x-template" id="button-template">
-    <div>
-        <div class="playlistIcons">
-            <div class="d-flex justify-content-between">
-                <button v-on:click="toggleRandom()" type="button" class="btn-circle" id="randomButton"><svg-icon name="shuffle-variant"></svg-icon></button>
-                <button v-on:click="toggleRepeat()" type="button" class="btn-circle" id="repeatButton"><svg-icon name="replay"></svg-icon></button>
-                <button v-on:click="startPlaylist()" type="button" class="btn-circle" id="playButton"><svg-icon name="play-circle-outline"></svg-icon></button>
-                <button type="button" class="btn-circle" data-toggle="modal" data-target="#equalizerModal"><svg-icon name="poll"></svg-icon></button>
-                <button type="button" class="btn-circle" data-toggle="modal" data-target="#fileModal"><svg-icon name="plus"></svg-icon></button>
-            </div>
+    <div class="playlist-actions">
+        <div class="d-flex justify-content-between mx-2" :class="{ disabled: !playlist.activeItem }">
+            <button v-on:click="toggleRepeat()" type="button" class="btn-circle" id="repeatButton"><svg-icon name="repeat"></svg-icon></button>
+            <button v-on:click="toggleRandom()" type="button" class="btn-circle" id="randomButton"><svg-icon name="shuffle"></svg-icon></button>
+            <span>{{ playlist.items.length ? playlist.items.length + ' items': '' }}</span>
+            <button type="button" class="btn-circle" data-toggle="modal" data-target="#equalizerModal"><svg-icon name="sort"></svg-icon></button>
+            <button v-on:click="removeItem(playlist.activeItem.id)" type="button" class="btn-circle"><svg-icon name="delete_outline"></svg-icon></button>
         </div>
     </div>
 </script>

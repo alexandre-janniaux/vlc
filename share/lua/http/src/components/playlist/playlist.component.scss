@@ -1,41 +1,17 @@
 .playlistNav {
-    right: 0;
-    width: 20%;
-    height: 100%;
-    position: fixed;
     z-index: 5;
-    top: 0;
-    background-color: $primary-bg-color;
     overflow-x: hidden;
-    padding-top: 10px;
-    transition: 0.5s;
-}
-
-.playlistIcons {
-    font-size: 2em;
-    padding-left: 4%;
-}
-
-.playlistNavMobile {
-    visibility: hidden;
-    right: 0;
-    width: 10%;
-    height: 100%;
-    position: fixed;
-    z-index: 5;
-    top: 0;
-    background-color: $primary-bg-color;
-    overflow-x: hidden;
-    padding-top: 2%;
+    padding-top: 40px;
     transition: 0.5s;
 }
 
 .btn-circle {
     text-align: center;
-    padding: 6px 0;
+    padding: 0;
     border-radius: 15px;
     border: 0;
-    background-color: $primary-bg-color;
+    background-color: transparent;
+    line-height: 0;
     .svg-icon {
         width: 1.5rem;
         height: 1.5rem;
@@ -58,16 +34,13 @@
     border-radius: 35px;
 }
 
-.playlistHeader{
-    color: black;
-    padding-left: 5%;
-    padding-right: 5%;
+#playlist {
+    max-height: calc(100% - 100px);
+    background-color: white;
 }
 
-#playlist {
-    width:21.5%;
-    height: 100%;
-    background-color: white;
+.playlist-header {
+    margin: 5px 8px;
 }
 
 @media screen and (min-device-width : 320px) and (max-device-width : 480px) {

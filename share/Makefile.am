@@ -5,6 +5,8 @@ EXTRA_DIST =
 
 JS_TARGETS = --js $(srcdir)/lua/http/src/services/initialize.service.js \
 --js $(srcdir)/lua/http/src/utils/lang/index.js \
+--js $(srcdir)/lua/http/src/utils/time/index.js \
+--js $(srcdir)/lua/http/src/utils/filters/duration.js \
 --js $(srcdir)/lua/http/src/services/playlist.service.js \
 --js $(srcdir)/lua/http/src/services/status.service.js \
 --js $(srcdir)/lua/http/src/services/vlm_cmd.service.js \
@@ -20,6 +22,9 @@ JS_TARGETS = --js $(srcdir)/lua/http/src/services/initialize.service.js \
 --js $(srcdir)/lua/http/src/components/controls/filebrowser.component.js \
 --js $(srcdir)/lua/http/src/components/vlm/vlm.component.js \
 --js $(srcdir)/lua/http/src/components/equalizer/equalizer.component.js \
+--js $(srcdir)/lua/http/src/components/library/library.component.js \
+--js $(srcdir)/lua/http/src/components/library-item/library-item.component.js \
+--js $(srcdir)/lua/http/src/components/main-view/main-view.component.js \
 --js $(srcdir)/lua/http/src/components/track-synchronisation/tracksync.component.js \
 --js $(srcdir)/lua/http/src/components/sot/stream.manager.component.js \
 --js $(srcdir)/lua/http/src/components/player/player.component.js \
@@ -31,6 +36,7 @@ JS_VENDORS_TARGETS = --js $(srcdir)/lua/http/src/vendors/jquery/jquery.js \
 --js $(srcdir)/lua/http/src/vendors/bootstrap/js/dist/index.js \
 --js $(srcdir)/lua/http/src/vendors/bootstrap/js/dist/util.js \
 --js $(srcdir)/lua/http/src/vendors/bootstrap/js/dist/modal.js \
+--js $(srcdir)/lua/http/src/vendors/bootstrap/js/dist/collapse.js \
 --js $(srcdir)/lua/http/src/vendors/vue/vue.js \
 --js $(srcdir)/lua/http/src/vendors/vue/vue-router.js \
 --js $(srcdir)/lua/http/src/vendors/vue/vuex.js \

@@ -2,8 +2,12 @@ Vue.component('playlist-buttons', {
     template: '#button-template',
     computed: {
         ...Vuex.mapState({
-            status: state => state.status.data
+            status: state => state.status.data,
+            playlist: state => state.playlist
         }),
+        ...Vuex.mapGetters('playlist', {
+            currentItem: 'getCurrentItem'
+        })
     },
     methods: {
         toggleRepeat() {
@@ -14,6 +18,9 @@ Vue.component('playlist-buttons', {
         },
         toggleRandom() {
             this.$store.dispatch('status/toggleRandom');
+        },
+        removeItem(id) {
+            this.$store.dispatch('playlist/removeItem', id);
         }
     }
 });

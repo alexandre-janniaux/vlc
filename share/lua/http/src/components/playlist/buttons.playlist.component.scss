@@ -1,0 +1,14 @@
+.playlist-actions {
+    background-color: var(--playlist-action-bg-color);
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    left: 0;
+    padding: 5px 8px;
+    .disabled {
+        color: var(--playlist-action-text-color);
+        .svg-icon {
+            color: var(--playlist-action-text-color);
+        }
+    }
+}

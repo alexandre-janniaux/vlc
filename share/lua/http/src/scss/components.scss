@@ -1,9 +1,12 @@
 // components.scss
 
 @import '../components/player/plyr.lib.custom.scss';
+@import '../components/library/library.component.scss';
+@import '../components/library-item/library-item.component.scss';
 @import '../components/player/player.component.scss';
 @import '../components/controls/sidenav.component.scss';
 @import '../components/playlist/playlist.component.scss';
 @import '../components/playlist/playlist_item.component.scss';
+@import '../components/playlist/buttons.playlist.component.scss';
 @import '../components/vlm/vlm.component.scss';
 @import '../components/svg-icon/svg-icon.component.scss';

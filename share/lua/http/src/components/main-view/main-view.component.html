@@ -1,0 +1,57 @@
+<script type="text/x-template" id="main-view-template">
+    <div>
+        <div class="container-fluid fixed-top primary-navbar d-flex align-content-center align-items-center text-center justify-content-center">
+            <div v-on:click="setLibraryView()" class="d-flex align-items-center h-100">
+                <button v-on:click="" class="btn btn-icon">
+                    <svg-icon name="local_movies"></svg-icon>
+                    <span>Video</span>
+                </button>
+                <button v-on:click="" class="btn btn-icon">
+                    <svg-icon name="audiotrack"></svg-icon>
+                    <span>Music</span>
+                </button>
+                <button v-on:click="" class="btn btn-icon">
+                    <svg-icon name="settings_input_antenna"></svg-icon>
+                    <span>Network</span>
+                </button>
+            </div>
+        </div>
+        <div class="container-fluid fixed-top secondary-navbar">
+            <div class="d-flex h-100 position-relative show collapse justify-content-between align-items-center">
+                <div class="flex-1 text-left">
+                    <button v-on:click="" class="btn btn-circle"><svg-icon name="sort"></svg-icon></button>
+                </div>
+                <div class="flex-1 text-center">
+                    <button class="btn btn-link">Albums</button>
+                    <button class="btn btn-link">Artists</button>
+                    <button class="btn btn-link">Genres</button>
+                    <button class="btn btn-link">Tracks</button>
+                </div>
+                <div class="flex-1 text-right">
+                    <button v-on:click="" class="btn-circle"><svg-icon name="filter_list_alt"></svg-icon></button>
+                    <a data-toggle="collapse" href="#" data-target=".collapse" role="button" class="text-white toggler px-2">
+                        <svg-icon name="playlist_play"></svg-icon>
+                    </a>
+                    <button v-on:click="" class="btn-circle"><svg-icon name="more-horizontal"></svg-icon></button>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid px-0" :class="mainView === 'player' ? 'overlay': 'push'">
+            <div class="row collapse show no-gutters d-flex h-100 position-relative">
+                <div class="col">
+                    <player v-if="mainView === 'player'"></player>
+                    <library v-else></library>
+                </div>
+                <div class="col-3 p-0 h-100 w-sidebar navbar-collapse collapse d-none d-md-flex sidebar show">
+                    <!-- fixed sidebar -->
+                    <div class="navbar-dark position-fixed h-100 align-self-start w-sidebar">
+                        <h6 class="px-3 pt-3"><a data-toggle="collapse" class="px-1 d-inline d-md-none text-white" href="#" data-target=".collapse">
+                        </a>
+                        </h6>
+                        <playlist></playlist>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

@@ -20,8 +20,11 @@ const actions = {
     toggleRepeat() {
         statusService.toggleRepeat();
     },
-    play({}, id) {
-        statusService.play(id);
+    play({ dispatch }, id) {
+        statusService.play(id)
+            .then(() => {
+                dispatch('playlist/fetchPlaylist', {}, {root:true})
+            });
     },
     pause() {
         statusService.pause();

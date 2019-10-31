@@ -1,6 +1,30 @@
 .playlist-item {
     text-align: center;
     border: 0;
+    border-radius: 0;
     margin-bottom: 0.2em;
-    background-color: white;
+    width: 100%;
+    &.current {
+        font-weight: bold;
+    }
+    &.active {
+        background-color: var(--highlight-color);
+        color: #fff;
+    }
+    &:focus,
+    &:hover {
+        text-decoration: none;
+        color: #fff;
+    }
+    .item-name {
+        text-overflow: ellipsis;
+        max-width: 60%;
+        overflow: hidden;
+        text-align: left;
+    }
+    .img-art {
+        width: 40px;
+        height: 45px;
+        object-fit: cover;
+    }
 }

@@ -1,33 +1,23 @@
 // initial state
 const state = {
-    playlist: true,
-    navbar: true
+    mainView: 'player'
 };
 
 const getters = {};
 
 const actions = {
-    openPlaylist({ commit }) {
-        commit('setPlaylistOpened', true);
+    setLibraryView({ commit }) {
+        commit('setMainView', 'library');
     },
-    closePlaylist({ commit }) {
-        commit('setPlaylistOpened', false);
-    },
-    openNavbar({ commit }) {
-        commit('setNavbarOpened', true);
-    },
-    closeNavbar({ commit }) {
-        commit('setNavbarOpened', false);
+    setPlayerView({ commit }) {
+        commit('setMainView', 'player');
     }
 };
 
 const mutations = {
-    setPlaylistOpened(state, opened) {
-        state.playlist = opened;
-    },
-    setNavbarOpened(state, opened) {
-        state.navbar = opened;
-    },
+    setMainView(state, value) {
+        state.mainView = value;
+    }
 };
 
 export default {

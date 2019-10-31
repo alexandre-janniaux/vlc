@@ -43,15 +43,6 @@ function vueInit() {
                     }
                 });
 
-                $('#mobilePlaylistNavButton').on('click', () => {
-                    if ($(window).width() <= 480 && $('#sideNav').width() === '60%') {
-                        this.$store.dispatch('layout/closeNavbar');
-                        this.$store.dispatch('layout/openPlaylist');
-                    } else {
-                        this.$store.dispatch('layout/openPlaylist');
-                    }
-                });
-
                 const container = $('#playlistNav');
                 if ($(window).width() <= 480 && !container.is(e.target) && container.has(e.target).length === 0 && container.css('width') !== '0px') {
                     this.$store.dispatch('layout/closePlaylist');
