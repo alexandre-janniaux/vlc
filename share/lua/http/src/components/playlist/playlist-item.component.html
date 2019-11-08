@@ -1,9 +1,20 @@
 <!-- Playlist item Template -->
 <script type="text/x-template" id="playlist-item-template">
-    <button v-on:click="setActiveItem(item)" v-on:dblclick="play(item.uri, item.id)" class="btn btn-link p-2 playlist-item d-flex justify-content-between align-items-center"
+    <button v-on:click="setActiveItem(item)" v-on:dblclick="play(item.uri, item.id)" class="btn btn-link p-2 playlist-item d-flex justify-content-between align-items-start position-relative"
         :class="{ current: item.current === 'current', active: item.active }">
-        <img class="img-art" :src="item.src" @error="onImgError(item)">
-        <span class="item-name">{{ item.name }}</span>
-        <span>{{ item.duration | formatDuration }}</span>
+        <div class="d-flex align-items-start">
+            <img class="img-art" :src="item.src" @error="onImgError(item)">
+            <span v-if="item.current === 'current'" class="item-duration">{{ item.duration | formatDuration }}</span>
+            <span v-else class="item-duration">10 min left</span>
+            <span class="item-nb">{{ item.nb }}</span>
+            <div class="item-detail d-flex flex-column mx-2">
+                <span class="item-title text-truncate">{{ item.name }}</span>
+                <span class="item-subtitle text-truncate">{{ item.subtitle }}</span>
+            </div>
+        </div>
+        <div class="d-flex">
+            <svg-icon name="more_vert"></svg-icon>
+        </div>
+        <div class="progress-bar" :style="{width: item.progress}"></div>
     </button>
 </script>

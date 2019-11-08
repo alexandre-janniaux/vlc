@@ -6,8 +6,26 @@
 // custom global styles
 body {
     background-color: var(--body-bg-color);
-    overflow: hidden;
+    overflow-x: hidden;
     color: var(--primary-text-color);
+}
+
+::-webkit-scrollbar {
+    height: 5px;
+    width: 5px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+::-webkit-scrollbar-thumb:window-inactive {
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .dropdown-divider {
@@ -21,8 +39,16 @@ $sidenav-width: 350px;
 
 .primary-navbar {
     background-color: var(--main-navbar-bg-color);
+    border-bottom: 1px solid var(--divider-color);
     z-index: 1061;
-    height: 30px;
+    height: 40px;
+    box-shadow: 0px 4px 8px -3px rgba(17, 17, 17, .06);
+    .btn-icon {
+        opacity: 0.4;
+        &.active {
+            opacity: 1;
+        }
+    }
 }
 
 .btn {
@@ -36,10 +62,10 @@ $sidenav-width: 350px;
 }
 
 .secondary-navbar {
-    top: 30px;
-    height: 30px;
+    top: 40px;
+    height: 35px;
     .btn-link {
-        margin-bottom: 1px;
+        margin-bottom: -5px;
         padding-bottom: 1px;
         border-radius: 0;
         margin-top: 1px;
@@ -48,23 +74,35 @@ $sidenav-width: 350px;
             text-decoration: none;
         }
         &.active {
-            border-bottom: 1px solid var(--highlight-color);
+            border-bottom: 2px solid var(--highlight-color);
         }
     }
 }
 
 .secondary-navbar {
     background-color: var(--secondary-navbar-bg-color);
-    border-bottom: var(--secondary-navbar-border-color);
+    // border-bottom: 1px solid var(--secondary-navbar-border-color);
     z-index: 1061;
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
 }
 
 .w-sidebar {
+    $top: 73px;
     width: $sidenav-width;
     max-width: $sidenav-width;
-    top: 0;
+    top: $top;
     z-index: 1060;
     background-color: var(--sidenav-bg-color);
+    height: 100%;
+}
+
+.sidebar {
+    height: calc(100% - 73px) !important;
+}
+
+.w-sidebar-content {
+    width: $sidenav-width;
+    max-width: $sidenav-width;
     border: 1px solid var(--sidenav-border-color);
 }
 
@@ -84,15 +122,6 @@ $sidenav-width: 350px;
     }
 }
 
-.toggler {
-    $height: 30px;
-    height: $height;
-    display: inline-block;
-    .svg-icon {
-        margin-top: 3px;
-    }
-}
-
 .flex-1 {
     flex: 1;
 }
@@ -107,7 +136,7 @@ $sidenav-width: 350px;
 .row.collapse {
     margin-right: -$sidenav-width;
     right: 0;
-	transition: all .15s linear;
+	transition: width .15s linear, margin .15s linear;
 }
 
 .row.collapse.show {
@@ -117,7 +146,7 @@ $sidenav-width: 350px;
 .row.collapsing {
     margin-right: -$sidenav-width;
     right: -0.05%;
-	transition: all .15s linear;
+	transition: width .15s linear, margin .15s linear;
 }
 
 .overlay {
@@ -131,33 +160,35 @@ $sidenav-width: 350px;
         overflow: visible;
     }
 
-    .row > .sidebar.collapse {
+    .row > .w-sidebar.collapse {
         display: flex !important;
-        margin-right: -100% !important;
-        transition: all .3s linear;
+        // margin-right: -100% !important;
+        transition: width .15s linear, margin .15s linear;
         position: fixed;
         z-index: 1050;
         max-width: 0;
         min-width: 0;
+        width: 0;
         flex-basis: auto;
-        .w-sidebar {
-            width: 0;
-        }
+        // .w-sidebar {
+        //     width: 0;
+        // }
     }
 
-    .row > .sidebar.collapse.show {
+    .row > .w-sidebar.collapse.show {
         margin-right: 0 !important;
         max-width: 100%;
+        width: $sidenav-width;
         min-width: initial;
         .w-sidebar {
             width: $sidenav-width;
         }
     }
 
-    .row > .sidebar.collapsing {
+    .row > .w-sidebar.collapsing {
         display: flex !important;
-        margin-right: -10% !important;
-        transition: all .3s linear !important;
+        // margin-right: -10% !important;
+        transition: width .15s linear, margin .15s linear !important;
         position: fixed;
         z-index: 1050;
         min-width: initial;
@@ -172,10 +203,13 @@ $sidenav-width: 350px;
         overflow: visible;
     }
 
+    .row > .sidebar {
+        transition: width .3s linear, margin .3s linear;
+    }
+
     .row > .sidebar.collapse {
         display: flex !important;
         margin-right: -100% !important;
-        transition: all .3s linear;
         position: fixed;
         z-index: 1050;
         max-width: 0;
@@ -193,7 +227,7 @@ $sidenav-width: 350px;
     .row > .sidebar.collapsing {
         display: flex !important;
         margin-right: -10% !important;
-        transition: all .3s linear !important;
+        transition: margin .3s linear, width .3s linear !important;
         position: fixed;
         z-index: 1050;
         min-width: initial;

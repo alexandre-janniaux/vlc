@@ -1,7 +1,6 @@
 .playlistNav {
     z-index: 5;
-    overflow-x: hidden;
-    padding-top: 40px;
+    overflow: hidden;
     transition: 0.5s;
 }
 
@@ -35,12 +34,13 @@
 }
 
 #playlist {
-    max-height: calc(100% - 100px);
-    background-color: white;
+    max-height: calc(100% - 84px);
+    background-color: #fff;
+    overflow-y: auto;
 }
 
 .playlist-header {
-    margin: 5px 8px;
+    margin: 8px 8px;
 }
 
 @media screen and (min-device-width : 320px) and (max-device-width : 480px) {
