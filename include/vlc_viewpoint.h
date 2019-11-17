@@ -51,8 +51,8 @@ struct vlc_viewpoint_t {
 
 static inline void vlc_viewpoint_init( vlc_viewpoint_t *p_vp )
 {
-    p_vp->quat[0] = 1;
-    p_vp->quat[1] = p_vp->quat[2] = p_vp->quat[3] = 0;
+    p_vp->quat[3] = 1;
+    p_vp->quat[0] = p_vp->quat[1] = p_vp->quat[2] = 0;
     p_vp->fov = FIELD_OF_VIEW_DEGREES_DEFAULT;
 }
 
