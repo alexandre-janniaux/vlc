@@ -25,6 +25,7 @@
 #endif
 
 #include <vlc_viewpoint.h>
+#include <assert.h>
 
 /* Quaternion to/from Euler conversion.
  * Original code from:
@@ -39,29 +40,63 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
     // if the quaternion is normalised, unit is one
     // otherwise it is correction factor
     float unit = sqx + sqy + sqz + sqw;
-    float test = q[1] * q[3] - q[0] * q[2];
+
+    /*
+     *     ⎡      2       2                                              ⎤
+     *     ⎢- 2⋅gy  - 2⋅gz  + 1   2⋅gw⋅gz + 2⋅gx⋅gy   -2⋅gw⋅gy + 2⋅gx⋅gz ⎥
+     *     ⎢                                                             ⎥
+     * M = ⎢                           2       2                         ⎥
+     *     ⎢-2⋅gw⋅gz + 2⋅gx⋅gy   - 2⋅gx  - 2⋅gz  + 1   2⋅gw⋅gx + 2⋅gy⋅gz ⎥
+     *     ⎢                                                             ⎥
+     *     ⎢                                                2       2    ⎥
+     *     ⎣ 2⋅gw⋅gy + 2⋅gx⋅gz   -2⋅gw⋅gx + 2⋅gy⋅gz   - 2⋅gx  - 2⋅gy  + 1⎦
+     */
+
+
+    /*
+     *     ⎡sp⋅sr⋅sy + cr⋅cy    sp⋅sy⋅cr - sr⋅cy    sy⋅cp⎤
+     *     ⎢                                             ⎥
+     * M = ⎢    sr⋅cp              cp⋅cr             -sp ⎥
+     *     ⎢                                             |
+     *     ⎣sp⋅sr⋅cy - sy⋅cr    sp⋅cr⋅cy + sr⋅sy    cp⋅cy⎦
+     */
+
+    /* The test value is extracted from M_23 = -sin(pitch).
+     * When abs(M_23 / 2) > = 0.4999, the cos(pitch) will be 0 and we need a
+     * fallback method to get the other angles in the singularity. */
+    float test = -q[3]*q[0] - q[1]*q[2];
+
+    assert(fabs(unit -1.f) < 0.1f);
+
+    const float M_11 = 1.f - 2.f * (sqy + sqz);
 
     if (test > 0.499 * unit)
     {
         // singularity at north pole
-        *yaw = -2 * atan2(q[0], q[3]);
+        *yaw = -asin(M_11);
         *pitch = M_PI / 2;
         *roll = 0;
     }
     else if (test < -0.499 * unit)
     {
         // singularity at south pole
-        *yaw = 2 * atan2(q[0], q[3]);
+        *yaw = asin(M_11);
         *pitch = -M_PI / 2;
         *roll = 0;
     }
     else
     {
-        *yaw   = atan2(2 * (q[2] * q[3] + q[0] * q[1]),
-                       unit - 2 * (q[1]*q[1] + q[2]*q[2]));
-        *pitch = asin(2 * test / unit);
-        *roll  = atan2(2 * (q[0] * q[3] + q[1] * q[2]),
-                       unit - 2 * (q[0]*q[0] + q[1]*q[1]));
+        const float M_13 = -2.f * (q[3]*q[1] + q[0]*q[2]);
+        const float M_33 =  1.f - 2.f * (sqx + sqy);
+        *yaw   = atan2( M_13, M_33 );
+
+        const float M_23 = 2.f * (q[3]*q[0] + q[1]*q[2]);
+        const float M_21 = 2.f * (q[0]*q[1] - q[3]*q[2]);
+        const float M_22 = 1.f - 2.f * (sqx + sqz);
+        *pitch = atan2( -M_23, sqrt( M_21*M_21 + M_22*M_22 ) );
+
+        /* Roll = atan2( M_21, M_22 ) */
+        *roll  = -atan2( M_21, M_22 );
     }
 }
 
@@ -123,7 +158,7 @@ void vlc_viewpoint_from_euler(vlc_viewpoint_t *vp,
                               float yaw, float pitch, float roll)
 {
     /* convert angles from degrees into radians */
-    yaw   = yaw   * (float)M_PI / 180.f + (float)M_PI_2;
+    yaw   = yaw   * (float)M_PI / 180.f /*+ (float)M_PI_2*/;
     pitch = pitch * (float)M_PI / 180.f;
     roll  = roll  * (float)M_PI / 180.f;
 
@@ -136,7 +171,7 @@ void vlc_viewpoint_to_euler(const vlc_viewpoint_t *vp,
     QuaternionToEuler(yaw, pitch, roll, vp->quat);
 
     /* convert angles from radian into degrees */
-    *yaw   = 180.f / (float)M_PI * (*yaw - (float)M_PI_2);
+    *yaw   = 180.f / (float)M_PI * (*yaw /*- (float)M_PI_2*/);
     *pitch = 180.f / (float)M_PI * (*pitch);
     *roll  = 180.f / (float)M_PI * (*roll);
 }

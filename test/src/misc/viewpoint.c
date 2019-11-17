@@ -81,15 +81,19 @@ reciprocal_euler(float epsilon, float yaw, float pitch, float roll)
     fprintf(stderr, "converted:  yaw=%f, pitch=%f, roll=%f\n", yaw2, pitch2, roll2);
     fprintf(stderr, "==========================================\n");
 
-    float d1 = fmodf(360.f + (yaw   - yaw2),   360.f);
-    float d2 = fmodf(180.f + (pitch - pitch2), 180.f);
-    float d3 = fmodf(360.f + (roll  - roll2),  360.f);
+    const float MAX_YAW   = 180.f;
+    const float MAX_PITCH = 360.f;
+    const float MAX_ROLL  = 180.f;
+
+    float dy = fmodf(MAX_YAW   + (yaw   - yaw2),   MAX_YAW);
+    float dp = fmodf(MAX_PITCH + (pitch - pitch2), MAX_PITCH);
+    float dr = fmodf(MAX_ROLL  + (roll  - roll2),  MAX_ROLL);
 
     /* Check the two borders of the tore, 0.f and 180.f or 360.f
      * depending on the range of the compared value. */
-    return (d1 < epsilon || 360.f - d1 < epsilon) &&
-           (d2 < epsilon || 180.f - d2 < epsilon) &&
-           (d3 < epsilon || 360.f - d3 < epsilon);
+    return (dy < epsilon || MAX_YAW   - dy < epsilon) &&
+           (dp < epsilon || MAX_PITCH - dp < epsilon) &&
+           (dr < epsilon || MAX_ROLL  - dr < epsilon);
 }
 
 static void
@@ -266,8 +270,8 @@ int main( void )
 {
     test_init();
 
-    test_conversion_viewpoint_mat4x4();
     test_conversion_euler_quaternion();
+    test_conversion_viewpoint_mat4x4();
 
     return 0;
 }
