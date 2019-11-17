@@ -86,7 +86,7 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
     }
     else
     {
-        const float M_13 = -2.f * (q[3]*q[1] + q[0]*q[2]);
+        const float M_13 =  2.f * (q[0]*q[2] - q[3]*q[1]);
         const float M_33 =  1.f - 2.f * (sqx + sqy);
         *yaw   = atan2( M_13, M_33 );
 
@@ -158,7 +158,7 @@ void vlc_viewpoint_from_euler(vlc_viewpoint_t *vp,
                               float yaw, float pitch, float roll)
 {
     /* convert angles from degrees into radians */
-    yaw   = yaw   * (float)M_PI / 180.f /*+ (float)M_PI_2*/;
+    yaw   = yaw   * (float)M_PI / 180.f + (float)M_PI_2;
     pitch = pitch * (float)M_PI / 180.f;
     roll  = roll  * (float)M_PI / 180.f;
 
@@ -171,7 +171,7 @@ void vlc_viewpoint_to_euler(const vlc_viewpoint_t *vp,
     QuaternionToEuler(yaw, pitch, roll, vp->quat);
 
     /* convert angles from radian into degrees */
-    *yaw   = 180.f / (float)M_PI * (*yaw /*- (float)M_PI_2*/);
+    *yaw   = 180.f / (float)M_PI * (*yaw - (float)M_PI_2);
     *pitch = 180.f / (float)M_PI * (*pitch);
     *roll  = 180.f / (float)M_PI * (*roll);
 }
