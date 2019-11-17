@@ -66,9 +66,7 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
      * fallback method to get the other angles in the singularity. */
     float test = -q[3]*q[0] - q[1]*q[2];
 
-    assert(fabs(unit -1.f) < 0.1f);
-
-    const float M_11 = 1.f - 2.f * (sqy + sqz);
+    const float M_11 = 1.f - 2.f * (sqy + sqz) / unit;
 
     if (test > 0.499 * unit)
     {
@@ -86,13 +84,13 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
     }
     else
     {
-        const float M_13 =  2.f * (q[0]*q[2] - q[3]*q[1]);
-        const float M_33 =  1.f - 2.f * (sqx + sqy);
+        const float M_13 =  2.f * (q[0]*q[2] - q[3]*q[1]) / unit;
+        const float M_33 =  1.f - 2.f * (sqx + sqy) / unit;
         *yaw   = atan2( M_13, M_33 );
 
-        const float M_23 = 2.f * (q[3]*q[0] + q[1]*q[2]);
-        const float M_21 = 2.f * (q[0]*q[1] - q[3]*q[2]);
-        const float M_22 = 1.f - 2.f * (sqx + sqz);
+        const float M_23 = 2.f * (q[3]*q[0] + q[1]*q[2]) / unit;
+        const float M_21 = 2.f * (q[0]*q[1] - q[3]*q[2]) / unit;
+        const float M_22 = 1.f - 2.f * (sqx + sqz) / unit;
         *pitch = atan2( -M_23, sqrt( M_21*M_21 + M_22*M_22 ) );
 
         /* Roll = atan2( M_21, M_22 ) */
