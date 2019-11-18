@@ -553,6 +553,18 @@ function hotkey(name, client, value)
     end
 end
 
+function rd_list(name, client)
+    list_rd = vlc.rd.list()
+    for k, v in pairs(list_rd) do
+        client:append(" + " .. v.name .. " (" .. v.longname .. ")")
+    end
+end
+
+function rd_select(name, client, value)
+    rd = vlc.rd.new(value)
+    client:append(value .. " created")
+end
+
 --[[ Declare commands, register their callback functions and provide
      help strings here.
      Syntax is:
@@ -627,6 +639,8 @@ commands_ordered = {
     { "logout"; { func = logout; help = "exit (if in a socket connection)" } };
     { "quit"; { func = quit; help = "quit VLC (or logout if in a socket connection)" } };
     { "shutdown"; { func = shutdown; help = "shutdown VLC" } };
+    { "rdlist"; { func = rd_list; help = "list renderer discoverers" } };
+    { "rdselect"; { func = rd_select; args = "[X]"; help = "select current renderer discoverer" } };
     }
 
 commands = {}
