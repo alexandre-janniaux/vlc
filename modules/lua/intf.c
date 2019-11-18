@@ -274,6 +274,7 @@ static int Start_LuaIntf( vlc_object_t *p_this, const char *name )
 #if defined(_WIN32) && !VLC_WINSTORE_APP
     luaopen_win( L );
 #endif
+    luaopen_rd( L );
 
     /* clean up */
     lua_pop( L, 1 );
