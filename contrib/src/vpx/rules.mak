@@ -74,6 +74,7 @@ ifeq ($(ARCH),$(filter $(ARCH), arm aarch64))
 VPX_OS := darwin
 else
 VPX_OS := darwin11
+VPX_CROSS :=
 endif
 else ifdef HAVE_SOLARIS
 VPX_OS := solaris
@@ -126,7 +127,7 @@ ifdef HAVE_MACOSX
 VPX_CONF += --sdk-path=$(MACOSX_SDK) --extra-cflags="$(EXTRA_CFLAGS)"
 endif
 ifdef HAVE_IOS
-VPX_CONF += --sdk-path=$(IOS_SDK) --enable-vp8-decoder
+VPX_CONF += --sdk-path=$(IOS_SDK) --enable-vp8-decoder --disable-tools
 ifdef HAVE_TVOS
 VPX_LDFLAGS := -L$(IOS_SDK)/usr/lib -isysroot $(IOS_SDK) -mtvos-version-min=9.0
 else
