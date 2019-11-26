@@ -21,6 +21,7 @@ soxr: soxr-$(SOXR_VERSION)-Source.tar.xz .sum-soxr
 	$(APPLY) $(SRC)/soxr/0003-add-aarch64-support.patch
 	$(APPLY) $(SRC)/soxr/0004-arm-fix-SIGILL-when-doing-divisions-on-some-old-arch.patch
 	$(APPLY) $(SRC)/soxr/find_ff_pkgconfig.patch
+	$(APPLY) $(SRC)/soxr/0005-cmake-SIMD32-fix-detection-for-aarch64.patch
 	$(call pkg_static,"src/soxr.pc.in")
 	$(MOVE)
 

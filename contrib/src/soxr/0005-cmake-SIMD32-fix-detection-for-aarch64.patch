@@ -1,0 +1,35 @@
+From d68eedd3cfe632c50e3859219f3868bedc3a4a34 Mon Sep 17 00:00:00 2001
+From: Alexandre Janniaux <ajanni@videolabs.io>
+Date: Tue, 26 Nov 2019 11:38:25 +0100
+Subject: [PATCH] cmake: SIMD32: fix ARM detection for aarch64
+
+When compiling for android for arm64, the settings exposed to cmake will
+be the following:
+
++ Android: API '21'
++ Architecture: 'arm64'
++ ABI: 'arm64-v8a'
++ Processor: 'aarch64'
+
+So CMAKE_SYSTEM_PROCESSOR must also be checked for aarch64 so as to
+generate NEON code.
+---
+ cmake/Modules/FindSIMD32.cmake | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/cmake/Modules/FindSIMD32.cmake b/cmake/Modules/FindSIMD32.cmake
+index 9e42373..eaf5864 100644
+--- a/cmake/Modules/FindSIMD32.cmake
++++ b/cmake/Modules/FindSIMD32.cmake
+@@ -9,7 +9,8 @@
+
+ if (DEFINED SIMD32_C_FLAGS)
+   set (TRIAL_C_FLAGS)
+-elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
++elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm"
++        OR CMAKE_SYSTEM_PROCESSOR MATCHES "^aarch64")
+   set (TRIAL_C_FLAGS
+     # Gcc
+     "-mfpu=neon-vfpv4 -mcpu=cortex-a7"
+--
+2.24.0
