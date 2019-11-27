@@ -1,9 +1,7 @@
 /*****************************************************************************
  * audiomix.c: audiomix stream output module
  *****************************************************************************
- * Copyright (C) 2003-2004 VLC authors and VideoLAN
- *
- * Authors: Laurent Aimar <fenrir@via.ecp.fr>
+ * Copyright (C) 2019 Videolabs
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -77,25 +75,25 @@ typedef struct
 /*****************************************************************************
  * Open:
  *****************************************************************************/
-static int Open( vlc_object_t *p_this )
+static int Open(vlc_object_t *p_this)
 {
     sout_stream_t     *p_stream = (sout_stream_t*)p_this;
-    sout_stream_sys_t *p_sys;
+    sout_stream_sys_t *sys;
 
-    p_stream->p_sys = p_sys = malloc( sizeof( sout_stream_sys_t ) );
-    if( p_sys == NULL )
+    p_stream->p_sys = sys = malloc(sizeof(*sys));
+    if (sys == NULL)
         return VLC_EGENERIC;
 
-    if( !p_stream->p_next )
+    if (!p_stream->p_next)
     {
-        free( p_sys );
+        free(sys);
         return VLC_EGENERIC;
     }
     p_stream->pf_add    = Add;
     p_stream->pf_del    = Del;
     p_stream->pf_send   = Send;
 
-    TAB_INIT( p_sys->i_id, p_sys->id );
+    TAB_INIT(sys->i_id, sys->id);
 
     return VLC_SUCCESS;
 }
@@ -103,23 +101,24 @@ static int Open( vlc_object_t *p_this )
 /*****************************************************************************
  * Close:
  *****************************************************************************/
-static void Close( vlc_object_t * p_this )
+static void Close (vlc_object_t * p_this)
 {
     sout_stream_t     *p_stream = (sout_stream_t*)p_this;
-    sout_stream_sys_t *p_sys = p_stream->p_sys;
+    sout_stream_sys_t *sys = p_stream->p_sys;
     int i;
 
-    for( i = 0; i < p_sys->i_id; i++ )
+    for (i = 0; i < sys->i_id; i++)
     {
-        sout_stream_id_sys_t *id = p_sys->id[i];
+        sout_stream_id_sys_t *id = sys->id[i];
 
-        sout_StreamIdDel( p_stream->p_next, id->id );
-        es_format_Clean( &id->fmt );
-        free( id );
+        if (id->fmt.i_cat != AUDIO_ES)
+            sout_StreamIdDel(p_stream->p_next, id->id);
+        es_format_Clean(&id->fmt);
+        free(id);
     }
-    TAB_CLEAN( p_sys->i_id, p_sys->id );
+    TAB_CLEAN(sys->i_id, sys->id);
 
-    free( p_sys );
+    free(sys);
 }
 
 /*****************************************************************************
@@ -133,17 +132,22 @@ static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt )
     /* TODO: different state for audio ES and video ES */
     /* TODO: use PCM only, warn if not PCM */
 
-    id = malloc( sizeof( sout_stream_id_sys_t ) );
-    if(id == NULL)
+    id = malloc(sizeof(sout_stream_id_sys_t));
+    if (id == NULL)
         return NULL;
-    es_format_Copy( &id->fmt, p_fmt );
-    id->id               = sout_StreamIdAdd( p_stream->p_next, &id->fmt );
-    if( id->id == NULL )
+    es_format_Copy(&id->fmt, p_fmt);
+
+    /* Add this stream_id only if it's not audio (bypass ES). */
+    if (p_fmt->i_cat != AUDIO_ES)
     {
-        free( id );
-        return NULL;
+        id->id = sout_StreamIdAdd(p_stream->p_next, &id->fmt);
+        if (id->id == NULL)
+        {
+            free(id);
+            return NULL;
+        }
+        TAB_APPEND(sys->i_id, sys->id, id);
     }
-    TAB_APPEND( p_sys->i_id, p_sys->id, id );
 
     return id;
 }
@@ -151,23 +155,22 @@ static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt )
 /*****************************************************************************
  * Del:
  *****************************************************************************/
-static void Del( sout_stream_t *p_stream, void *_id )
+static void Del(sout_stream_t *p_stream, void *opaque_id)
 {
     VLC_UNUSED(p_stream);
-    sout_stream_id_sys_t *id = (sout_stream_id_sys_t *)_id;
-    id->b_used = false;
+    sout_stream_id_sys_t *id = opaque_id;
+
+    /* We don't forward streams for input except if they are non-audio streams
+     * so there is no need to delete them otherwise. */
+    if (id->fmt.i_cat != AUDIO_ES)
+        sout_StreamIdDel(p_stream->p_next, p_stream);
 }
 
 /*****************************************************************************
  * Send:
  *****************************************************************************/
-static int Send( sout_stream_t *p_stream, void *_id, block_t *p_buffer )
+static int Send(sout_stream_t *p_stream, void *opaque_id, block_t *p_buffer)
 {
-    sout_stream_id_sys_t *id = (sout_stream_id_sys_t *)_id;
-    if ( id->b_streamswap )
-    {
-        id->b_streamswap = false;
-        p_buffer->i_flags |= BLOCK_FLAG_DISCONTINUITY;
-    }
-    return sout_StreamIdSend( p_stream->p_next, id->id, p_buffer );
+    sout_stream_id_sys_t *id = opaque_id;
+    return sout_StreamIdSend(p_stream->p_next, id->id, p_buffer);
 }

@@ -1,5 +1,6 @@
 soutdir = $(pluginsdir)/stream_out
 
+libstream_out_audiomix_plugin_la_SOURCES = stream_out/audiomix.c
 libstream_out_dummy_plugin_la_SOURCES = stream_out/dummy.c
 libstream_out_cycle_plugin_la_SOURCES = stream_out/cycle.c
 libstream_out_delay_plugin_la_SOURCES = stream_out/delay.c
@@ -32,6 +33,7 @@ libstream_out_transcode_plugin_la_CFLAGS = $(AM_CFLAGS)
 libstream_out_transcode_plugin_la_LIBADD = $(LIBM)
 
 sout_LTLIBRARIES = \
+	libstream_out_audiomix_plugin.la \
 	libstream_out_dummy_plugin.la \
 	libstream_out_cycle_plugin.la \
 	libstream_out_delay_plugin.la \
