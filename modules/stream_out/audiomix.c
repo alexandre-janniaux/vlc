@@ -39,6 +39,7 @@
 #include <vlc_plugin.h>
 #include <vlc_sout.h>
 #include <vlc_block.h>
+#include <vlc_list.h>
 
 /*****************************************************************************
  * Module descriptor
@@ -64,12 +65,12 @@ typedef struct
 {
     es_format_t fmt;
     void          *id;
+    struct vlc_list node;
 } sout_stream_id_sys_t;
 
 typedef struct
 {
-    int              i_id;
-    sout_stream_id_sys_t **id;
+    struct vlc_list es_list;
 } sout_stream_sys_t;
 
 /*****************************************************************************
@@ -84,6 +85,8 @@ static int Open(vlc_object_t *p_this)
     if (sys == NULL)
         return VLC_EGENERIC;
 
+    vlc_list_init(&sys->es_list);
+
     if (!p_stream->p_next)
     {
         free(sys);
@@ -92,8 +95,6 @@ static int Open(vlc_object_t *p_this)
     p_stream->pf_add    = Add;
     p_stream->pf_del    = Del;
     p_stream->pf_send   = Send;
-
-    TAB_INIT(sys->i_id, sys->id);
 
     return VLC_SUCCESS;
 }
@@ -105,18 +106,16 @@ static void Close (vlc_object_t * p_this)
 {
     sout_stream_t     *p_stream = (sout_stream_t*)p_this;
     sout_stream_sys_t *sys = p_stream->p_sys;
-    int i;
 
-    for (i = 0; i < sys->i_id; i++)
+    sout_stream_id_sys_t *es_entry = NULL;
+    vlc_list_foreach(es_entry, &sys->es_list, node)
     {
-        sout_stream_id_sys_t *id = sys->id[i];
-
-        if (id->fmt.i_cat != AUDIO_ES)
-            sout_StreamIdDel(p_stream->p_next, id->id);
-        es_format_Clean(&id->fmt);
-        free(id);
+        if (es_entry->fmt.i_cat != AUDIO_ES)
+            sout_StreamIdDel(p_stream->p_next, es_entry->id);
+        es_format_Clean(&es_entry->fmt);
+        vlc_list_remove(&es_entry->node);
+        free(es_entry);
     }
-    TAB_CLEAN(sys->i_id, sys->id);
 
     free(sys);
 }
@@ -143,11 +142,12 @@ static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt )
         id->id = sout_StreamIdAdd(p_stream->p_next, &id->fmt);
         if (id->id == NULL)
         {
+            es_format_Clean(&id->fmt);
             free(id);
             return NULL;
         }
-        TAB_APPEND(sys->i_id, sys->id, id);
     }
+    vlc_list_append(&id->node, &sys->es_list);
 
     return id;
 }
@@ -157,13 +157,17 @@ static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt )
  *****************************************************************************/
 static void Del(sout_stream_t *p_stream, void *opaque_id)
 {
-    VLC_UNUSED(p_stream);
     sout_stream_id_sys_t *id = opaque_id;
 
     /* We don't forward streams for input except if they are non-audio streams
      * so there is no need to delete them otherwise. */
     if (id->fmt.i_cat != AUDIO_ES)
-        sout_StreamIdDel(p_stream->p_next, p_stream);
+        sout_StreamIdDel(p_stream->p_next, id->id);
+
+    vlc_list_remove(&id->node);
+
+    es_format_Clean(&id->fmt);
+    free(id);
 }
 
 /*****************************************************************************
@@ -172,5 +176,11 @@ static void Del(sout_stream_t *p_stream, void *opaque_id)
 static int Send(sout_stream_t *p_stream, void *opaque_id, block_t *p_buffer)
 {
     sout_stream_id_sys_t *id = opaque_id;
+    if (id->fmt.i_cat == AUDIO_ES)
+    {
+        block_Release(p_buffer);
+        return VLC_SUCCESS;
+    }
+
     return sout_StreamIdSend(p_stream->p_next, id->id, p_buffer);
 }
