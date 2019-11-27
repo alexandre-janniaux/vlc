@@ -40,6 +40,7 @@
 #include <vlc_sout.h>
 #include <vlc_block.h>
 #include <vlc_list.h>
+#include <assert.h>
 
 /*****************************************************************************
  * Module descriptor
@@ -65,12 +66,17 @@ typedef struct
 {
     es_format_t fmt;
     void          *id;
+
+    block_t *block_list;
+    block_t **block_list_head;
+
     struct vlc_list node;
 } sout_stream_id_sys_t;
 
 typedef struct
 {
     struct vlc_list es_list;
+    struct vlc_list audio_list;
 } sout_stream_sys_t;
 
 /*****************************************************************************
@@ -86,6 +92,7 @@ static int Open(vlc_object_t *p_this)
         return VLC_EGENERIC;
 
     vlc_list_init(&sys->es_list);
+    vlc_list_init(&sys->audio_list);
 
     if (!p_stream->p_next)
     {
@@ -110,14 +117,110 @@ static void Close (vlc_object_t * p_this)
     sout_stream_id_sys_t *es_entry = NULL;
     vlc_list_foreach(es_entry, &sys->es_list, node)
     {
-        if (es_entry->fmt.i_cat != AUDIO_ES)
-            sout_StreamIdDel(p_stream->p_next, es_entry->id);
+        sout_StreamIdDel(p_stream->p_next, es_entry->id);
+        es_format_Clean(&es_entry->fmt);
+        vlc_list_remove(&es_entry->node);
+        free(es_entry);
+    }
+
+    vlc_list_foreach(es_entry, &sys->audio_list, node)
+    {
+        /* TODO: should never happen */
+        if (es_entry->block_list)
+            block_ChainRelease(es_entry->block_list);
         es_format_Clean(&es_entry->fmt);
         vlc_list_remove(&es_entry->node);
         free(es_entry);
     }
 
     free(sys);
+}
+
+static size_t ProcessData(sout_stream_t *stream)
+{
+    sout_stream_sys_t *sys = stream->p_sys;
+
+    // TODO: handle PTS, rate
+    const unsigned samplerate = 44100;
+    const unsigned pitch_data = 2;
+
+    /* Compute the maximum amount of data that will be processed. */
+    size_t max_data = SIZE_MAX;
+    sout_stream_id_sys_t *es_stream = NULL;
+    vlc_list_foreach(es_stream, &sys->audio_list, node)
+    {
+        /* If one stream is not ready, we cannot process data and send it
+         * to next stream, wait for more data. */
+        if (es_stream->block_list == NULL)
+        {
+            msg_Info(stream, "Not enough data to process, waiting for more");
+            return 0;
+        }
+
+        msg_Dbg(stream, "ES %p available data: %zu", es_stream, es_stream->block_list->i_buffer);
+        assert (es_stream->block_list->i_buffer > pitch_data);
+
+
+        max_data = __MIN(max_data, es_stream->block_list->i_buffer) & ~((pitch_data<<1)-1);
+    }
+
+    assert(max_data > 0);
+
+    /* Allocate the work memory for the output. */
+    block_t *buffer = block_Alloc(max_data);
+    if (!buffer)
+    {
+        msg_Err(stream, "cannot allocate data");
+        return 0;
+    }
+    memset(buffer->p_buffer, 0, buffer->i_buffer);
+
+    /* Do the actual processing */
+    vlc_list_foreach(es_stream, &sys->audio_list, node)
+    {
+        for (size_t i=0; i<max_data; i+=pitch_data)
+        {
+            unsigned int current = 0;
+            unsigned int value = 0;
+            for (unsigned j=0; j<pitch_data; ++j)
+            {
+                value   = value   << 4 | es_stream->block_list->p_buffer[i+j];
+                current = current << 4 | buffer->p_buffer[i+j];
+            }
+            current += value / 2; // HACK
+
+            for (unsigned j=pitch_data; j>0; --j)
+            {
+                buffer->p_buffer[i+j] = (value >> (j-1)) & 0xFF;
+            }
+        }
+
+        es_stream->block_list->i_buffer -= max_data;
+        es_stream->block_list->p_buffer += max_data;
+
+        /* If we exhausted a block, release it. */
+        if (es_stream->block_list->i_buffer < pitch_data)
+        {
+            msg_Info(stream, "Release block %p", es_stream->block_list);
+            block_t *last_block = es_stream->block_list;
+            /* We reached the last block, reset the block list state. */
+            if (last_block->p_next == NULL)
+                es_stream->block_list_head = &es_stream->block_list;
+
+            es_stream->block_list = es_stream->block_list->p_next;
+
+            block_Release(last_block);
+        }
+    }
+
+    /* Setup metadata on the block and compute next ones. */
+    //block->i_pts = block->i_dts = date_Get(&sys->date);
+    //date_Increment(&sys->date, max_data / pitch_data);
+
+    /* The block is ready to be sent to next stream. */
+    block_Release(buffer);
+
+    return max_data;
 }
 
 /*****************************************************************************
@@ -140,14 +243,22 @@ static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt )
     if (p_fmt->i_cat != AUDIO_ES)
     {
         id->id = sout_StreamIdAdd(p_stream->p_next, &id->fmt);
+
         if (id->id == NULL)
         {
             es_format_Clean(&id->fmt);
             free(id);
             return NULL;
         }
+        vlc_list_append(&id->node, &sys->es_list);
     }
-    vlc_list_append(&id->node, &sys->es_list);
+    else
+    {
+        id->block_list = NULL;
+        id->block_list_head = &id->block_list;
+        vlc_list_append(&id->node, &sys->audio_list);
+    }
+
 
     return id;
 }
@@ -175,10 +286,16 @@ static void Del(sout_stream_t *p_stream, void *opaque_id)
  *****************************************************************************/
 static int Send(sout_stream_t *p_stream, void *opaque_id, block_t *p_buffer)
 {
+    sout_stream_sys_t *sys = p_stream->p_sys;
     sout_stream_id_sys_t *id = opaque_id;
     if (id->fmt.i_cat == AUDIO_ES)
     {
-        block_Release(p_buffer);
+        msg_Info(p_stream, "Received audio pts from stream %p: %" PRId64,
+                 opaque_id, p_buffer->i_pts);
+
+        block_ChainLastAppend(&id->block_list_head, p_buffer);
+        ProcessData(p_stream);
+
         return VLC_SUCCESS;
     }
 
