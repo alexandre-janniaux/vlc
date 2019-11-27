@@ -117,7 +117,11 @@ static bool vlc_lock_marked(const void *lock, void **rootp)
     return tfind(mark, rootp, vlc_lock_mark_cmp) != NULL;
 }
 
+#ifdef __i386__
+static void *vlc_mutex_marks = NULL;
+#else
 static _Thread_local void *vlc_mutex_marks = NULL;
+#endif
 
 void vlc_mutex_mark(const vlc_mutex_t *mutex)
 {
