@@ -148,6 +148,29 @@ static void Close (vlc_object_t * p_this)
     free(sys);
 }
 
+static void ComputeOutputBlock(block_t *output, block_t *input,
+                               size_t out_offset, size_t length,
+                               unsigned pitch_data)
+{
+    for (size_t i=0; i<length; i+=pitch_data)
+    {
+        unsigned int current = 0;
+        unsigned int value = 0;
+
+        for (unsigned j=0; j<pitch_data; ++j)
+        {
+            value   = value   << 4 | input->p_buffer[i+j];
+            current = current << 4 | output->p_buffer[i+j+out_offset];
+        }
+        current += value / 2; // HACK
+
+        for (unsigned j=pitch_data; j>0; --j)
+        {
+            output->p_buffer[i+j+out_offset] = (value >> (j-1)) & 0xFF;
+        }
+    }
+}
+
 static size_t ProcessData(sout_stream_t *stream)
 {
     sout_stream_sys_t *sys = stream->p_sys;
@@ -169,14 +192,20 @@ static size_t ProcessData(sout_stream_t *stream)
             return 0;
         }
 
-        msg_Dbg(stream, "ES %p available data: %zu", es_stream, es_stream->block_list->i_buffer);
-        assert (es_stream->block_list->i_buffer > pitch_data);
+        size_t available_data = es_stream->block_list->i_buffer;
 
+        /* We need to compress data with next block if available, so that we
+         * don't need to copy buffer even when available_data < pitch_data. */
+        if (es_stream->block_list->p_next != NULL)
+            available_data += es_stream->block_list->p_next->i_buffer;
+
+        msg_Dbg(stream, "ES %p available data: %zu", es_stream, available_data);
 
         max_data = __MIN(max_data, es_stream->block_list->i_buffer) & ~((pitch_data<<1)-1);
     }
 
-    assert(max_data > 0);
+    if (max_data < pitch_data)
+        return 0;
 
     /* Allocate the work memory for the output. */
     block_t *buffer = block_Alloc(max_data);
@@ -190,38 +219,39 @@ static size_t ProcessData(sout_stream_t *stream)
     /* Do the actual processing */
     vlc_list_foreach(es_stream, &sys->audio_list, node)
     {
-        for (size_t i=0; i<max_data; i+=pitch_data)
-        {
-            unsigned int current = 0;
-            unsigned int value = 0;
-            for (unsigned j=0; j<pitch_data; ++j)
-            {
-                value   = value   << 4 | es_stream->block_list->p_buffer[i+j];
-                current = current << 4 | buffer->p_buffer[i+j];
-            }
-            current += value / 2; // HACK
+        block_t *first_input = es_stream->block_list;
+        size_t available_data = __MIN(max_data, first_input->i_buffer);
+        ComputeOutputBlock(buffer, first_input, 0, available_data, pitch_data);
 
-            for (unsigned j=pitch_data; j>0; --j)
-            {
-                buffer->p_buffer[i+j] = (value >> (j-1)) & 0xFF;
-            }
+        if (first_input->p_next != NULL && first_input->i_buffer < max_data)
+        {
+            ComputeOutputBlock(buffer, first_input->p_next,
+                               first_input->i_buffer,
+                               max_data - first_input->i_buffer,
+                               pitch_data);
+            first_input->p_next->p_buffer += max_data - available_data;
+            first_input->p_next->i_buffer -= max_data - available_data;
         }
 
-        es_stream->block_list->i_buffer -= max_data;
-        es_stream->block_list->p_buffer += max_data;
+        first_input->i_buffer -= available_data;
+        first_input->p_buffer += available_data;
 
         /* If we exhausted a block, release it. */
-        if (es_stream->block_list->i_buffer < pitch_data)
+        while (es_stream->block_list)
         {
-            msg_Info(stream, "Release block %p", es_stream->block_list);
-            block_t *last_block = es_stream->block_list;
-            /* We reached the last block, reset the block list state. */
-            if (last_block->p_next == NULL)
-                es_stream->block_list_head = &es_stream->block_list;
+            if (es_stream->block_list->i_buffer == 0)
+            {
+                msg_Info(stream, "Release block %p", es_stream->block_list);
+                block_t *last_block = es_stream->block_list;
+                /* We reached the last block, reset the block list state. */
+                if (last_block->p_next == NULL)
+                    es_stream->block_list_head = &es_stream->block_list;
 
-            es_stream->block_list = es_stream->block_list->p_next;
+                es_stream->block_list = es_stream->block_list->p_next;
 
-            block_Release(last_block);
+                block_Release(last_block);
+            }
+            else break;
         }
     }
 
@@ -230,7 +260,10 @@ static size_t ProcessData(sout_stream_t *stream)
     //date_Increment(&sys->date, max_data / pitch_data);
 
     /* The block is ready to be sent to next stream. */
-    block_Release(buffer);
+    if (sys->out_stream) // TODO: should always be available
+        sout_StreamIdSend(stream, sys->out_stream, buffer);
+    else
+        block_Release(buffer);
 
     return max_data;
 }
