@@ -179,7 +179,8 @@ static void ComputeOutputBlock(block_t *output, block_t *input,
         current.u = GetWLE(out_ptr);
         value.u = GetWLE(in_ptr);
 
-        current.i = (current.i + value.i) / stream_count;
+        /* Current is accumulated for each stream. */
+        current.i = current.i + value.i / stream_count;
 
         SetWLE(out_ptr, current.u);
     }
