@@ -24,6 +24,17 @@
  *
  * This plugin provides a stream output module allowing mixing to be done in
  * the stream output (sout) pipeline.
+ *
+ * It currently supports only S16L inputs and won't use the inputs in case it
+ * cannot support them. The stream output acts as a bypass for unused inputs.
+ *
+ * It also only support mono channel muxing, so the format might need to be
+ * transcoded before this filter.
+ *
+ * TODO: option: set output ES id
+ * TODO: stereo mixing support
+ * TODO: option: mixing strategy
+ * TODO: refactor mixing code into another mode?
  */
 
 
