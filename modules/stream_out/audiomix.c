@@ -78,6 +78,9 @@ typedef struct
     struct vlc_list es_list;
     struct vlc_list audio_list;
 
+    /* Number of audio tracks */
+    unsigned stream_count;
+
     void *out_stream;
     es_format_t out_fmt;
     date_t date;
@@ -98,12 +101,13 @@ static int Open(vlc_object_t *p_this)
     vlc_list_init(&sys->es_list);
     vlc_list_init(&sys->audio_list);
     sys->out_stream = NULL;
+    sys->stream_count = 0;
     es_format_Init(&sys->out_fmt, AUDIO_ES, VLC_CODEC_S16L);
     sys->out_fmt.audio.i_rate = 44100;
     sys->out_fmt.audio.i_channels = 1;
     sys->out_fmt.audio.i_physical_channels = 1;
     sys->out_fmt.audio.i_format = VLC_CODEC_S16L;
-    sys->out_fmt.audio.i_chan_mode = AOUT_CHANMODE_DUALMONO;
+    sys->out_fmt.audio.i_bitspersample = 16;
 
     date_Init(&sys->date, sys->out_fmt.audio.i_rate, 1);
     date_Set(&sys->date, VLC_TICK_0);
@@ -157,24 +161,27 @@ static void Close (vlc_object_t * p_this)
 
 static void ComputeOutputBlock(block_t *output, block_t *input,
                                size_t out_offset, size_t length,
-                               unsigned pitch_data)
+                               unsigned pitch_data, unsigned stream_count)
 {
     for (size_t i=0; i<length; i+=pitch_data)
     {
-        unsigned int current = 0;
-        unsigned int value = 0;
+        /* TODO: not completely correct, but VLC already does that */
+        union {
+            uint16_t u; int16_t i;
+        } current, value;
 
-        for (unsigned j=0; j<pitch_data; ++j)
-        {
-            value   = value   << 4 | input->p_buffer[i+j];
-            current = current << 4 | output->p_buffer[i+j+out_offset];
-        }
-        current += value / 2; // HACK
+        current.u = 0;
+        value.u = 0;
 
-        for (unsigned j=pitch_data; j>0; --j)
-        {
-            output->p_buffer[i+j+out_offset] = (value >> (j-1)) & 0xFF;
-        }
+        const uint8_t *in_ptr  = &input->p_buffer[i];
+        uint8_t *out_ptr = &output->p_buffer[i+out_offset];
+
+        current.u = GetWLE(out_ptr);
+        value.u = GetWLE(in_ptr);
+
+        current.i = (current.i + value.i) / stream_count;
+
+        SetWLE(out_ptr, current.u);
     }
 }
 
@@ -229,14 +236,15 @@ static size_t ProcessData(sout_stream_t *stream)
     {
         block_t *first_input = es_stream->block_list;
         size_t available_data = __MIN(max_data, first_input->i_buffer);
-        ComputeOutputBlock(buffer, first_input, 0, available_data, pitch_data);
+        ComputeOutputBlock(buffer, first_input, 0, available_data,
+                           pitch_data, sys->stream_count);
 
         if (first_input->p_next != NULL && first_input->i_buffer < max_data)
         {
             ComputeOutputBlock(buffer, first_input->p_next,
                                first_input->i_buffer,
                                max_data - first_input->i_buffer,
-                               pitch_data);
+                               pitch_data, sys->stream_count);
             first_input->p_next->p_buffer += max_data - available_data;
             first_input->p_next->i_buffer -= max_data - available_data;
         }
@@ -315,6 +323,7 @@ static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt )
         id->block_list = NULL;
         id->block_list_head = &id->block_list;
         vlc_list_append(&id->node, &sys->audio_list);
+        sys->stream_count += 1;
     }
 
     if (sys->out_stream == NULL)
@@ -343,6 +352,8 @@ static void Del(sout_stream_t *p_stream, void *opaque_id)
      * so there is no need to delete them otherwise. */
     if (id->fmt.i_cat != AUDIO_ES)
         sout_StreamIdDel(p_stream->p_next, id->id);
+    else
+        sys->stream_count -= 1;
 
     vlc_list_remove(&id->node);
     es_format_Clean(&id->fmt);
