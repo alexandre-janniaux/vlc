@@ -251,11 +251,10 @@ static size_t ProcessData(sout_stream_t *stream)
         ComputeOutputBlock(buffer, first_input, 0, available_data,
                            pitch_data, sys->stream_count);
 
-        if (first_input->p_next != NULL && first_input->i_buffer < max_data)
+        if (first_input->p_next != NULL && available_data < max_data)
         {
             ComputeOutputBlock(buffer, first_input->p_next,
-                               first_input->i_buffer,
-                               max_data - first_input->i_buffer,
+                               available_data, max_data - available_data,
                                pitch_data, sys->stream_count);
             first_input->p_next->p_buffer += max_data - available_data;
             first_input->p_next->i_buffer -= max_data - available_data;
