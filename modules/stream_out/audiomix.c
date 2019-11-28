@@ -80,6 +80,7 @@ typedef struct
 
     void *out_stream;
     es_format_t out_fmt;
+    date_t date;
 } sout_stream_sys_t;
 
 /*****************************************************************************
@@ -98,8 +99,14 @@ static int Open(vlc_object_t *p_this)
     vlc_list_init(&sys->audio_list);
     sys->out_stream = NULL;
     es_format_Init(&sys->out_fmt, AUDIO_ES, VLC_CODEC_S16L);
-
     sys->out_fmt.audio.i_rate = 44100;
+    sys->out_fmt.audio.i_channels = 1;
+    sys->out_fmt.audio.i_physical_channels = 1;
+    sys->out_fmt.audio.i_format = VLC_CODEC_S16L;
+    sys->out_fmt.audio.i_chan_mode = AOUT_CHANMODE_DUALMONO;
+
+    date_Init(&sys->date, sys->out_fmt.audio.i_rate, 1);
+    date_Set(&sys->date, VLC_TICK_0);
 
     if (!p_stream->p_next)
     {
@@ -201,7 +208,8 @@ static size_t ProcessData(sout_stream_t *stream)
 
         msg_Dbg(stream, "ES %p available data: %zu", es_stream, available_data);
 
-        max_data = __MIN(max_data, es_stream->block_list->i_buffer) & ~((pitch_data<<1)-1);
+        max_data = __MIN(max_data, es_stream->block_list->i_buffer)
+                 & ~((pitch_data<<1)-1);
     }
 
     if (max_data < pitch_data)
@@ -247,7 +255,7 @@ static size_t ProcessData(sout_stream_t *stream)
                 if (last_block->p_next == NULL)
                     es_stream->block_list_head = &es_stream->block_list;
 
-                es_stream->block_list = es_stream->block_list->p_next;
+                es_stream->block_list = last_block->p_next;
 
                 block_Release(last_block);
             }
@@ -256,9 +264,14 @@ static size_t ProcessData(sout_stream_t *stream)
     }
 
     /* Setup metadata on the block and compute next ones. */
-    //block->i_pts = block->i_dts = date_Get(&sys->date);
-    //date_Increment(&sys->date, max_data / pitch_data);
+    buffer->i_pts = buffer->i_dts = date_Get(&sys->date);
+    buffer->i_nb_samples = max_data / pitch_data;
+    buffer->i_length = vlc_tick_from_samples(buffer->i_nb_samples, samplerate);
+    date_Increment(&sys->date, buffer->i_nb_samples);
 
+    msg_Info(stream, "Block pushed with ts=%" PRId64 ", max_data=%zu", buffer->i_pts, max_data);
+
+    assert(sys->out_stream);
     /* The block is ready to be sent to next stream. */
     if (sys->out_stream) // TODO: should always be available
         sout_StreamIdSend(stream->p_next, sys->out_stream, buffer);
