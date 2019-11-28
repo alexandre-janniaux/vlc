@@ -142,6 +142,9 @@ static void Close (vlc_object_t * p_this)
 
     es_format_Clean(&sys->out_fmt);
 
+    if (sys->out_stream)
+        sout_StreamIdDel(p_stream->p_next, sys->out_stream);
+
     free(sys);
 }
 
