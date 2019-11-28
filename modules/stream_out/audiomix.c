@@ -77,6 +77,9 @@ typedef struct
 {
     struct vlc_list es_list;
     struct vlc_list audio_list;
+
+    void *out_stream;
+    es_format_t out_fmt;
 } sout_stream_sys_t;
 
 /*****************************************************************************
@@ -93,6 +96,10 @@ static int Open(vlc_object_t *p_this)
 
     vlc_list_init(&sys->es_list);
     vlc_list_init(&sys->audio_list);
+    sys->out_stream = NULL;
+    es_format_Init(&sys->out_fmt, AUDIO_ES, VLC_CODEC_S16L);
+
+    sys->out_fmt.audio.i_rate = 44100;
 
     if (!p_stream->p_next)
     {
@@ -132,6 +139,8 @@ static void Close (vlc_object_t * p_this)
         vlc_list_remove(&es_entry->node);
         free(es_entry);
     }
+
+    es_format_Clean(&sys->out_fmt);
 
     free(sys);
 }
@@ -259,6 +268,16 @@ static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt )
         vlc_list_append(&id->node, &sys->audio_list);
     }
 
+    if (sys->out_stream == NULL)
+    {
+        sys->out_stream = sout_StreamIdAdd(p_stream->p_next, &sys->out_fmt);
+        if (sys->out_stream == NULL)
+        {
+            /* what to do ? */
+            abort();
+        }
+    }
+
 
     return id;
 }
@@ -268,6 +287,7 @@ static void *Add( sout_stream_t *p_stream, const es_format_t *p_fmt )
  *****************************************************************************/
 static void Del(sout_stream_t *p_stream, void *opaque_id)
 {
+    sout_stream_sys_t *sys = p_stream->p_sys;
     sout_stream_id_sys_t *id = opaque_id;
 
     /* We don't forward streams for input except if they are non-audio streams
@@ -276,8 +296,16 @@ static void Del(sout_stream_t *p_stream, void *opaque_id)
         sout_StreamIdDel(p_stream->p_next, id->id);
 
     vlc_list_remove(&id->node);
-
     es_format_Clean(&id->fmt);
+
+    if (vlc_list_is_empty(&sys->audio_list)
+        || vlc_list_is_empty(&sys->es_list))
+    {
+        if (sys->out_stream)
+            sout_StreamIdDel(p_stream->p_next, sys->out_stream);
+        sys->out_stream = NULL;
+    }
+
     free(id);
 }
 
