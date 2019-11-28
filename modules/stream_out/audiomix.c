@@ -261,7 +261,7 @@ static size_t ProcessData(sout_stream_t *stream)
 
     /* The block is ready to be sent to next stream. */
     if (sys->out_stream) // TODO: should always be available
-        sout_StreamIdSend(stream, sys->out_stream, buffer);
+        sout_StreamIdSend(stream->p_next, sys->out_stream, buffer);
     else
         block_Release(buffer);
 
