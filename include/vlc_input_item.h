@@ -120,6 +120,9 @@ struct input_item_t
 
     bool        b_preparse_interact; /**< Force interaction with the user when
                                           preparsing.*/
+
+    bool        b_preparse_slaves;   /**< Force slaves media of this item to be
+                                          preparsed with the item. */
 };
 
 #define INPUT_ITEM_URI_NOP "vlc://nop" /* dummy URI for node/directory items */
