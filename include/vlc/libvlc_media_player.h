@@ -1414,7 +1414,7 @@ LIBVLC_API bool libvlc_get_fullscreen( libvlc_media_player_t *p_mi );
  * \param on true to handle key press events, false to ignore them.
  */
 LIBVLC_API
-void libvlc_video_set_key_input( libvlc_media_player_t *p_mi, unsigned on );
+void libvlc_video_set_key_input( libvlc_media_player_t *p_mi, bool on );
 
 /**
  * Enable or disable mouse click events handling. By default, those events are

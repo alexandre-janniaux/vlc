@@ -117,9 +117,9 @@ void libvlc_toggle_fullscreen( libvlc_media_player_t *p_mi )
     free (pp_vouts);
 }
 
-void libvlc_video_set_key_input( libvlc_media_player_t *p_mi, unsigned on )
+void libvlc_video_set_key_input( libvlc_media_player_t *p_mi, bool on )
 {
-    var_SetBool (p_mi, "keyboard-events", !!on);
+    var_SetBool (p_mi, "keyboard-events", on);
 }
 
 void libvlc_video_set_mouse_input( libvlc_media_player_t *p_mi, unsigned on )
