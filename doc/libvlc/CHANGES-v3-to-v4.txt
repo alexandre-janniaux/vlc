@@ -6,3 +6,5 @@ Breaking changes between libvlc 3 and libvlc 4:
 - libvlc_media_player_stop() is now asynchronous
 - libvlc_media_player_set_pause() and libvlc_media_player_set_media(), which
   could possibly stop, are now asynchronous too
+- libvlc_video_set_mouse_input() and libvlc_video_set_key_input() now take
+  bool-typed values instead of unsigned-typed boolean values
