@@ -1283,7 +1283,7 @@ static int Init( input_thread_t * p_input )
     input_SendEventTimes( p_input, 0.0, VLC_TICK_INVALID, priv->normal_time,
                           i_length );
 
-    if( !priv->b_preparsing )
+    if( !priv->b_preparsing || priv->p_item->b_preparse_slaves )
     {
         StartTitle( p_input );
         SetSubtitlesOptions( p_input );
