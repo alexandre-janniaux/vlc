@@ -272,6 +272,11 @@ typedef enum libvlc_media_parse_flag_t
      * when the input is asking for credentials.
      */
     libvlc_media_do_interact    = 0x08,
+    /**
+     * Also parse media associated to this item like external subtitles or
+     * input slaves.
+     */
+    libvlc_media_parse_slaves   = 0x10
 } libvlc_media_parse_flag_t;
 
 /**
