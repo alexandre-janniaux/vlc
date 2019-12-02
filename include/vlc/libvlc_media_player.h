@@ -1429,7 +1429,7 @@ void libvlc_video_set_key_input( libvlc_media_player_t *p_mi, bool on );
  * \param on true to handle mouse click events, false to ignore them.
  */
 LIBVLC_API
-void libvlc_video_set_mouse_input( libvlc_media_player_t *p_mi, unsigned on );
+void libvlc_video_set_mouse_input( libvlc_media_player_t *p_mi, bool on );
 
 /**
  * Get the pixel dimensions of a video.
