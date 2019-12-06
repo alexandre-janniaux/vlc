@@ -180,9 +180,24 @@ static void Close( vlc_object_t *p_this )
 static int Filter( video_splitter_t *p_splitter,
                    picture_t *pp_dst[], picture_t *p_src )
 {
-    for( int i = 0; i < p_splitter->i_output; i++ )
+    int i = 0;
+    for( ; i < p_splitter->i_output; i++ )
+    {
         pp_dst[i] = picture_Clone( p_src );
+
+        if (pp_dst[i] == NULL)
+            goto error;
+    }
 
     picture_Release( p_src );
     return VLC_SUCCESS;
+
+error:
+    for(; i >= 0; --i)
+    {
+        picture_Release( pp_dst[i] );
+        pp_dst[i] = NULL;
+    }
+    picture_Release( p_src );
+    return VLC_ENOMEM;
 }
