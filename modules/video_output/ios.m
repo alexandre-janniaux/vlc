@@ -741,10 +741,7 @@ static void GLESSwap(vlc_gl_t *gl)
      * background.*/
     EAGLContext *previousEaglContext = [EAGLContext currentContext];
     if ([EAGLContext setCurrentContext:_eaglContext])
-    {
         glFinish();
-        glFlush();
-    }
     [EAGLContext setCurrentContext:previousEaglContext];
 }
 
