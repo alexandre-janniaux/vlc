@@ -184,6 +184,11 @@ struct vout_thread_sys_t
     vout_display_t *display;
     vlc_mutex_t     display_lock;
 
+    /* Protected by display_lock, window size that will be used by as the
+     * default display size when creating a new vd plugin. */
+    unsigned        window_width;
+    unsigned        window_height;
+
     picture_pool_t  *private_pool;
     picture_pool_t  *display_pool;
     picture_fifo_t  *decoder_fifo;
