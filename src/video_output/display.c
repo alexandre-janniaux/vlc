@@ -91,6 +91,9 @@ void vout_display_GetDefaultDisplaySize(unsigned *width, unsigned *height,
                                         const video_format_t *source,
                                         const vout_display_cfg_t *cfg)
 {
+    if (cfg->is_display_filled
+     && (cfg->display.width != 0 || cfg->display.height != 0))
+    {
     if (cfg->display.width != 0 && cfg->display.height != 0) {
         *width  = cfg->display.width;
         *height = cfg->display.height;
@@ -98,16 +101,20 @@ void vout_display_GetDefaultDisplaySize(unsigned *width, unsigned *height,
         *width  = cfg->display.width;
         *height = (int64_t)source->i_visible_height * source->i_sar_den * cfg->display.width * cfg->display.sar.num /
             source->i_visible_width / source->i_sar_num / cfg->display.sar.den;
-    } else if (cfg->display.height != 0) {
+    } else {
+        assert(cfg->display.height != 0);
         *width  = (int64_t)source->i_visible_width * source->i_sar_num * cfg->display.height * cfg->display.sar.den /
             source->i_visible_height / source->i_sar_den / cfg->display.sar.num;
         *height = cfg->display.height;
-    } else if (source->i_sar_num >= source->i_sar_den) {
+    }
+    } else {
+    if (source->i_sar_num >= source->i_sar_den) {
         *width  = (int64_t)source->i_visible_width * source->i_sar_num * cfg->display.sar.den / source->i_sar_den / cfg->display.sar.num;
         *height = source->i_visible_height;
     } else {
         *width  = source->i_visible_width;
         *height = (int64_t)source->i_visible_height * source->i_sar_den * cfg->display.sar.num / source->i_sar_num / cfg->display.sar.den;
+    }
     }
 
     *width  = *width  * cfg->zoom.num / cfg->zoom.den;
@@ -139,17 +146,8 @@ void vout_display_PlacePicture(vout_display_place_t *place,
     video_format_ApplyRotation(&source_rot, source);
     source = &source_rot;
 
-    if (cfg->is_display_filled) {
-        display_width  = cfg->display.width;
-        display_height = cfg->display.height;
-    } else {
-        vout_display_cfg_t cfg_tmp = *cfg;
-
-        cfg_tmp.display.width  = 0;
-        cfg_tmp.display.height = 0;
-        vout_display_GetDefaultDisplaySize(&display_width, &display_height,
-                                           source, &cfg_tmp);
-    }
+    vout_display_GetDefaultDisplaySize(&display_width, &display_height,
+                                       source, cfg);
 
     const unsigned width  = source->i_visible_width;
     const unsigned height = source->i_visible_height;
