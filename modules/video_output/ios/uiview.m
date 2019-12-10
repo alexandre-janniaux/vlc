@@ -250,31 +250,63 @@ struct vout_window_sys {
 
 static int Enable(vout_window_t *wnd)
 {
-    VLCCALayerVideoView *sys = wnd->sys;
+    VLCVideoUIView *sys = wnd->sys;
 
     return VLC_SUCCESS;
 }
 
 static void Disable(vout_window_t *wnd)
 {
-    VLCCALayerVideoView *sys = wnd->sys;
+    VLCVideoUIView *sys = wnd->sys;
 }
 
 static void Close(vout_window_t *wnd)
 {
-    VLCCALayerVideoView *sys = wnd->sys;
+    VLCVideoUIView *sys = wnd->sys;
 
+    free(sys);
 }
 
 static int Open(vout_window_t *wnd)
 {
+    struct vout_window_sys *sys = malloc(sizeof *sys);
+    if (sys == NULL)
+        return VLC_EGENERIC;
+
+    var_Create(vlc_object_parent(vd), "ios-eaglcontext", VLC_VAR_ADDRESS);
+
+    @autoreleasepool {
+        /* setup the actual OpenGL ES view */
+
+        [VLCVideoUIView performSelectorOnMainThread:@selector(getNewView:)
+                                         withObject:[NSArray arrayWithObjects:
+                                                    [NSValue valueWithPointer:&sys->glESView],
+                                                    [NSValue valueWithPointer:wnd], nil]
+                                      waitUntilDone:YES];
+        if (!sys->glESView) {
+            msg_Err(vd, "Creating OpenGL ES 2 view failed");
+            var_Destroy(vlc_object_parent(vd), "ios-eaglcontext");
+            goto error;
+        }
+    }
+
+
+    wnd->sys = sys;
 
     wnd->enable  = Enable;
     wnd->disable = Disable;
     wnd->resize  = Resize;
     wnd->destroy = Close;
 
+    wnd->handle.nsobject = view;
+    wnd->type = VOUT_WINDOW_TYPE_NSOBJECT;
+
     return VLC_SUCCESS;
+
+error:
+    free(sys);
+
+    return VLC_EGENERIC;
 }
 
 
