@@ -94,7 +94,6 @@ vlc_module_end ()
     BOOL _placeInvalidated;
 
     UIView *_viewContainer;
-    UITapGestureRecognizer *_tapRecognizer;
 
     /* Written from MT, read locked from vout */
     vout_display_place_t _place;
@@ -475,14 +474,6 @@ static void GLESSwap(vlc_gl_t *gl)
 
         [_viewContainer addSubview:self];
 
-        /* add tap gesture recognizer for DVD menus and stuff */
-        _tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
-                                                                 action:@selector(tapRecognized:)];
-        if (_viewContainer.window
-         && _viewContainer.window.rootViewController
-         && _viewContainer.window.rootViewController.view)
-            [_viewContainer.superview addGestureRecognizer:_tapRecognizer];
-        _tapRecognizer.cancelsTouchesInView = NO;
         return YES;
     } @catch (NSException *exception) {
         msg_Err(_voutDisplay, "Handling the view container failed due to an Obj-C exception (%s, %s", [exception.name UTF8String], [exception.reason UTF8String]);
@@ -496,9 +487,6 @@ static void GLESSwap(vlc_gl_t *gl)
 - (void)cleanAndReleaseFromMainThread
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-
-    [_tapRecognizer.view removeGestureRecognizer:_tapRecognizer];
-    [_tapRecognizer release];
 
     [self removeFromSuperview];
     [_viewContainer release];
@@ -692,27 +680,6 @@ static void GLESSwap(vlc_gl_t *gl)
     vlc_mutex_unlock(&_mutex);
 }
 
-- (void)tapRecognized:(UITapGestureRecognizer *)tapRecognizer
-{
-    vlc_mutex_lock(&_mutex);
-    if (!_voutDisplay)
-    {
-        vlc_mutex_unlock(&_mutex);
-        return;
-    }
-
-    UIGestureRecognizerState state = [tapRecognizer state];
-    CGPoint touchPoint = [tapRecognizer locationInView:self];
-    CGFloat scaleFactor = self.contentScaleFactor;
-    vout_display_SendMouseMovedDisplayCoordinates(_voutDisplay,
-                                                  (int)touchPoint.x * scaleFactor, (int)touchPoint.y * scaleFactor);
-
-    vout_display_SendEventMousePressed(_voutDisplay, MOUSE_BUTTON_LEFT);
-    vout_display_SendEventMouseReleased(_voutDisplay, MOUSE_BUTTON_LEFT);
-
-    vlc_mutex_unlock(&_mutex);
-}
-
 - (void)updateVoutCfg:(const vout_display_cfg_t *)cfg withVGL:(vout_display_opengl_t *)vgl
 {
     if (memcmp(&_cfg, cfg, sizeof(vout_display_cfg_t)) == 0)
@@ -790,9 +757,11 @@ static void GLESSwap(vlc_gl_t *gl)
     return YES;
 }
 
-- (BOOL)acceptsFirstResponder
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event
 {
-    return YES;
+    /* Disable events for this view, as the vout_window view will be the one
+     * handling them. */
+    return nil;
 }
 
 @end
