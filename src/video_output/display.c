@@ -747,9 +747,6 @@ vout_display_t *vout_display_New(vlc_object_t *parent,
         return NULL;
 
     osys->cfg = *cfg;
-    vout_display_GetDefaultDisplaySize(&osys->cfg.display.width,
-                                       &osys->cfg.display.height,
-                                       source, &osys->cfg);
 #ifdef _WIN32
     osys->reset_pictures = false;
 #endif

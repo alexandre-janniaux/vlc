@@ -95,7 +95,6 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
 
     sys->gl = NULL;
     sys->pool = NULL;
-    sys->place_changed = false;
 
     vout_window_t *surface = cfg->window;
     char *gl_name = var_InheritString(surface, MODULE_VARNAME);
@@ -143,6 +142,9 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
 
     if (sys->vgl == NULL)
         goto error;
+
+    vout_display_PlacePicture(&sys->place, &vd->source, cfg);
+    sys->place_changed = true;
 
     vd->sys = sys;
     vd->info.subpicture_chromas = spu_chromas;
