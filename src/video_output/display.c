@@ -94,27 +94,33 @@ void vout_display_GetDefaultDisplaySize(unsigned *width, unsigned *height,
     if (cfg->is_display_filled
      && (cfg->display.width != 0 || cfg->display.height != 0))
     {
-    if (cfg->display.width != 0 && cfg->display.height != 0) {
-        *width  = cfg->display.width;
-        *height = cfg->display.height;
-    } else if (cfg->display.width != 0) {
-        *width  = cfg->display.width;
-        *height = (int64_t)source->i_visible_height * source->i_sar_den * cfg->display.width * cfg->display.sar.num /
-            source->i_visible_width / source->i_sar_num / cfg->display.sar.den;
+        if (cfg->display.width != 0 && cfg->display.height != 0) {
+            *width  = cfg->display.width;
+            *height = cfg->display.height;
+        } else if (cfg->display.width != 0) {
+            *width  = cfg->display.width;
+            *height = (int64_t)source->i_visible_height * source->i_sar_den
+                    * cfg->display.width * cfg->display.sar.num
+                    / source->i_visible_width / source->i_sar_num
+                    / cfg->display.sar.den;
+        } else {
+            assert(cfg->display.height != 0);
+            *width  = (int64_t)source->i_visible_width * source->i_sar_num
+                    * cfg->display.height * cfg->display.sar.den
+                    / source->i_visible_height / source->i_sar_den
+                    / cfg->display.sar.num;
+            *height = cfg->display.height;
+        }
     } else {
-        assert(cfg->display.height != 0);
-        *width  = (int64_t)source->i_visible_width * source->i_sar_num * cfg->display.height * cfg->display.sar.den /
-            source->i_visible_height / source->i_sar_den / cfg->display.sar.num;
-        *height = cfg->display.height;
-    }
-    } else {
-    if (source->i_sar_num >= source->i_sar_den) {
-        *width  = (int64_t)source->i_visible_width * source->i_sar_num * cfg->display.sar.den / source->i_sar_den / cfg->display.sar.num;
-        *height = source->i_visible_height;
-    } else {
-        *width  = source->i_visible_width;
-        *height = (int64_t)source->i_visible_height * source->i_sar_den * cfg->display.sar.num / source->i_sar_num / cfg->display.sar.den;
-    }
+        if (source->i_sar_num >= source->i_sar_den) {
+            *width  = (int64_t)source->i_visible_width * source->i_sar_num
+                    * cfg->display.sar.den / source->i_sar_den / cfg->display.sar.num;
+            *height = source->i_visible_height;
+        } else {
+            *width  = source->i_visible_width;
+            *height = (int64_t)source->i_visible_height * source->i_sar_den
+                    * cfg->display.sar.num / source->i_sar_num / cfg->display.sar.den;
+        }
     }
 
     *width  = *width  * cfg->zoom.num / cfg->zoom.den;
