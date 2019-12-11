@@ -478,8 +478,6 @@ static void GLESSwap(vlc_gl_t *gl)
     } @catch (NSException *exception) {
         msg_Err(_voutDisplay, "Handling the view container failed due to an Obj-C exception (%s, %s", [exception.name UTF8String], [exception.reason UTF8String]);
         vout_display_sys_t *sys = _voutDisplay->sys;
-        if (_tapRecognizer)
-            [_tapRecognizer release];
         return NO;
     }
 }
