@@ -71,6 +71,9 @@ static const char *const enc_hq_list_text[] = {
         "delivered by the FFmpeg library. This includes (MS)MPEG4, DivX, SV1,"\
         "H261, H263, H264, WMV, WMA, AAC, AMR, DV, MJPEG and other codecs")
 
+#define AVCODEC_QUIET_TEXT "Force quiet mode"
+#define AVCODEC_QUIET_LONGTEXT "Force avcodec logs to quiet mode"
+
 vlc_module_begin ()
     set_shortname( "FFmpeg")
     set_category( CAT_INPUT )
@@ -79,6 +82,9 @@ vlc_module_begin ()
     set_description( N_("FFmpeg audio/video decoder") )
     set_help( MODULE_DESCRIPTION )
     set_section( N_("Decoding") , NULL )
+
+    add_bool("avcodec-quiet", false, AVCODEC_QUIET_TEXT,
+             AVCODEC_QUIET_LONGTEXT, true)
 
     add_shortcut("ffmpeg")
     set_capability("video decoder", 70)

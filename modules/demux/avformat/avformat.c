@@ -32,6 +32,9 @@
 #include "avformat.h"
 #include "../../codec/avcodec/avcommon.h"
 
+#define AVFORMAT_QUIET_TEXT "Force quiet mode"
+#define AVFORMAT_QUIET_LONGTEXT "Force avformat logs to quiet mode"
+
 vlc_module_begin ()
 #endif /* MERGE_FFMPEG */
     add_shortcut( "ffmpeg", "avformat" )
@@ -45,6 +48,8 @@ vlc_module_begin ()
     add_string( "avformat-format", NULL, FORMAT_TEXT, FORMAT_LONGTEXT, true )
     add_obsolete_string("ffmpeg-format") /* removed since 2.1.0 */
     add_string( "avformat-options", NULL, AV_OPTIONS_TEXT, AV_OPTIONS_LONGTEXT, true )
+    add_bool( "avformat-quiet", false, AVFORMAT_QUIET_TEXT,
+               AVFORMAT_QUIET_LONGTEXT, true )
 
 #ifdef ENABLE_SOUT
     /* mux submodule */

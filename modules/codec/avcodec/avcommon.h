@@ -76,11 +76,11 @@ static inline void vlc_av_get_options(const char *psz_opts, AVDictionary** pp_di
     }
 }
 
-static inline void vlc_init_avutil(vlc_object_t *obj)
+static inline void vlc_init_avutil(vlc_object_t *obj, bool quiet)
 {
     int level = AV_LOG_QUIET;
 
-    if (!var_InheritBool(obj, "quiet")) {
+    if (!quiet) {
         int64_t verbose = var_InheritInteger(obj, "verbose");
         if (verbose >= 0) switch(verbose + VLC_MSG_ERR) {
         case VLC_MSG_ERR:
@@ -111,9 +111,11 @@ static inline void vlc_init_avutil(vlc_object_t *obj)
 # include <libavformat/avformat.h>
 static inline void vlc_init_avformat(vlc_object_t *obj)
 {
+    bool quiet = var_InheritBool(obj, "avformat-quiet");
+
     vlc_avcodec_lock();
 
-    vlc_init_avutil(obj);
+    vlc_init_avutil(obj, quiet);
 
     avformat_network_init();
 
@@ -127,9 +129,11 @@ static inline void vlc_init_avformat(vlc_object_t *obj)
 # include <libavcodec/avcodec.h>
 static inline void vlc_init_avcodec(vlc_object_t *obj)
 {
+    bool quiet = var_InheritBool(obj, "avcodec-quiet");
+
     vlc_avcodec_lock();
 
-    vlc_init_avutil(obj);
+    vlc_init_avutil(obj, quiet);
 
     avcodec_register_all();
 
