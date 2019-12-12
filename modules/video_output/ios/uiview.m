@@ -71,9 +71,9 @@
     CGFloat _scaleFactor;
 }
 
-+ (void)getNewView:(NSArray *)value;
++ (void)getNewView:(NSValue *)value;
 - (id)initWithFrame:(CGRect)frame;
-- (BOOL)fetchViewContaine;
+- (BOOL)fetchViewContainer;
 - (void)cleanAndReleaseFromMainThread;
 - (void)cleanAndRelease:(BOOL)flushed;
 - (void)dealloc;
@@ -93,10 +93,18 @@
 @implementation VLCVideoUIView
 
 // 
-+ (void)getNewView:(NSArray *)value
++ (void)getNewView:(NSValue *)value
 {
-    id *ret = [[value objectAtIndex:0] pointerValue];
-    *ret = [[self alloc] initWithFrame:CGRectMake(0.,0.,320.,240.)];
+    VLCVideoUIView *uiview = [self alloc];
+    if (uiview == nil)
+        return;
+
+
+    uiview->_wnd = [value pointerValue];
+    uiview->_wnd->sys = [uiview initWithFrame:CGRectMake(0.,0.,320.,240.)];
+
+    if (uiview->_wnd->sys == nil)
+        [uiview release];
 }
 
 - (id)initWithFrame:(CGRect)frame
@@ -259,7 +267,7 @@
 
 @end
 
-static int Enable(vout_window_t *wnd)
+static int Enable(vout_window_t *wnd, const vout_window_cfg_t *cfg)
 {
     VLCVideoUIView *sys = wnd->sys;
 
@@ -287,6 +295,8 @@ static const struct vout_window_operations window_ops =
 
 static int Open(vout_window_t *wnd)
 {
+    wnd->sys = NULL;
+
     var_Create(vlc_object_parent(wnd), "ios-eaglcontext", VLC_VAR_ADDRESS);
 
     @autoreleasepool {
