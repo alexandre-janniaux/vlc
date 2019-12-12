@@ -52,12 +52,13 @@
 
 #import <vlc_common.h>
 #import <vlc_plugin.h>
-#import <vlc_vout_display.h>
 #import <vlc_opengl.h>
 #import <vlc_dialog.h>
-#import "opengl/vout_helper.h"
+#import <vlc_mouse.h>
+#import "../opengl/vout_helper.h"
 
 @interface VLCVideoUIView : UIView {
+    struct vout_window_t *_wnd;
     vlc_mutex_t _mutex;
 
     BOOL _appActive;
@@ -70,15 +71,26 @@
     CGFloat _scaleFactor;
 }
 
-struct vout_window_sys {
-    VLCCALayerVideoView *view;
-    UIView *parent;
-};
++ (void)getNewView:(NSArray *)value;
+- (id)initWithFrame:(CGRect)frame;
+- (BOOL)fetchViewContaine;
+- (void)cleanAndReleaseFromMainThread;
+- (void)cleanAndRelease:(BOOL)flushed;
+- (void)dealloc;
+- (void)didMoveToWindow;
+- (void)layoutSubviews;
+- (void)reshape;
+- (void)tapRecognized:(UITapGestureRecognizer *)tapRecognizer;
+- (void)updateConstraints;
+- (BOOL)isOpaque;
+- (BOOL)acceptsFirstResponder;
+
+@end
 
 /*****************************************************************************
  * Our UIView object
  *****************************************************************************/
-@implementation VLCCALayerVideoView
+@implementation VLCVideoUIView
 
 // 
 + (void)getNewView:(NSArray *)value
@@ -98,7 +110,6 @@ struct vout_window_sys {
         return nil;
 
     vlc_mutex_init(&_mutex);
-    vlc_cond_init(&_gl_attached_wait);
 
     /* The window is controlled by the host application through the UIView
      * sizing mechanisms. */
@@ -117,21 +128,21 @@ struct vout_window_sys {
 {
     @try {
         /* get the object we will draw into */
-        UIView *viewContainer = var_InheritAddress (_voutDisplay, "drawable-nsobject");
+        UIView *viewContainer = var_InheritAddress (_wnd, "drawable-nsobject");
         if (unlikely(viewContainer == nil)) {
-            msg_Err(_voutDisplay, "provided view container is nil");
+            msg_Err(_wnd, "provided view container is nil");
             return NO;
         }
 
         if (unlikely(![viewContainer respondsToSelector:@selector(isKindOfClass:)])) {
-            msg_Err(_voutDisplay, "void pointer not an ObjC object");
+            msg_Err(_wnd, "void pointer not an ObjC object");
             return NO;
         }
 
         [viewContainer retain];
 
         if (![viewContainer isKindOfClass:[UIView class]]) {
-            msg_Err(_voutDisplay, "passed ObjC object not of class UIView");
+            msg_Err(_wnd, "passed ObjC object not of class UIView");
             return NO;
         }
 
@@ -154,8 +165,7 @@ struct vout_window_sys {
         _tapRecognizer.cancelsTouchesInView = NO;
         return YES;
     } @catch (NSException *exception) {
-        msg_Err(_voutDisplay, "Handling the view container failed due to an Obj-C exception (%s, %s", [exception.name UTF8String], [exception.reason UTF8String]);
-        vout_display_sys_t *sys = _voutDisplay->sys;
+        msg_Err(_wnd, "Handling the view container failed due to an Obj-C exception (%s, %s", [exception.name UTF8String], [exception.reason UTF8String]);
         if (_tapRecognizer)
             [_tapRecognizer release];
         return NO;
@@ -185,7 +195,6 @@ struct vout_window_sys {
 - (void)dealloc
 {
     vlc_mutex_destroy(&_mutex);
-    vlc_cond_destroy(&_gl_attached_wait);
     [super dealloc];
 }
 
@@ -248,6 +257,8 @@ struct vout_window_sys {
     return YES;
 }
 
+@end
+
 static int Enable(vout_window_t *wnd)
 {
     VLCVideoUIView *sys = wnd->sys;
@@ -267,47 +278,52 @@ static void Close(vout_window_t *wnd)
     free(sys);
 }
 
+static const struct vout_window_operations window_ops =
+{
+    .enable = Enable,
+    .disable = Disable,
+    .destroy = Close,
+};
+
 static int Open(vout_window_t *wnd)
 {
-    struct vout_window_sys *sys = malloc(sizeof *sys);
-    if (sys == NULL)
-        return VLC_EGENERIC;
-
-    var_Create(vlc_object_parent(vd), "ios-eaglcontext", VLC_VAR_ADDRESS);
+    var_Create(vlc_object_parent(wnd), "ios-eaglcontext", VLC_VAR_ADDRESS);
 
     @autoreleasepool {
         /* setup the actual OpenGL ES view */
-
         [VLCVideoUIView performSelectorOnMainThread:@selector(getNewView:)
-                                         withObject:[NSArray arrayWithObjects:
-                                                    [NSValue valueWithPointer:&sys->glESView],
-                                                    [NSValue valueWithPointer:wnd], nil]
+                                         withObject:[NSValue valueWithPointer:wnd]
                                       waitUntilDone:YES];
-        if (!sys->glESView) {
-            msg_Err(vd, "Creating OpenGL ES 2 view failed");
-            var_Destroy(vlc_object_parent(vd), "ios-eaglcontext");
-            goto error;
-        }
     }
 
+    if (wnd->sys == NULL)
+    {
+        msg_Err(wnd, "Creating OpenGL ES 2 view failed");
+        var_Destroy(vlc_object_parent(wnd), "ios-eaglcontext");
+        goto error;
+    }
 
-    wnd->sys = sys;
-
-    wnd->enable  = Enable;
-    wnd->disable = Disable;
-    wnd->resize  = Resize;
-    wnd->destroy = Close;
-
-    wnd->handle.nsobject = view;
     wnd->type = VOUT_WINDOW_TYPE_NSOBJECT;
+    wnd->handle.nsobject = wnd->sys;
+    wnd->ops = &window_ops;
 
     return VLC_SUCCESS;
 
 error:
-    free(sys);
 
     return VLC_EGENERIC;
 }
 
+vlc_module_begin ()
+    set_shortname("iOS UIView vout window")
+    set_description("iOS UIView wrapper for window provision")
+    set_category(CAT_VIDEO)
+    set_subcategory(SUBCAT_VIDEO_VOUT)
+    set_capability("vout window", 300)
+    set_callback(Open)
 
-@end
+    add_shortcut("uiview", "ios")
+    add_glopts()
+vlc_module_end ()
+
+
