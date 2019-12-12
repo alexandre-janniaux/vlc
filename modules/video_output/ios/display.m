@@ -104,7 +104,7 @@ vlc_module_end ()
     vout_display_cfg_t _cfg;
 }
 
-- (id)initWithFrame:(CGRect)frame andVD:(vout_display_t*)vd;
+- (id)initWithFrame:(CGRect)frame andVD:(vout_display_t*)vd window:(vout_window_t*)wnd;
 - (void)cleanAndRelease:(BOOL)flushed;
 - (BOOL)makeCurrent:(EAGLContext **)previousEaglContext withGL:(vlc_gl_t *)gl;
 - (void)releaseCurrent:(EAGLContext *)previousEaglContext;
@@ -143,7 +143,8 @@ static void *OurGetProcAddress(vlc_gl_t *gl, const char *name)
 static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
                 video_format_t *fmt, vlc_video_context *context)
 {
-    if (vout_display_cfg_IsWindowed(cfg))
+    vout_window_t *wnd = cfg->window;
+    if (wnd->type != VOUT_WINDOW_TYPE_NSOBJECT)
         return VLC_EGENERIC;
 
     vout_display_sys_t *sys = vlc_obj_calloc(VLC_OBJECT(vd), 1, sizeof(*sys));
@@ -162,8 +163,8 @@ static int Open(vout_display_t *vd, const vout_display_cfg_t *cfg,
 
         [VLCOpenGLES2VideoView performSelectorOnMainThread:@selector(getNewView:)
                                                 withObject:[NSArray arrayWithObjects:
-                                                           [NSValue valueWithPointer:&sys->glESView],
-                                                           [NSValue valueWithPointer:vd], nil]
+                                                           [NSValue valueWithPointer:vd],
+                                                           [NSValue valueWithPointer:wnd], nil]
                                              waitUntilDone:YES];
         if (!sys->glESView) {
             msg_Err(vd, "Creating OpenGL ES 2 view failed");
@@ -365,12 +366,14 @@ static void GLESSwap(vlc_gl_t *gl)
 
 + (void)getNewView:(NSArray *)value
 {
-    id *ret = [[value objectAtIndex:0] pointerValue];
-    vout_display_t *vd = [[value objectAtIndex:1] pointerValue];
-    *ret = [[self alloc] initWithFrame:CGRectMake(0.,0.,320.,240.) andVD:vd];
+    vout_display_t *vd = [[value objectAtIndex:0] pointerValue];
+    vout_window_t *wnd = [[value objectAtIndex:1] pointerValue];
+
+    struct vout_display_sys_t *sys = vd->sys;
+    sys->glESView = [[self alloc] initWithFrame:CGRectMake(0.,0.,320.,240.) andVD:vd window:wnd];
 }
 
-- (id)initWithFrame:(CGRect)frame andVD:(vout_display_t*)vd
+- (id)initWithFrame:(CGRect)frame andVD:(vout_display_t*)vd window:(vout_window_t*)wnd
 {
     _appActive = ([UIApplication sharedApplication].applicationState == UIApplicationStateActive);
     if (unlikely(!_appActive))
@@ -415,7 +418,7 @@ static void GLESSwap(vlc_gl_t *gl)
 
     self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
-    if (![self fetchViewContainer])
+    if (![self bindToWindow: wnd])
     {
         [_eaglContext release];
         [self release];
@@ -443,11 +446,11 @@ static void GLESSwap(vlc_gl_t *gl)
     return self;
 }
 
-- (BOOL)fetchViewContainer
+- (BOOL)bindToWindow:(vout_window_t*)wnd
 {
     @try {
+        UIView *viewContainer = wnd->handle.nsobject;
         /* get the object we will draw into */
-        UIView *viewContainer = var_InheritAddress (_voutDisplay, "drawable-nsobject");
         if (unlikely(viewContainer == nil)) {
             msg_Err(_voutDisplay, "provided view container is nil");
             return NO;
