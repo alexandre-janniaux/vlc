@@ -71,19 +71,16 @@ static void GLESReleaseCurrent(vlc_gl_t *);
 
     UIView *_viewContainer;
 
-    /* Written from MT, read locked from vout */
-    CGSize _viewSize;
-    CGFloat _scaleFactor;
+    GLuint _renderBuffer;
+    GLuint _frameBuffer;
 }
 
 - (id)initWithFrame:(CGRect)frame gl:(vlc_gl_t*)gl;
 - (void)cleanAndRelease:(BOOL)flushed;
-- (BOOL)makeCurrent:(EAGLContext **)previousEaglContext;
-- (void)releaseCurrent:(EAGLContext *)previousEaglContext;
+- (BOOL)makeCurrent;
+- (void)releaseCurrent;
 - (void)presentRenderbuffer;
 
-// TODO RESIZE
-- (void)updateVoutCfg:(const vout_display_cfg_t *)cfg withVGL:(vout_display_opengl_t *)vgl;
 @end
 
 /*****************************************************************************
@@ -96,7 +93,7 @@ static void GLESReleaseCurrent(vlc_gl_t *);
     return [CAEAGLLayer class];
 }
 
-+ (void)getNewView:(NSArray *)value
++ (void)getNewView:(NSValue *)value
 {
 
     VLCOpenGLES2VideoView *view = [self alloc];
@@ -139,7 +136,7 @@ static void GLESReleaseCurrent(vlc_gl_t *);
         [self release];
         return nil;
     }
-    [self releaseCurrent:previousEaglContext];
+    [self releaseCurrent];
 
     _layer = (CAEAGLLayer *)self.layer;
     _layer.drawableProperties = [NSDictionary dictionaryWithObject:kEAGLColorFormatRGBA8 forKey: kEAGLDrawablePropertyColorFormat];
@@ -202,7 +199,6 @@ static void GLESReleaseCurrent(vlc_gl_t *);
         _viewContainer = viewContainer;
 
         self.frame = viewContainer.bounds;
-        [self reshape];
 
         [_viewContainer addSubview:self];
 
@@ -258,31 +254,31 @@ static void GLESReleaseCurrent(vlc_gl_t *);
 {
     VLCOpenGLES2VideoView *view = gl->sys;
 
-    if (view->frameBuffer != 0)
+    if (_frameBuffer != 0)
     {
         /* clear frame buffer */
-        glDeleteFramebuffers(1, &view->frameBuffer);
-        view->frameBuffer = 0;
+        glDeleteFramebuffers(1, &_frameBuffer);
+        _frameBuffer = 0;
     }
 
-    if (view->renderBuffer != 0)
+    if (_renderBuffer != 0)
     {
         /* clear render buffer */
-        glDeleteRenderbuffers(1, &view->renderBuffer);
-        view->renderBuffer = 0;
+        glDeleteRenderbuffers(1, &_renderBuffer);
+        _renderBuffer = 0;
     }
 
     glDisable(GL_DEPTH_TEST);
 
-    glGenFramebuffers(1, &view->frameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, view->frameBuffer);
+    glGenFramebuffers(1, &_frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, _frameBuffer);
 
-    glGenRenderbuffers(1, &view->renderBuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, view->renderBuffer);
+    glGenRenderbuffers(1, &_renderBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, _renderBuffer);
 
     [_eaglContext renderbufferStorage:GL_RENDERBUFFER fromDrawable:_layer];
 
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, view->renderBuffer);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, _renderBuffer);
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         msg_Err(_gl, "Failed to make complete framebuffer object %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
@@ -291,7 +287,7 @@ static void GLESReleaseCurrent(vlc_gl_t *);
     return YES;
 }
 
-- (BOOL)makeCurrent:(EAGLContext **)previousEaglContext
+- (BOOL)makeCurrent
 {
     vlc_mutex_lock(&_mutex);
     assert(!_gl_attached);
@@ -305,7 +301,7 @@ static void GLESReleaseCurrent(vlc_gl_t *);
     }
 
     assert(_eaglEnabled);
-    *previousEaglContext = [EAGLContext currentContext];
+    //*previousEaglContext = [EAGLContext currentContext];
 
     if (![EAGLContext setCurrentContext:_eaglContext])
     {
@@ -326,21 +322,20 @@ static void GLESReleaseCurrent(vlc_gl_t *);
 
     vlc_mutex_unlock(&_mutex);
 
-    if (resetBuffers && ![self doResetBuffers:gl])
+    if (resetBuffers && ![self doResetBuffers:_gl])
     {
-        [self releaseCurrent:*previousEaglContext];
+        [self releaseCurrent];
         return NO;
     }
     return YES;
 }
 
-- (void)releaseCurrent:(EAGLContext *)previousEaglContext
+- (void)releaseCurrent
 {
-    [EAGLContext setCurrentContext:previousEaglContext];
-
     vlc_mutex_lock(&_mutex);
     assert(_gl_attached);
     _gl_attached = NO;
+    [EAGLContext setCurrentContext:nil];
     vlc_mutex_unlock(&_mutex);
     vlc_cond_signal(&_gl_attached_wait);
 }
@@ -352,36 +347,9 @@ static void GLESReleaseCurrent(vlc_gl_t *);
 
 - (void)layoutSubviews
 {
-    [self reshape];
-
     vlc_mutex_lock(&_mutex);
     _bufferNeedReset = YES;
     vlc_mutex_unlock(&_mutex);
-}
-
-- (void)reshape
-{
-    assert([NSThread isMainThread]);
-
-    vlc_mutex_lock(&_mutex);
-    _viewSize = [self bounds].size;
-    _scaleFactor = self.contentScaleFactor;
-    vlc_mutex_unlock(&_mutex);
-}
-
-- (void)updateVoutCfg:(const vout_display_cfg_t *)cfg withVGL:(vout_display_opengl_t *)vgl
-{
-    if (memcmp(&_cfg, cfg, sizeof(vout_display_cfg_t)) == 0)
-        return;
-
-    vlc_mutex_lock(&_mutex);
-    _cfg = *cfg;
-
-    vlc_mutex_unlock(&_mutex);
-
-    [self performSelectorOnMainThread:@selector(setNeedsUpdateConstraints)
-                           withObject:nil
-                        waitUntilDone:NO];
 }
 
 - (void)flushEAGLLocked
@@ -434,7 +402,6 @@ static void GLESReleaseCurrent(vlc_gl_t *);
 - (void)updateConstraints
 {
     [super updateConstraints];
-    [self reshape];
 }
 
 - (BOOL)isOpaque
@@ -465,7 +432,7 @@ static int MakeCurrent(vlc_gl_t *gl)
 {
     VLCOpenGLES2VideoView *view = gl->sys;
 
-    if (![view makeCurrent:&sys->previousEaglContext withGL:gl])
+    if (![view makeCurrent])
         return VLC_EGENERIC;
     return VLC_SUCCESS;
 }
@@ -473,7 +440,7 @@ static int MakeCurrent(vlc_gl_t *gl)
 static void ReleaseCurrent(vlc_gl_t *gl)
 {
     VLCOpenGLES2VideoView *view = gl->sys;
-    [view releaseCurrent:sys->previousEaglContext];
+    [view releaseCurrent];
 }
 
 static void Swap(vlc_gl_t *gl)
@@ -482,22 +449,33 @@ static void Swap(vlc_gl_t *gl)
     [view presentRenderbuffer];
 }
 
-static void Open(vlc_gl_t *gl, unsigned width, unsigned height)
+static void Resize(vlc_gl_t *gl, unsigned width, unsigned height)
+{
+
+}
+
+static void Close(vlc_gl_t *gl)
+{
+
+}
+
+static int Open(vlc_gl_t *gl, unsigned width, unsigned height)
 {
     vout_window_t *wnd = gl->surface;
     if (wnd->type != VOUT_WINDOW_TYPE_NSOBJECT)
         return VLC_EGENERIC;
 
    @autoreleasepool {
-    /* setup the actual OpenGL ES view */
+        /* setup the actual OpenGL ES view */
 
-    [VLCOpenGLES2VideoView performSelectorOnMainThread:@selector(getNewView:)
-                                            withObject:[NSValue valueWithPointer:gl]
-                                         waitUntilDone:YES];
-    if (gl->sys == NULL)
-    {
-        msg_Err(vd, "Creating OpenGL ES 2 view failed");
-        return VLC_EGENERIC;
+        [VLCOpenGLES2VideoView performSelectorOnMainThread:@selector(getNewView:)
+                                                withObject:[NSValue valueWithPointer:gl]
+                                             waitUntilDone:YES];
+        if (gl->sys == NULL)
+        {
+            msg_Err(gl, "Creating OpenGL ES 2 view failed");
+            return VLC_EGENERIC;
+        }
     }
 
     const vlc_fourcc_t *subpicture_chromas;
@@ -521,3 +499,4 @@ vlc_module_begin ()
     set_callback(Open)
     add_shortcut ("caeagl")
 vlc_module_end ()
+
