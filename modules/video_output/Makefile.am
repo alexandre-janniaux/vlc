@@ -57,7 +57,7 @@ if HAVE_IOS
 libglconv_cvpx_plugin_la_CFLAGS = $(AM_CFLAGS) -DUSE_OPENGL_ES2
 endif
 
-libvout_ios_plugin_la_SOURCES = video_output/ios/display.m $(OPENGL_COMMONSOURCES)
+libvout_ios_plugin_la_SOURCES = video_output/opengl/display.c $(OPENGL_COMMONSOURCES)
 libvout_ios_plugin_la_CFLAGS = $(AM_CFLAGS) $(OPENGL_COMMONCFLAGS) -DUSE_OPENGL_ES2
 libvout_ios_plugin_la_LIBADD = $(OPENGL_COMMONLIBS)
 libvout_ios_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)' \
@@ -65,12 +65,17 @@ libvout_ios_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)' \
 
 libuiview_window_plugin_la_SOURCES = video_output/ios/uiview.m
 libuiview_window_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)' \
+	-Wl,-framework,QuartzCore,-framework,UIKit
+
+libcaeagl_ios_plugin_la_SOURCES = video_output/ios/caeagl.m
+libcaeagl_ios_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)' \
 	-Wl,-framework,OpenGLES,-framework,QuartzCore,-framework,UIKit
 
 if HAVE_IOS
-vout_LTLIBRARIES += libvout_ios_plugin.la \
-	libglconv_cvpx_plugin.la \
-	libuiview_window_plugin.la
+vout_LTLIBRARIES += libvout_ios_plugin.la
+vout_LTLIBRARIES += libglconv_cvpx_plugin.la
+vout_LTLIBRARIES += libuiview_window_plugin.la
+vout_LTLIBRARIES += libcaeagl_ios_plugin.la
 endif
 if HAVE_TVOS
 vout_LTLIBRARIES += libvout_ios_plugin.la libglconv_cvpx_plugin.la
