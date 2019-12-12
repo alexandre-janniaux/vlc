@@ -84,6 +84,8 @@
 - (void)updateConstraints;
 - (BOOL)isOpaque;
 - (BOOL)acceptsFirstResponder;
+- (void)enable;
+- (void)disable;
 
 @end
 
@@ -92,7 +94,6 @@
  *****************************************************************************/
 @implementation VLCVideoUIView
 
-// 
 + (void)getNewView:(NSValue *)value
 {
     VLCVideoUIView *uiview = [self alloc];
@@ -161,8 +162,6 @@
         self.frame = viewContainer.bounds;
         [self reshape];
 
-        [_viewContainer addSubview:self];
-
         /* add tap gesture recognizer for DVD menus and stuff */
         _tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self
                                                                  action:@selector(tapRecognized:)];
@@ -178,6 +177,16 @@
             [_tapRecognizer release];
         return NO;
     }
+}
+
+- (void)enable
+{
+    [_viewContainer addSubview:self];
+}
+
+- (void)disable
+{
+    [self removeFromSuperview];
 }
 
 - (void)cleanAndReleaseFromMainThread
@@ -270,6 +279,9 @@
 static int Enable(vout_window_t *wnd, const vout_window_cfg_t *cfg)
 {
     VLCVideoUIView *sys = wnd->sys;
+    [sys performSelectorOnMainThread: @selector(enable)
+                          withObject: nil
+                       waitUntilDone: NO];
 
     return VLC_SUCCESS;
 }
@@ -277,13 +289,14 @@ static int Enable(vout_window_t *wnd, const vout_window_cfg_t *cfg)
 static void Disable(vout_window_t *wnd)
 {
     VLCVideoUIView *sys = wnd->sys;
+    [sys performSelectorOnMainThread: @selector(disable)
+                          withObject: nil
+                       waitUntilDone: NO];
 }
 
 static void Close(vout_window_t *wnd)
 {
     VLCVideoUIView *sys = wnd->sys;
-
-    free(sys);
 }
 
 static const struct vout_window_operations window_ops =
