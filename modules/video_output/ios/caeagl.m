@@ -223,6 +223,7 @@ static void GLESReleaseCurrent(vlc_gl_t *);
 
 - (void)cleanAndRelease:(BOOL)flushed
 {
+    // TODO: is needed ?
     vlc_mutex_lock(&_mutex);
     if (_eaglEnabled && !flushed)
         [self flushEAGLLocked];
@@ -416,6 +417,11 @@ static void GLESReleaseCurrent(vlc_gl_t *);
     return nil;
 }
 
+- (void)resize:(CGSize)size
+{
+    /* HOW TO RESIZE ? */
+}
+
 @end
 
 /*****************************************************************************
@@ -451,12 +457,14 @@ static void Swap(vlc_gl_t *gl)
 
 static void Resize(vlc_gl_t *gl, unsigned width, unsigned height)
 {
-
+    VLCOpenGLES2VideoView *view = gl->sys;
+    [view resize:CGSizeMake(width, height)];
 }
 
 static void Close(vlc_gl_t *gl)
 {
-
+    VLCOpenGLES2VideoView *view = gl->sys;
+    [view cleanAndRelease:YES];
 }
 
 static int Open(vlc_gl_t *gl, unsigned width, unsigned height)
