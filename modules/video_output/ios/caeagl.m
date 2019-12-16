@@ -125,18 +125,7 @@ static void GLESReleaseCurrent(vlc_gl_t *);
      * need if there is already an active context created by another OpenGL
      * provider we cache it and restore analog to the
      * makeCurrent/releaseCurrent pattern used through-out the class */
-    EAGLContext *previousEaglContext = [EAGLContext currentContext];
-
     _eaglContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-
-    if (unlikely(!_eaglContext)
-     || unlikely(![EAGLContext setCurrentContext:_eaglContext]))
-    {
-        [_eaglContext release];
-        [self release];
-        return nil;
-    }
-    [self releaseCurrent];
 
     _layer = (CAEAGLLayer *)self.layer;
     _layer.drawableProperties = [NSDictionary dictionaryWithObject:kEAGLColorFormatRGBA8 forKey: kEAGLDrawablePropertyColorFormat];
@@ -507,4 +496,3 @@ vlc_module_begin ()
     set_callback(Open)
     add_shortcut ("caeagl")
 vlc_module_end ()
-
