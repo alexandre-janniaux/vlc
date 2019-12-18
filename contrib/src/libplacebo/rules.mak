@@ -19,6 +19,8 @@ endif
 
 ifdef HAVE_WIN32
 DEPS_libplacebo += pthreads $(DEPS_pthreads)
+# vulkan-loader is enabled only for win32 for now, for vulkan support
+DEPS_libplacebo += vulkan-loader $(DEPS_vulkan-loader)
 endif
 
 PLACEBOCONF := -Dglslang=enabled \
