@@ -128,7 +128,8 @@ VLC_API picture_t * picture_pool_Get( picture_pool_t * ) VLC_USED;
  *
  * @note This function is thread-safe.
  */
-VLC_API picture_t *picture_pool_Wait(picture_pool_t *) VLC_USED;
+#define picture_pool_Wait(pool) (picture_pool_Wait)(pool, __FILE__, __LINE__, __FUNCTION__)
+VLC_API picture_t *(picture_pool_Wait)(picture_pool_t *, const char*, int, const char*) VLC_USED;
 
 /**
  * Cancel the picture pool.
@@ -171,4 +172,3 @@ VLC_API unsigned picture_pool_GetSize(const picture_pool_t *);
 
 
 #endif /* VLC_PICTURE_POOL_H */
-

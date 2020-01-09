@@ -223,10 +223,12 @@ VLC_API void picture_Destroy(picture_t *picture);
  *
  * \return picture
  */
-static inline picture_t *picture_Hold(picture_t *picture)
+#define picture_Hold(pic) (picture_Hold)(pic, __FILE__, __LINE__, __FUNCTION__)
+static inline picture_t *(picture_Hold)(picture_t *picture, const char *file, int line, const char *func)
 {
-    atomic_fetch_add_explicit(&picture->refs, (uintptr_t)1,
+    uintptr_t refs = atomic_fetch_add_explicit(&picture->refs, (uintptr_t)1,
                               memory_order_relaxed);
+    fprintf(stderr, "[PIC] ++ holding picture %p at %s in %s:%d : count=%u\n", picture, func, file, line, (unsigned)refs+1);
     return picture;
 }
 
@@ -237,10 +239,12 @@ static inline picture_t *picture_Hold(picture_t *picture)
  * allocated from a pool, the underlying picture buffer will be returned to the
  * pool. Otherwise, the picture buffer will be freed.
  */
-static inline void picture_Release(picture_t *picture)
+#define picture_Release(pic) (picture_Release)(pic, __FILE__, __LINE__, __FUNCTION__)
+static inline void (picture_Release)(picture_t *picture, const char *file, int line, const char *func)
 {
     uintptr_t refs = atomic_fetch_sub_explicit(&picture->refs, (uintptr_t)1,
                                                memory_order_release);
+    fprintf(stderr, "[PIC] -- releasing picture %p at %s in %s:%d : count=%u\n", picture, func, file, line, (unsigned)refs-1);
     vlc_assert(refs > 0);
     if (refs == 1)
         picture_Destroy(picture);

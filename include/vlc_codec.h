@@ -398,11 +398,13 @@ VLC_API void decoder_Clean( decoder_t *p_dec );
  * error).
  * FIXME: input_DecoderFrameNext won't work if a module use this function.
  */
-static inline void decoder_QueueVideo( decoder_t *dec, picture_t *p_pic )
+#define decoder_QueueVideo(dec, pic) (decoder_QueueVideo)(dec, pic, __FILE__, __LINE__, __FUNCTION__)
+static inline void (decoder_QueueVideo)( decoder_t *dec, picture_t *p_pic, const char *file, int line, const char *func )
 {
     vlc_assert( dec->fmt_in.i_cat == VIDEO_ES && dec->cbs != NULL );
     vlc_assert( p_pic->p_next == NULL );
     vlc_assert( dec->cbs->video.queue != NULL );
+    fprintf(stderr, "[PIC][Codec] Queuing picture %p in file %s:%d in function %s\n", p_pic, file, line, func);
     dec->cbs->video.queue( dec, p_pic );
 }
 

@@ -225,8 +225,10 @@ picture_t *picture_pool_Get(picture_pool_t *pool)
     return NULL;
 }
 
-picture_t *picture_pool_Wait(picture_pool_t *pool)
+picture_t *(picture_pool_Wait)(picture_pool_t *pool, const char *file, int line, const char *func)
 {
+    fprintf(stderr, "[PIC][POOL] Waiting for picture in pool %p, file %s:%d, function %s\n",
+            pool, file, line, func);
     vlc_mutex_lock(&pool->lock);
     assert(pool->refs > 0);
 
@@ -259,6 +261,8 @@ picture_t *picture_pool_Wait(picture_pool_t *pool)
         assert(clone->p_next == NULL);
         atomic_fetch_add_explicit(&pool->refs, 1, memory_order_relaxed);
     }
+    fprintf(stderr, "[PIC][POOL] Got picture %p in pool %p, file %s:%d, function %s\n",
+            clone, pool, file, line, func);
     return clone;
 }
 

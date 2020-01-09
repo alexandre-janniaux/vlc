@@ -441,6 +441,7 @@ picture_t *picture_InternalClone(picture_t *picture,
     if (likely(clone != NULL)) {
         ((picture_priv_t *)clone)->gc.opaque = opaque;
         picture_Hold(picture);
+        fprintf(stderr, "Cloning picture %p into the picture %p\n", picture, clone);
     }
     return clone;
 }
