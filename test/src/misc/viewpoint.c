@@ -101,13 +101,6 @@ test_conversion_euler_quaternion()
 {
     const float epsilon = 0.1f;
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  0.f));
-    //assert(reciprocal_euler(epsilon, 90.f, 0.f,  0.f));
-    //assert(reciprocal_euler(epsilon, 0.f,  90.f, 0.f));
-    //assert(reciprocal_euler(epsilon, 0.f,  0.f,  90.f));
-    //assert(reciprocal_euler(epsilon, 90.f, 90.f, 00.f));
-    //assert(reciprocal_euler(epsilon, 90.f,  0.f, 90.f));
-    //assert(reciprocal_euler(epsilon, 0.f,  90.f, 90.f));
-    //assert(reciprocal_euler(epsilon, 90.f, 90.f, 90.f));
     assert(reciprocal_euler(epsilon, 45.f, 0.f,  0.f));
     assert(reciprocal_euler(epsilon, 0.f,  45.f, 0.f));
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  45.f));
