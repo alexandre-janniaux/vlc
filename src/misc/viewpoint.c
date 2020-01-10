@@ -32,10 +32,51 @@
  * http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToEuler/ */
 static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float *q)
 {
-    float sqx = q[0] * q[0];
-    float sqy = q[1] * q[1];
-    float sqz = q[2] * q[2];
-    float sqw = q[3] * q[3];
+    /* The matrix built from the angles is made from the multiplication of the
+     * following matrices:
+     *                    ⎡cos(yaw)  0  -sin(yaw)⎤
+     *  m_yaw (y_rot)   = ⎢   0      1      0    ⎥
+     *                    ⎣sin(yaw)  0  cos(yaw) ⎦
+     *                    ⎡1       0           0     ⎤
+     *  m_pitch (x_rot) = ⎢0  cos(pitch)   sin(pitch)⎥
+     *                    ⎣0  -sin(pitch)  cos(pitch)⎦
+     *                    ⎡cos(roll)   sin(roll)  0⎤
+     *  m_roll (z_rot)  = ⎢-sin(roll)  cos(roll)  0⎥
+     *                    ⎣    0           0      1⎦
+     *
+     * Which, multiplied in the correct order will bring, with the symbols
+     * rewritten: sin = s , cos = c, yaw = y, pitch = p, roll = r
+     *
+     *     ⎡s(p)⋅s(r)⋅s(y) + c(r)⋅c(y)  s(r)⋅c(p)  s(p)⋅s(r)⋅c(y) - s(y)⋅c(r)⎤
+     * V = ⎢s(p)⋅s(y)⋅c(r) - s(r)⋅c(y)  c(p)⋅c(r)  s(p)⋅c(r)⋅c(y) + s(r)⋅s(y)⎥
+     *     ⎣           s(y)⋅c(p)          -s(p)           c(p)⋅c(y)          ⎦
+     *
+     * We can first extract pitch = atan2( -V_32, sqrt(V_31^2 + V_33^2) )
+     *
+     * By taking the case |pitch| = 90 degree, it simplify c(y) and s(y) and:
+     *      roll = atan2( V_11, -V_21 )
+     *      yaw  = atan2( V_11, -V_13 )
+     *
+     * Otherwise, |pitch| != 90 degree and we can get:
+     *      roll = atan2( V_12, V_22 )
+     *      yaw  = atan2( V_31, V_33 )
+     *
+     * By identifying the coefficient in this matrix and the matrix obtained
+     * from converting the quaternion to 3x3 matrix, we get the following
+     * results.
+     */
+
+    /* Rename variables and precompute square values to improve readability. as
+     * they are used multiple times. */
+    float gw = q[3];
+    float gx = q[0];
+    float gy = q[1];
+    float gz = q[2];
+
+    float sqx = gx * gx;
+    float sqy = gy * gy;
+    float sqz = gz * gz;
+    float sqw = gw * gw;
 
     // if the quaternion is normalised, unit is one
     // otherwise it is correction factor
@@ -67,6 +108,21 @@ static void QuaternionToEuler(float *yaw, float *pitch, float *roll, const float
     float test = -q[3]*q[0] - q[1]*q[2];
 
     const float M_11 = 1.f - 2.f * (sqy + sqz) / unit;
+
+    /* TODO not used currently */
+    /* Diagonal values. */
+    float V_11 = 1 - 2 * (sqy + sqz);
+    float V_22 = 1 - 2 * (sqx + sqz);
+    float V_33 = 1 - 2 * (sqx + sqy);
+
+    /* Values with a minus sign. */
+    float V_31 = 2 * (gx * gz - gw * gy);
+    float V_12 = 2 * (gx * gy - gw * gz);
+
+    /* Values with only plus sign. */
+    float V_32 = 2 * (gw * gx + gy * gz);
+    float V_21 = 2 * (gx * gy + gw * gz);
+    float V_13 = 2 * (gw * gy + gx * gz);
 
     if (test > 0.499 * unit)
     {
