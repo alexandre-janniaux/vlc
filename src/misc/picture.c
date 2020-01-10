@@ -446,9 +446,10 @@ picture_t *picture_InternalClone(picture_t *picture,
     return clone;
 }
 
-picture_t *picture_Clone(picture_t *picture)
+picture_t *(picture_Clone)(picture_t *picture, const char *file, int line, const char *func)
 {
     picture_t *clone = picture_InternalClone(picture, picture_DestroyClone, picture);
+    fprintf(stderr, "[PIC][CLONE] Cloned picture %p into %p, file %s:%d, function %s\n", picture, clone, file, line, func);
     if (likely(clone != NULL)) {
         if (picture->context != NULL)
             clone->context = picture->context->copy(picture->context);

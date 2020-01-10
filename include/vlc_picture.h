@@ -289,7 +289,8 @@ VLC_API void picture_Copy( picture_t *p_dst, const picture_t *p_src );
  *
  * \return A clone picture on success, NULL on error.
  */
-VLC_API picture_t *picture_Clone(picture_t *pic);
+#define picture_Clone(pic) (picture_Clone)(pic, __FILE__, __LINE__, __FUNCTION__)
+VLC_API picture_t *(picture_Clone)(picture_t *pic, const char*, int, const char*);
 
 /**
  * This function will export a picture to an encoded bitstream.
