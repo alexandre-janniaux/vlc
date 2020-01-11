@@ -113,6 +113,15 @@ test_conversion_euler_quaternion()
     assert(reciprocal_euler(epsilon, 0.f,  45.f, 0.f));
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  45.f));
     assert(reciprocal_euler(epsilon, 45.f, 45.f, 0.f));
+    assert(reciprocal_euler(epsilon, 0.f,  45.f, 45.f));
+    assert(reciprocal_euler(epsilon, 45.f, 45.f, 45.f));
+
+    assert(reciprocal_euler(epsilon, -45.f,  0.f,  0.f));
+    assert(reciprocal_euler(epsilon,  0.f,  -45.f, 0.f));
+    assert(reciprocal_euler(epsilon,  0.f,   0.f,  -45.f));
+    assert(reciprocal_euler(epsilon, -45.f, -45.f,  0.f));
+    assert(reciprocal_euler(epsilon,  0.f,  -45.f, -45.f));
+    assert(reciprocal_euler(epsilon, -45.f, -45.f, -45.f));
 
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  10.f));
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  20.f));
@@ -124,8 +133,6 @@ test_conversion_euler_quaternion()
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  80.f));
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  90.f));
 
-    assert(reciprocal_euler(epsilon, 0.f,  45.f, 45.f));
-    assert(reciprocal_euler(epsilon, 45.f, 45.f, 45.f));
 }
 
 static int fuzzy_memcmp(const float *a, const float *b,
@@ -183,8 +190,6 @@ struct example_mat4x4 examples_mat4x4[] = {
          -1.f,  0.f,  0.f,  0.f,
           0.f, -1.f,  0.f,  0.f,
           0.f,  0.f,  0.f,  1.f, } },
-
-
 
     { .angles = { 90.f, 90.f, 0.f },
       .mat    = {
@@ -247,15 +252,8 @@ test_conversion_viewpoint_mat4x4()
         float expect_mat[16];
         mat4x4_for_angles(expect_mat, ex->angles);
 
-        //float transpose[16];
-        //for (int j=0; j<4; ++j)
-        //    for (int k=0; k<4; ++k)
-        //        transpose[4*k+j] = expect_mat[4*j+k];
-        //memcpy(expect_mat, transpose, sizeof(expect_mat));
-
         bool diff = fuzzy_memcmp(mat, expect_mat,
                                  ARRAY_SIZE(mat), epsilon);
-        //printmat("EXPECT", ex->mat);
         if (!diff)
             continue;
 
