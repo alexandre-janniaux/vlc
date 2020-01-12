@@ -427,6 +427,9 @@ void vout_ChangeDisplaySize(vout_thread_t *vout,
     vlc_mutex_lock(&sys->display_lock);
     if (sys->display != NULL)
         vout_display_SetSize(sys->display, width, height);
+
+    sys->has_size = true;
+    vlc_cond_signal(&sys->state_update);
     vlc_mutex_unlock(&sys->display_lock);
 }
 
@@ -1795,6 +1798,8 @@ static void vout_DisableWindow(vout_thread_t *vout)
         vout_window_Disable(sys->display_cfg.window);
         sys->window_enabled = false;
     }
+    /* Next time  */
+    sys->has_size = false;
     vlc_mutex_unlock(&sys->window_lock);
 }
 
@@ -1848,6 +1853,7 @@ void vout_Release(vout_thread_t *vout)
     /* Destroy the locks */
     vlc_mutex_destroy(&sys->window_lock);
     vlc_mutex_destroy(&sys->filter.lock);
+    vlc_cond_destroy(&sys->state_update);
 
     if (sys->dec_device)
         vlc_decoder_device_Release(sys->dec_device);
@@ -1948,6 +1954,8 @@ vout_thread_t *vout_Create(vlc_object_t *object)
     vlc_mutex_init(&sys->display_lock);
 
     /* Window */
+    vlc_cond_init(&sys->state_update);
+    sys->has_size = false;
     sys->display_cfg.window = vout_display_window_New(vout);
     if (sys->display_cfg.window == NULL) {
         if (sys->spu)
@@ -2036,7 +2044,13 @@ static int vout_EnableWindow(vout_thread_t *vout, const video_format_t *original
             sys->dec_device = vlc_decoder_device_Create(&vout->obj, sys->display_cfg.window);
         *pp_dec_device = sys->dec_device ? vlc_decoder_device_Hold( sys->dec_device ) : NULL;
     }
+
+    vlc_mutex_lock(&sys->display_lock);
     vlc_mutex_unlock(&sys->window_lock);
+    while (!sys->has_size)
+        vlc_cond_wait(&sys->state_update, &sys->display_lock);
+    vlc_mutex_unlock(&sys->display_lock);
+
     return 0;
 }
 

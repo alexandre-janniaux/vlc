@@ -108,6 +108,10 @@ struct vout_thread_sys_t
         } crop;
     } source;
 
+    /* Window state synchronization */
+    vlc_cond_t state_update;
+    bool has_size;
+
     /* Snapshot interface */
     struct vout_snapshot *snapshot;
 
