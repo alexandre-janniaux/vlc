@@ -76,10 +76,10 @@ static inline void vlc_viewpoint_reverse( vlc_viewpoint_t *dst,
                                           const vlc_viewpoint_t *src )
 {
     /* reverse x, y, z but not w */
-    dst->quat[0] =  src->quat[0];
+    dst->quat[0] = -src->quat[0];
     dst->quat[1] = -src->quat[1];
     dst->quat[2] = -src->quat[2];
-    dst->quat[3] = -src->quat[3];
+    dst->quat[3] =  src->quat[3];
 
     dst->fov   = src->fov;
 }
