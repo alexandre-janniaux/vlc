@@ -74,17 +74,23 @@ compare_angles(float epsilon, const float a1[3], const float a2[3])
     const float MAX_PITCH = 360.f;
     const float MAX_ROLL  = 180.f;
 
+    /* We add MAX_YAW, MAX_PITCH and MAX_ROLL to ensure the value for fmodf
+     * will stay positive. The value will be between 0 and {MAX_ANGLE}. */
     float dy = fmodf(MAX_YAW   + (a1[0] - a2[0]), MAX_YAW);
     float dp = fmodf(MAX_PITCH + (a1[1] - a2[1]), MAX_PITCH);
     float dr = fmodf(MAX_ROLL  + (a1[2] - a2[2]), MAX_ROLL);
 
-    /* Check the two borders of the tore, 0.f and 180.f or 360.f
-     * depending on the range of the compared value. */
+    /* Check the two borders of the torus, 0.f and 180.f or 360.f depending
+     * on the range of the compared value. */
     return (dy < epsilon || MAX_YAW   - dy < epsilon) &&
            (dp < epsilon || MAX_PITCH - dp < epsilon) &&
            (dr < epsilon || MAX_ROLL  - dr < epsilon);
 }
 
+/**
+ * Execute conversion back and forth from Euler angles to quaternion.
+ * Check that the original angles are preserved by the conversion methods.
+ */
 static bool
 reciprocal_euler(float epsilon, float yaw, float pitch, float roll)
 {
@@ -122,17 +128,6 @@ test_conversion_euler_quaternion()
     assert(reciprocal_euler(epsilon, -45.f, -45.f,  0.f));
     assert(reciprocal_euler(epsilon,  0.f,  -45.f, -45.f));
     assert(reciprocal_euler(epsilon, -45.f, -45.f, -45.f));
-
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  10.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  20.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  30.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  40.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  50.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  60.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  70.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  80.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  90.f));
-
 }
 
 static int fuzzy_memcmp(const float *a, const float *b,
