@@ -27,7 +27,10 @@
 
 #ifdef HAVE_LIBPLACEBO
 #include <libplacebo/shaders.h>
+#include <libplacebo/dummy.h>
 #include <libplacebo/shaders/colorspace.h>
+#include <libplacebo/shaders/sampling.h>
+
 #include "../placebo_utils.h"
 #endif
 
@@ -513,6 +516,23 @@ opengl_fragment_shader_init(opengl_tex_converter_t *tc, GLenum tex_target,
         struct pl_color_space dst_space = pl_color_space_unknown;
         dst_space.primaries = var_InheritInteger(tc->gl, "target-prim");
         dst_space.transfer = var_InheritInteger(tc->gl, "target-trc");
+
+        /* pl_filter_config available through filter_config->filter */
+        const struct pl_named_filter_config *filter_config = pl_find_named_filter("jinc");
+
+        struct pl_tex_params tex_params = {};
+        const struct pl_tex *tex_src = pl_tex_dummy_create(tc->pl_gpu, &tex_params);
+        struct pl_sample_src sample_src = { .tex = tex_src };
+        struct pl_sample_filter_params filter_params = {
+            .filter = *filter_config->filter,
+            .no_compute = true,
+            //TODO shader lut
+        };
+
+        if (!pl_shader_sample_polar(sh, &sample_src, &filter_params))
+        {
+            // TODO
+        }
 
         pl_shader_color_map(sh, &color_params,
                 vlc_placebo_ColorSpace(&interop->fmt),
