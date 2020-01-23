@@ -218,7 +218,9 @@ static void getViewpointMatrixes(vout_display_opengl_t *vgl,
     if (projection_mode == PROJECTION_MODE_EQUIRECTANGULAR
         || projection_mode == PROJECTION_MODE_CUBEMAP_LAYOUT_STANDARD)
     {
-        getProjectionMatrix(vgl->f_sar, vgl->f_fovy, prgm->var.ProjectionMatrix);
+        msg_Info(vgl->gl, "FOV = %f", vgl->vp.fov);
+        getProjectionMatrix(vgl->f_sar, vgl->vp.fov, prgm->var.ProjectionMatrix);
+        //getProjectionMatrix(vgl->f_sar, vgl->f_fovy, prgm->var.ProjectionMatrix);
         getZoomMatrix(vgl->f_z, prgm->var.ZoomMatrix);
 
         /* vgl->vp has been reversed and is a world transform */
