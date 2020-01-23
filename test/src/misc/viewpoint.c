@@ -68,6 +68,30 @@ static void mat4x4_for_angles( float *m, float *angles )
 }
 
 static bool
+compare_angles(float epsilon, const float a1[3], const float a2[3])
+{
+    const float MAX_YAW   = 180.f;
+    const float MAX_PITCH = 360.f;
+    const float MAX_ROLL  = 180.f;
+
+    /* We add MAX_YAW, MAX_PITCH and MAX_ROLL to ensure the value for fmodf
+     * will stay positive. The value will be between 0 and {MAX_ANGLE}. */
+    float dy = fmodf(MAX_YAW   + (a1[0] - a2[0]), MAX_YAW);
+    float dp = fmodf(MAX_PITCH + (a1[1] - a2[1]), MAX_PITCH);
+    float dr = fmodf(MAX_ROLL  + (a1[2] - a2[2]), MAX_ROLL);
+
+    /* Check the two borders of the torus, 0.f and 180.f or 360.f depending
+     * on the range of the compared value. */
+    return (dy < epsilon || MAX_YAW   - dy < epsilon) &&
+           (dp < epsilon || MAX_PITCH - dp < epsilon) &&
+           (dr < epsilon || MAX_ROLL  - dr < epsilon);
+}
+
+/**
+ * Execute conversion back and forth from Euler angles to quaternion.
+ * Check that the original angles are preserved by the conversion methods.
+ */
+static bool
 reciprocal_euler(float epsilon, float yaw, float pitch, float roll)
 {
     vlc_viewpoint_t vp;
@@ -81,15 +105,9 @@ reciprocal_euler(float epsilon, float yaw, float pitch, float roll)
     fprintf(stderr, "converted:  yaw=%f, pitch=%f, roll=%f\n", yaw2, pitch2, roll2);
     fprintf(stderr, "==========================================\n");
 
-    float d1 = fmodf(360.f + (yaw   - yaw2),   360.f);
-    float d2 = fmodf(180.f + (pitch - pitch2), 180.f);
-    float d3 = fmodf(360.f + (roll  - roll2),  360.f);
-
-    /* Check the two borders of the tore, 0.f and 180.f or 360.f
-     * depending on the range of the compared value. */
-    return (d1 < epsilon || 360.f - d1 < epsilon) &&
-           (d2 < epsilon || 180.f - d2 < epsilon) &&
-           (d3 < epsilon || 360.f - d3 < epsilon);
+    return compare_angles(epsilon,
+            (float[]){yaw, pitch, roll},
+            (float[]){yaw, pitch, roll});
 }
 
 static void
@@ -97,30 +115,19 @@ test_conversion_euler_quaternion()
 {
     const float epsilon = 0.1f;
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  0.f));
-    //assert(reciprocal_euler(epsilon, 90.f, 0.f,  0.f));
-    //assert(reciprocal_euler(epsilon, 0.f,  90.f, 0.f));
-    //assert(reciprocal_euler(epsilon, 0.f,  0.f,  90.f));
-    //assert(reciprocal_euler(epsilon, 90.f, 90.f, 00.f));
-    //assert(reciprocal_euler(epsilon, 90.f,  0.f, 90.f));
-    //assert(reciprocal_euler(epsilon, 0.f,  90.f, 90.f));
-    //assert(reciprocal_euler(epsilon, 90.f, 90.f, 90.f));
     assert(reciprocal_euler(epsilon, 45.f, 0.f,  0.f));
     assert(reciprocal_euler(epsilon, 0.f,  45.f, 0.f));
     assert(reciprocal_euler(epsilon, 0.f,  0.f,  45.f));
     assert(reciprocal_euler(epsilon, 45.f, 45.f, 0.f));
-
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  10.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  20.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  30.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  40.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  50.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  60.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  70.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  80.f));
-    assert(reciprocal_euler(epsilon, 0.f,  0.f,  90.f));
-
     assert(reciprocal_euler(epsilon, 0.f,  45.f, 45.f));
     assert(reciprocal_euler(epsilon, 45.f, 45.f, 45.f));
+
+    assert(reciprocal_euler(epsilon, -45.f,  0.f,  0.f));
+    assert(reciprocal_euler(epsilon,  0.f,  -45.f, 0.f));
+    assert(reciprocal_euler(epsilon,  0.f,   0.f,  -45.f));
+    assert(reciprocal_euler(epsilon, -45.f, -45.f,  0.f));
+    assert(reciprocal_euler(epsilon,  0.f,  -45.f, -45.f));
+    assert(reciprocal_euler(epsilon, -45.f, -45.f, -45.f));
 }
 
 static int fuzzy_memcmp(const float *a, const float *b,
@@ -178,8 +185,6 @@ struct example_mat4x4 examples_mat4x4[] = {
          -1.f,  0.f,  0.f,  0.f,
           0.f, -1.f,  0.f,  0.f,
           0.f,  0.f,  0.f,  1.f, } },
-
-
 
     { .angles = { 90.f, 90.f, 0.f },
       .mat    = {
@@ -242,15 +247,8 @@ test_conversion_viewpoint_mat4x4()
         float expect_mat[16];
         mat4x4_for_angles(expect_mat, ex->angles);
 
-        //float transpose[16];
-        //for (int j=0; j<4; ++j)
-        //    for (int k=0; k<4; ++k)
-        //        transpose[4*k+j] = expect_mat[4*j+k];
-        //memcpy(expect_mat, transpose, sizeof(expect_mat));
-
         bool diff = fuzzy_memcmp(mat, expect_mat,
                                  ARRAY_SIZE(mat), epsilon);
-        //printmat("EXPECT", ex->mat);
         if (!diff)
             continue;
 
@@ -266,8 +264,8 @@ int main( void )
 {
     test_init();
 
-    test_conversion_viewpoint_mat4x4();
     test_conversion_euler_quaternion();
+    test_conversion_viewpoint_mat4x4();
 
     return 0;
 }
