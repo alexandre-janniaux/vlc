@@ -1024,7 +1024,7 @@ PlayerControllerPrivate::PlayerControllerPrivate(PlayerController *playercontrol
 
 PlayerController::PlayerController( intf_thread_t *_p_intf )
     : QObject(NULL)
-    , d_ptr( new PlayerControllerPrivate(this, _p_intf) )
+    , d_ptr { std::make_unique<PlayerControllerPrivate>(this, _p_intf) }
 {
     /* Audio Menu */
     menusAudioMapper = new QSignalMapper(this);

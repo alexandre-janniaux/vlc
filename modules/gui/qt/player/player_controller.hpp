@@ -432,7 +432,7 @@ private slots:
 
 private:
     Q_DECLARE_PRIVATE(PlayerController)
-    QScopedPointer<PlayerControllerPrivate> d_ptr;
+    std::unique_ptr<PlayerControllerPrivate> d_ptr;
     QSignalMapper *menusAudioMapper; //used by VLCMenuBar
 
     /* updateArt gui request */
