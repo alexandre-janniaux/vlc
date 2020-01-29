@@ -469,9 +469,7 @@ static void SetQuadVSProjection(vout_display_t *vd, d3d_quad_t *quad, const vlc_
         getZoomMatrix(SPHERE_RADIUS * f_z, dst_data->Zoom);
         getProjectionMatrix(f_sar, f_fovy, dst_data->Projection);
 
-        vlc_viewpoint_t vp;
-        vlc_viewpoint_reverse(&vp, p_vp);
-        vlc_viewpoint_to_4x4(&vp, dst_data->View);
+        vlc_viewpoint_to_4x4(p_vp, dst_data->View);
     }
     ID3D11DeviceContext_Unmap(sys->d3d_dev->d3dcontext, (ID3D11Resource *)quad->pVertexShaderConstants, 0);
 }

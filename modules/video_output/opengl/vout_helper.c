@@ -1024,8 +1024,9 @@ int vout_display_opengl_SetViewpoint(vout_display_opengl_t *vgl,
     // Convert degree into radian
     float f_fovx = p_vp->fov * (float)M_PI / 180.f;
 
-    /* vgl->vp needs to be converted into world transform */
-    vlc_viewpoint_reverse(&vgl->vp, p_vp);
+    /* Copy the viewpoint for future pictures. */
+    vgl->vp = *p_vp;
+
 
     if (fabsf(f_fovx - vgl->f_fovx) >= 0.001f)
     {
