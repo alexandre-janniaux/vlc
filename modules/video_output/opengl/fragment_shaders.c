@@ -521,12 +521,13 @@ opengl_fragment_shader_init(opengl_tex_converter_t *tc, GLenum tex_target,
         const struct pl_named_filter_config *filter_config = pl_find_named_filter("jinc");
 
         struct pl_tex_params tex_params = {};
-        const struct pl_tex *tex_src = pl_tex_dummy_create(tc->pl_gpu, &tex_params);
-        struct pl_sample_src sample_src = { .tex = tex_src };
+        const struct pl_tex *filter_tex_src = pl_tex_dummy_create(tc->pl_gpu, &tex_params);
+        struct pl_sample_src sample_src = { .tex = filter_tex_src };
+        struct pl_shader_obj *lut = NULL;
         struct pl_sample_filter_params filter_params = {
             .filter = *filter_config->filter,
             .no_compute = true,
-            //TODO shader lut
+            .lut = &lut,
         };
 
         if (!pl_shader_sample_polar(sh, &sample_src, &filter_params))
@@ -583,6 +584,8 @@ opengl_fragment_shader_init(opengl_tex_converter_t *tc, GLenum tex_target,
         assert(res->num_descriptors == 0);
 
         ADD(res->glsl);
+        pl_tex_destroy(tc->pl_gpu, &filter_tex_src);
+        pl_shader_obj_destroy(&lut);
     }
 #else
     if (interop->fmt.transfer == TRANSFER_FUNC_SMPTE_ST2084 ||
