@@ -42,10 +42,6 @@
 #include "vout_helper.h"
 #include "internal.h"
 
-#ifdef HAVE_LIBPLACEBO
-#include <libplacebo/dummy.h>
-#endif
-
 #ifndef GL_CLAMP_TO_EDGE
 # define GL_CLAMP_TO_EDGE 0x812F
 #endif
@@ -517,8 +513,6 @@ opengl_deinit_program(vout_display_opengl_t *vgl, struct prgm *prgm)
 
 #ifdef HAVE_LIBPLACEBO
     FREENULL(tc->uloc.pl_vars);
-    if (tc->pl_gpu)
-        pl_gpu_dummy_destroy(&tc->pl_gpu);
     if (tc->pl_ctx)
         pl_context_destroy(&tc->pl_ctx);
 #endif
@@ -572,19 +566,7 @@ opengl_init_program(vout_display_opengl_t *vgl, vlc_video_context *context,
     // Create the main libplacebo context
     if (!subpics)
     {
-        struct pl_gpu_dummy_params gpu_dummy_params = {
-            .caps = PL_GPU_CAP_INPUT_VARIABLES,
-            .glsl = (struct pl_glsl_desc) {
-                .version = tc->glsl_version,
-                .gles = interop->is_gles,
-                .vulkan = false,
-            },
-            .limits = (struct pl_gpu_limits) {
-                //TODO
-            },
-        };
         tc->pl_ctx = vlc_placebo_Create(VLC_OBJECT(vgl->gl));
-        tc->pl_gpu = pl_gpu_dummy_create(tc->pl_ctx, &gpu_dummy_params);
         if (tc->pl_ctx) {
 #   if PL_API_VER >= 20
             tc->pl_sh = pl_shader_alloc(tc->pl_ctx, NULL);
@@ -1743,3 +1725,4 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
     return VLC_SUCCESS;
 }
+

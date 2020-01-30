@@ -32,7 +32,6 @@
 struct pl_context;
 struct pl_shader;
 struct pl_shader_res;
-struct pl_gpu;
 
 /*
  * Structure that is filled by "glhw converter" module probe function
@@ -76,7 +75,6 @@ struct opengl_tex_converter_t
     bool yuv_color;
     GLfloat conv_matrix[16];
 
-    const struct pl_gpu *pl_gpu;
     struct pl_shader *pl_sh;
     const struct pl_shader_res *pl_sh_res;
 
