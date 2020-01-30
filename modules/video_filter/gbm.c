@@ -238,6 +238,8 @@ static picture_t *filter_input( filter_t *filter, picture_t *input )
         return NULL;
     }
 
+    picture_CopyProperties( output, input );
+
     context->lock = &sys->lock;
     context->cond = &sys->cond;
     context->surface = sys->gl->surface->handle.gbm;
@@ -317,8 +319,24 @@ static picture_t *filter_output( filter_t *filter, picture_t *input )
             output = filter_NewPicture(filter);
             if (output != NULL)
             {
+                //msg_Info(filter, "stride = %u", stride);
+                //msg_Info(filter, "offset = %u", offset);
+                //msg_Info(filter, "ASSERT: %u = %u",
+                //         output->format.i_visible_width, width);
+                //msg_Info(filter, "ASSERT: %u = %u",
+                //         output->format.i_visible_height, height);
+                //msg_Info(filter, "plane count = %u", gbm_bo_get_plane_count(context->bo));
+                //msg_Info(filter, "bit pp = %u", gbm_bo_get_bpp(context->bo));
                 assert(output->i_planes == 1);
-                memcpy(output->p[0].p_pixels, (const char*)buffer + strides, height * strides);
+                assert(output->format.i_visible_width == width);
+                assert(output->format.i_visible_height == height);
+
+                for(size_t line=0; line < height; ++line)
+                {
+                    memcpy((char*)output->p[0].p_pixels + line*width, (const char*)base + offset * line, width);
+                }
+
+                picture_CopyProperties( output, input );
             }
             gbm_bo_unmap(context->bo, buffer);
         }
