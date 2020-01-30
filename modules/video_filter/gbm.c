@@ -319,14 +319,7 @@ static picture_t *filter_output( filter_t *filter, picture_t *input )
             output = filter_NewPicture(filter);
             if (output != NULL)
             {
-                //msg_Info(filter, "stride = %u", stride);
-                //msg_Info(filter, "offset = %u", offset);
-                //msg_Info(filter, "ASSERT: %u = %u",
-                //         output->format.i_visible_width, width);
-                //msg_Info(filter, "ASSERT: %u = %u",
-                //         output->format.i_visible_height, height);
-                //msg_Info(filter, "plane count = %u", gbm_bo_get_plane_count(context->bo));
-                //msg_Info(filter, "bit pp = %u", gbm_bo_get_bpp(context->bo));
+                assert(gbm_bo_get_format(context->bo) == GBM_FORMAT_XRGB8888);
                 assert(output->i_planes == 1);
                 assert(output->format.i_visible_width == width);
                 assert(output->format.i_visible_height == height);
