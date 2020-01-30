@@ -31,9 +31,11 @@ struct gbm_filter_t
     vout_display_opengl_t   *vgl;
     vlc_gl_t                *gl;
     vout_window_t           *win;
+    vlc_mutex_t             lock;
+    vlc_cond_t              cond;
 };
 
-int dummy(void)
+static int dummy(void)
 {
     return 0;
 }
@@ -72,10 +74,14 @@ static int create( vlc_object_t *obj )
     fprintf(stderr, "~~~~~ create offscreen filter\n");
 
     filter->fmt_out.i_codec = VLC_CODEC_GBM;
+    filter->fmt_out.video.i_chroma = VLC_CODEC_GBM;
 
     filter->p_sys = sys = malloc(sizeof(*sys));
     if (sys == NULL)
         return VLC_ENOMEM;
+
+    vlc_mutex_init(&sys->lock);
+    vlc_cond_init(&sys->cond);
 
     sys->gl = NULL;
     sys->vgl = NULL;
@@ -86,7 +92,7 @@ static int create( vlc_object_t *obj )
         goto error;
     }
 
-    vout_window_Enable(displ_cfg.window, &wind_cfg);   
+    vout_window_Enable(displ_cfg.window, &wind_cfg);
 
     sys->gl = vlc_gl_Create(&displ_cfg, VLC_OPENGL, "egl_gbm");
     if (sys->gl == NULL)
@@ -125,8 +131,8 @@ static int create( vlc_object_t *obj )
             {
                 next_module = config_ChainCreate(&name, &chain, next_module);
                 // TODO: chain == null ?
-                if (name != NULL)
-                    vout_display_opengl_AppendFilter(sys->vgl, name, chain);
+                //if (name != NULL)
+                //    vout_display_opengl_AppendFilter(sys->vgl, name, chain);
                 config_ChainDestroy(chain);
             }
         }
@@ -139,6 +145,8 @@ static int create( vlc_object_t *obj )
     return VLC_SUCCESS;
 
 error:
+    vlc_mutex_destroy(&sys->lock);
+    vlc_cond_destroy(&sys->cond);
     destroy(obj);
     return VLC_EGENERIC;
 }
@@ -147,6 +155,8 @@ static void destroy( vlc_object_t *obj )
 {
     filter_t        *filter = (filter_t *)obj;
     struct gbm_filter_t    *sys = filter->p_sys;
+
+    fprintf(stderr, "DESTROY FILTER\n");
 
     fprintf(stderr, "~~~~~ destroy\n");
     if (sys != NULL)
@@ -175,6 +185,8 @@ struct gbm_context
     struct gbm_bo *bo;
     struct gbm_surface *surface;
     vlc_atomic_rc_t rc;
+    vlc_mutex_t *lock;
+    vlc_cond_t *cond;
 };
 
 static picture_context_t    *picture_context_copy(picture_context_t *input)
@@ -189,10 +201,15 @@ static void picture_context_destroy(picture_context_t *input)
 {
     struct gbm_context *context = (struct gbm_context *)input;
 
+    fprintf(stderr, "DESTROY PICTURE CONTEXT\n");
+
     if (vlc_atomic_rc_dec(&context->rc))
     {
+        vlc_mutex_lock(context->lock);
         if (context->bo != NULL)
             gbm_surface_release_buffer(context->surface, context->bo);
+        vlc_cond_signal(context->cond);
+        vlc_mutex_unlock(context->lock);
         free(context);
     }
 }
@@ -204,7 +221,6 @@ static picture_t *filter_input( filter_t *filter, picture_t *input )
     picture_resource_t pict_resource = {
         .p_sys = input->p_sys,
     };
-
 
     fprintf(stderr, "i_planes == %u\n", input->i_planes);
 
@@ -227,11 +243,19 @@ static picture_t *filter_input( filter_t *filter, picture_t *input )
         return NULL;
     }
 
+    context->lock = &sys->lock;
+    context->cond = &sys->cond;
     context->surface = sys->gl->surface->handle.gbm;
     context->cbs.destroy = picture_context_destroy;
     context->cbs.copy = picture_context_copy;
     vlc_atomic_rc_init(&context->rc);
     output->context = (picture_context_t *)context;
+    output->context->vctx = NULL;
+
+    vlc_mutex_lock(&sys->lock);
+    while(gbm_surface_has_free_buffers(context->surface) == 0)
+        vlc_cond_wait(&sys->cond, &sys->lock);
+    vlc_mutex_unlock(&sys->lock);
 
     if (vlc_gl_MakeCurrent(sys->gl) == VLC_SUCCESS)
     {
@@ -299,7 +323,7 @@ static picture_t *filter_output( filter_t *filter, picture_t *input )
             if (output != NULL)
             {
                 assert(output->i_planes == 1);
-                memcpy(output->p[0].p_pixels, buffer + strides, height * strides);
+                memcpy(output->p[0].p_pixels, (const char*)buffer + strides, height * strides);
             }
             gbm_bo_unmap(context->bo, buffer);
         }
@@ -307,30 +331,6 @@ static picture_t *filter_output( filter_t *filter, picture_t *input )
     picture_Release(input);
     return output;
 }
-
-static picture_t *dummy_filter( filter_t *f, picture_t *i )
-{
-    return i;
-}
-
-static int dummy_force( vlc_object_t *obj )
-{
-    filter_t *filter = (filter_t *)obj;
-
-    fprintf(stderr, "Dummy filter %4.4s -> %4.4s\n", (char *)&filter->fmt_in.i_codec,
-                    (char *)&filter->fmt_out.i_codec);
-
-    //if (filter->fmt_out.i_codec != VLC_CODEC_BGRA)
-    //    return VLC_EGENERIC;
-
-    filter->fmt_in.video.i_chroma = VLC_CODEC_BGRA;
-    //filter->fmt_out.i_codec = filter->fmt_out.video.i_chroma = VLC_CODEC_BGRA;
-
-    filter->pf_video_filter = dummy_filter;
-
-    return VLC_SUCCESS;
-}
-
 
 vlc_module_begin()
 
@@ -354,14 +354,5 @@ vlc_module_begin()
     set_capability( "video converter", 100 )
     add_shortcut( "coffscreen", "cpu-offscreen", "conv-offscreen" )
     set_callback( cpu_create )
-
-
-    add_submodule()
-
-    set_shortname( N_("dummy_gbm") )
-    set_description( N_("Put an offscreen surface in CPU") )
-    set_capability( "video filter", 10 )
-    add_shortcut( "dfgbm" )
-    set_callback( dummy_force )
 
 vlc_module_end()
