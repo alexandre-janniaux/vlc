@@ -62,19 +62,19 @@ static int create( vlc_object_t *obj )
     struct gbm_filter_t         *sys;
     struct vout_display_cfg     displ_cfg = {
         .display = {
-            .width = filter->fmt_in.video.i_width ,
-            .height = filter->fmt_in.video.i_height,
+            .width = filter->fmt_in.video.i_visible_width ,
+            .height = filter->fmt_in.video.i_visible_height,
         },
     };
     vout_window_cfg_t           wind_cfg = {
-        .width = filter->fmt_in.video.i_width ,
-        .height = filter->fmt_in.video.i_height,
+        .width = filter->fmt_in.video.i_visible_width ,
+        .height = filter->fmt_in.video.i_visible_height,
     };
-
-    fprintf(stderr, "~~~~~ create offscreen filter\n");
 
     filter->fmt_out.i_codec = VLC_CODEC_GBM;
     filter->fmt_out.video.i_chroma = VLC_CODEC_GBM;
+    filter->fmt_out.video.i_visible_width = filter->fmt_in.video.i_visible_width;
+    filter->fmt_out.video.i_visible_height = filter->fmt_in.video.i_visible_height;
 
     filter->p_sys = sys = malloc(sizeof(*sys));
     if (sys == NULL)
@@ -156,9 +156,6 @@ static void destroy( vlc_object_t *obj )
     filter_t        *filter = (filter_t *)obj;
     struct gbm_filter_t    *sys = filter->p_sys;
 
-    fprintf(stderr, "DESTROY FILTER\n");
-
-    fprintf(stderr, "~~~~~ destroy\n");
     if (sys != NULL)
     {
         if (sys->gl != NULL)
@@ -291,10 +288,20 @@ static int cpu_create( vlc_object_t *obj )
     if (filter->fmt_in.i_codec != VLC_CODEC_GBM)
         return VLC_EGENERIC;
 
-    if (filter->fmt_out.i_codec != VLC_CODEC_BGRA)
+    if (filter->fmt_out.i_codec != VLC_CODEC_RGB32)
         return VLC_EGENERIC;
 
-    filter->fmt_out.i_codec = filter->fmt_out.video.i_chroma = VLC_CODEC_BGRA;
+    filter->fmt_out.i_codec
+        = filter->fmt_out.video.i_chroma
+        = VLC_CODEC_RGBA;
+
+    filter->fmt_out.video.i_visible_width
+        = filter->fmt_out.video.i_width
+        = filter->fmt_in.video.i_visible_width;
+
+    filter->fmt_out.video.i_visible_height
+        = filter->fmt_out.video.i_height
+        = filter->fmt_in.video.i_visible_height;
 
     filter->pf_video_filter = filter_output;
 
@@ -308,18 +315,28 @@ static picture_t *filter_output( filter_t *filter, picture_t *input )
 
     if (context->bo != NULL)
     {
-        int width = gbm_bo_get_width(context->bo),
-            height = gbm_bo_get_height(context->bo);
-        uint32_t strides;
+        uint32_t width = gbm_bo_get_width(context->bo);
+        uint32_t height = gbm_bo_get_height(context->bo);
+        uint32_t stride = gbm_bo_get_stride(context->bo);
+        uint32_t offset;
 
-        void *buffer = gbm_bo_map(context->bo, 0, 0, width, height,
-                                  GBM_BO_TRANSFER_READ, &strides, &buffer);
-        if (buffer != NULL)
+        void *buffer = NULL;
+        void *base = gbm_bo_map(context->bo, 0, 0, width, height,
+                                GBM_BO_TRANSFER_READ, &offset, &buffer);
+        if (base != NULL)
         {
             output = filter_NewPicture(filter);
             if (output != NULL)
             {
                 assert(gbm_bo_get_format(context->bo) == GBM_FORMAT_XRGB8888);
+                msg_Info(filter, "stride = %u", stride);
+                msg_Info(filter, "offset = %u", offset);
+                msg_Info(filter, "ASSERT: %u = %u",
+                         output->format.i_visible_width, width);
+                msg_Info(filter, "ASSERT: %u = %u",
+                         output->format.i_visible_height, height);
+                msg_Info(filter, "plane count = %u", gbm_bo_get_plane_count(context->bo));
+                msg_Info(filter, "bit pp = %u", gbm_bo_get_bpp(context->bo));
                 assert(output->i_planes == 1);
                 assert(output->format.i_visible_width == width);
                 assert(output->format.i_visible_height == height);
@@ -331,8 +348,11 @@ static picture_t *filter_output( filter_t *filter, picture_t *input )
 
                 picture_CopyProperties( output, input );
             }
-            gbm_bo_unmap(context->bo, buffer);
+            gbm_bo_unmap(context->bo, base);
+
         }
+        else
+            msg_Err(filter, "gbm_bo_map failed");
     }
     picture_Release(input);
     return output;
