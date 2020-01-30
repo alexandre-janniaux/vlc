@@ -201,8 +201,6 @@ static void picture_context_destroy(picture_context_t *input)
 {
     struct gbm_context *context = (struct gbm_context *)input;
 
-    fprintf(stderr, "DESTROY PICTURE CONTEXT\n");
-
     if (vlc_atomic_rc_dec(&context->rc))
     {
         vlc_mutex_lock(context->lock);
@@ -222,8 +220,6 @@ static picture_t *filter_input( filter_t *filter, picture_t *input )
         .p_sys = input->p_sys,
     };
 
-    fprintf(stderr, "i_planes == %u\n", input->i_planes);
-
     for (int i = 0; i < PICTURE_PLANE_MAX; i++)
     {
         pict_resource.p[i].p_pixels = input->p[i].p_pixels;
@@ -236,7 +232,6 @@ static picture_t *filter_input( filter_t *filter, picture_t *input )
 
     picture_t *output = picture_NewFromResource(&filter->fmt_out.video, &pict_resource);
 
-    fprintf(stderr, "fmt out chroma = %4.4s\n", (char *)&filter->fmt_out.i_codec);
     if (output == NULL)
     {
         free(context);
@@ -294,6 +289,9 @@ static int cpu_create( vlc_object_t *obj )
     if (filter->fmt_in.i_codec != VLC_CODEC_GBM)
         return VLC_EGENERIC;
 
+    if (filter->fmt_out.i_codec != VLC_CODEC_BGRA)
+        return VLC_EGENERIC;
+
     filter->fmt_out.i_codec = filter->fmt_out.video.i_chroma = VLC_CODEC_BGRA;
 
     filter->pf_video_filter = filter_output;
@@ -306,8 +304,6 @@ static picture_t *filter_output( filter_t *filter, picture_t *input )
     struct gbm_context *context = (struct gbm_context *)input->context;
     picture_t   *output = NULL;
 
-    msg_Err(VLC_OBJECT(filter), "Filter output");
-
     if (context->bo != NULL)
     {
         int width = gbm_bo_get_width(context->bo),
@@ -316,7 +312,6 @@ static picture_t *filter_output( filter_t *filter, picture_t *input )
 
         void *buffer = gbm_bo_map(context->bo, 0, 0, width, height,
                                   GBM_BO_TRANSFER_READ, &strides, &buffer);
-        fprintf(stderr, "strides %u\n", strides);
         if (buffer != NULL)
         {
             output = filter_NewPicture(filter);

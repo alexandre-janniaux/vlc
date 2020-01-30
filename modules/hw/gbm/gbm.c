@@ -129,7 +129,6 @@ static void resize(struct vout_window_t *wnd, unsigned width, unsigned height)
     VLC_UNUSED(height);
 }
 
-
 vlc_module_begin()
     set_description( N_("A gbm pseudo window with EGL for OpenGL") )
     set_shortname(N_("Video gbm"))
