@@ -1,10 +1,22 @@
 #!/bin/sh
+set -eu
 
 #############
 # ARGUMENTS #
 #############
+: ${RELEASE:=0}
+: ${MAKEFLAGS:=}
+: ${MSYSTEM_PREFIX:=}
+: ${NO_OPTIM:=}
+: ${AVLC_SOURCED:=0}
 
-AVLC_RELEASE=$RELEASE
+EXTRA_CFLAGS=
+EXTRA_CXXFLAGS=
+VLC_LDFLAGS=
+VLC_CFLAGS=
+VLC_CXXFLAGS=
+
+AVLC_RELEASE=${RELEASE}
 # Indicated if prebuilt contribs package
 # should be created
 AVLC_MAKE_PREBUILT_CONTRIBS=0
@@ -62,6 +74,9 @@ if [ "${ANDROID_ABI}" = "arm" ] ; then
 elif [ "${ANDROID_ABI}" = "arm64" ] ; then
     ANDROID_ABI="arm64-v8a"
 fi
+
+HAVE_64=0
+HAVE_ARM=0
 
 # Set up ABI variables
 if [ "${ANDROID_ABI}" = "x86" ] ; then
