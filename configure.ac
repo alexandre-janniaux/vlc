@@ -874,10 +874,10 @@ AS_IF([test "${enable_shared}" = "no"], [
 AM_CONDITIONAL([HAVE_DYNAMIC_PLUGINS], [test "${have_dynamic_objects}" != "no"])
 
 dnl
-dnl  The dynamic plugin loader can be enforced regardless of whether we
-dnl  build static or dynamic plugins, as the final user can provide a
-dnl  way to generate a dynamic plugin from the static one, like by
-dnl  merging them together.
+dnl The dynamic plugin loader can be enforced regardless of whether we
+dnl build static or dynamic plugins, as the final user can provide a
+dnl way to generate a dynamic plugin from the static one, like by
+dnl merging them together.
 dnl
 have_dynamic_loader="yes"
 AS_IF([test "${enable_dynamic_loader}" = "no"], [
