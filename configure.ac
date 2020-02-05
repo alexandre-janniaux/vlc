@@ -869,10 +869,27 @@ AS_VAR_IF(with_libfuzzer, no, [], [
 ])
 AM_CONDITIONAL([HAVE_LIBFUZZER], [test "${with_libfuzzer}" != "no"])
 
+dnl
+dnl When building dynamic objects only, both the dynamic plugin and the
+dnl dynamic loader are built. When building static plugins, the dynamic
+dnl loader can be specifically enabled or not using --enable-dynamic-loader.
+dnl
 AS_IF([test "${enable_shared}" = "no"], [
   have_dynamic_objects=no
 ])
 AM_CONDITIONAL([HAVE_DYNAMIC_PLUGINS], [test "${have_dynamic_objects}" != "no"])
+
+AC_ARG_ENABLE([dynamic-loader],
+  AS_HELP_STRING([--enable-dynamic-loader],
+    [compile VLC with dynamic plugin loader, only makes sense for static build (default disabled for static build)]))
+
+have_dynamic_loader="no"
+AS_IF([test "${enable_dynamic_loader}" = "yes"], [have_dynamic_loader="yes"])
+AM_CONDITIONAL([HAVE_DYNAMIC_LOADER],
+  [test "${have_dynamic_loader}" = "yes" -o "${have_dynamic_objects}" = "yes"])
+
+AS_IF([test "${enable_shared}" != "no" -a "${enable_dynamic_loader}" = "no"], [
+  AC_MSG_ERROR([Dynamic loaders cannot be disabled when building dynamic plugins.])])
 
 AC_SUBST([LIBDL])
 

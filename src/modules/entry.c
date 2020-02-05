@@ -103,7 +103,7 @@ vlc_plugin_t *vlc_plugin_create(void)
     plugin->conf.size = 0;
     plugin->conf.count = 0;
     plugin->conf.booleans = 0;
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
     plugin->abspath = NULL;
     plugin->unloadable = true;
     atomic_init(&plugin->handle, 0);
@@ -123,7 +123,7 @@ vlc_plugin_t *vlc_plugin_create(void)
 void vlc_plugin_destroy(vlc_plugin_t *plugin)
 {
     assert(plugin != NULL);
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
     assert(!plugin->unloadable || atomic_load(&plugin->handle) == 0);
 #endif
 
@@ -131,7 +131,7 @@ void vlc_plugin_destroy(vlc_plugin_t *plugin)
         vlc_module_destroy(plugin->module);
 
     config_Free(plugin->conf.items, plugin->conf.size);
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
     free(plugin->abspath);
     free(plugin->path);
 #endif
@@ -278,7 +278,7 @@ static int vlc_plugin_desc_cb(void *ctx, void *tgt, int propid, ...)
             break;
 
         case VLC_MODULE_NO_UNLOAD:
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
             plugin->unloadable = false;
 #endif
             break;

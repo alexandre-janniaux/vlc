@@ -45,7 +45,7 @@ typedef struct vlc_plugin_t
         size_t booleans; /**< Number of booleal config items */
     } conf;
 
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
     bool unloadable; /**< Whether the plug-in can be unloaded safely */
     atomic_uintptr_t handle; /**< Run-time linker handle (or nul) */
     char *abspath; /**< Absolute path */

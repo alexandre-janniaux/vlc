@@ -53,7 +53,7 @@
 /*****************************************************************************
  * Local prototypes
  *****************************************************************************/
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
 /* Sub-version number
  * (only used to avoid breakage in dev version when cache structure changes) */
 #define CACHE_SUBVERSION_NUM 36
@@ -707,4 +707,4 @@ vlc_plugin_t *vlc_cache_lookup(vlc_plugin_t **cache, const char *path)
 
     return NULL;
 }
-#endif /* HAVE_DYNAMIC_PLUGINS */
+#endif /* HAVE_DYNAMIC_LOADER */
