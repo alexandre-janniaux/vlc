@@ -886,7 +886,7 @@ AS_IF([test "${enable_dynamic_loader}" = "no"], [
 AS_IF([test "${enable_dynamic_loader}" != "yes" -a "${enable_shared}" = "no"], [
   have_dynamic_loader="no"
 ])
-AM_CONDITIONAL([HAVE_DYNAMIC_LOADER], [test "${have_dynamic_loader" = "yes"])
+AM_CONDITIONAL([HAVE_DYNAMIC_LOADER], [test "${have_dynamic_loader}" = "yes"])
 
 AC_SUBST([LIBDL])
 
