@@ -2153,7 +2153,7 @@ vlc_module_begin ()
                VOD_SERVER_TEXT, VOD_SERVER_LONGTEXT)
 
     set_section( N_("Plugins" ), NULL )
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
     add_bool( "plugins-cache", true, PLUGINS_CACHE_TEXT,
               PLUGINS_CACHE_LONGTEXT, true )
         change_volatile ()
@@ -2919,7 +2919,7 @@ vlc_module_begin ()
     add_obsolete_bool( "save-config" )
     add_bool( "reset-config", false, RESET_CONFIG_TEXT, "", false )
         change_volatile ()
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
     add_bool( "reset-plugins-cache", false,
               RESET_PLUGINS_CACHE_TEXT, "", false )
         change_volatile ()
