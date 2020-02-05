@@ -366,6 +366,7 @@ VLC_CONFIGURE_ARGS="\
     --enable-taglib \
     --enable-dvbpsi \
     --disable-vlc --disable-shared \
+    --enable-dynamic-loader \
     --disable-update-check \
     --disable-vlm \
     --disable-dbus \
