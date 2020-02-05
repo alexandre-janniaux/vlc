@@ -879,8 +879,11 @@ dnl build static or dynamic plugins, as the final user can provide a
 dnl way to generate a dynamic plugin from the static one, like by
 dnl merging them together.
 dnl
-have_dynamic_loader="yes"
-AS_IF([test "${enable_dynamic_loader}" = "no"], [
+AC_ARG_ENABLE([dynamic-loader],
+  AS_HELP_STRING([--enable-dynamic-loader],
+    [compile VLC with dynamic plugin loader (default disabled for static build)]))
+have_dynamic_loader=yes
+AS_IF([test "${enable_dynamic_loader}" = "no" -a "${enable_vlc}" != "no"], [
   have_dynamic_loader="no"
 ])
 AS_IF([test "${enable_dynamic_loader}" != "yes" -a "${enable_shared}" = "no"], [
