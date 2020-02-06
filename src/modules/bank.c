@@ -165,14 +165,14 @@ static vlc_plugin_t *module_InitStatic(vlc_plugin_cb entry)
     if (unlikely(lib == NULL))
         return NULL;
 
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
     atomic_init(&lib->handle, 0);
     lib->unloadable = false;
 #endif
     return lib;
 }
 
-#if defined(__ELF__) || !HAVE_DYNAMIC_PLUGINS
+#if defined(__ELF__) || !HAVE_DYNAMIC_LOADER
 VLC_WEAK
 extern vlc_plugin_cb vlc_static_modules[];
 
@@ -192,7 +192,7 @@ static void module_InitStaticModules(void)
 static void module_InitStaticModules(void) { }
 #endif
 
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
 static const char *module_GetVersion(void *handle)
 {
     const char *(*get_api_version)(void);
@@ -629,7 +629,7 @@ void *module_Symbol(struct vlc_logger *log,
     (void) log; (void) plugin; (void) name;
     return NULL;
 }
-#endif /* HAVE_DYNAMIC_PLUGINS */
+#endif /* HAVE_DYNAMIC_LOADER */
 
 /**
  * Init bank
@@ -723,7 +723,7 @@ void module_LoadPlugins(vlc_object_t *obj)
     if (modules.usage == 1)
     {
         module_InitStaticModules ();
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
         msg_Dbg (obj, "searching plug-in modules");
         AllocateAllPlugins (obj);
 #endif
