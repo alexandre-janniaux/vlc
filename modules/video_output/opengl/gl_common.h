@@ -39,6 +39,7 @@
 # if defined (USE_OPENGL_ES2)
 #  include <GLES2/gl2.h>
 #  include <GLES2/gl2ext.h>
+#  include <GLES3/gl31.h>
 # else
 #  ifdef HAVE_GL_WGLEW_H
 #   include <GL/glew.h>
@@ -114,8 +115,14 @@ typedef void (APIENTRY *PFNGLTEXPARAMETERFPROC) (GLenum target, GLenum pname, GL
 typedef void (APIENTRY *PFNGLTEXPARAMETERIPROC) (GLenum target, GLenum pname, GLint param);
 typedef void (APIENTRY *PFNGLTEXSUBIMAGE2DPROC) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
 typedef void (APIENTRY *PFNGLVIEWPORTPROC) (GLint x, GLint y, GLsizei width, GLsizei height);
+typedef void (APIENTRY *PFNGLREADPIXELSPROC) (GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void *);
 
 /* The following are defined in glext.h but not for GLES2 or on Apple systems */
+
+#if defined(USE_OPENGL_ES2)
+typedef void *(APIENTRY *PFNGLMAPBUFFERPROC)(GLenum, GLbitfield);
+#endif
+
 #if defined(USE_OPENGL_ES2) || defined(__APPLE__)
 #   define PFNGLGETPROGRAMIVPROC             typeof(glGetProgramiv)*
 #   define PFNGLGETPROGRAMINFOLOGPROC        typeof(glGetProgramInfoLog)*
@@ -249,12 +256,19 @@ typedef struct {
 
     /* Framebuffers commands */
     PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC GetFramebufferAttachmentParameteriv;
+    PFNGLDELETEFRAMEBUFFERSPROC DeleteFramebuffers;
+    PFNGLGENFRAMEBUFFERSPROC GenFramebuffers;
+    PFNGLBINDFRAMEBUFFERPROC BindFramebuffer;
+    PFNGLFRAMEBUFFERTEXTURE2DPROC FramebufferTexture2D;
+
+    PFNGLREADPIXELSPROC ReadPixels;
 
     /* Commands used for PBO and/or Persistent mapping */
     PFNGLBUFFERSUBDATAPROC          BufferSubData; /* can be NULL */
     PFNGLBUFFERSTORAGEPROC          BufferStorage; /* can be NULL */
     PFNGLMAPBUFFERRANGEPROC         MapBufferRange; /* can be NULL */
     PFNGLFLUSHMAPPEDBUFFERRANGEPROC FlushMappedBufferRange; /* can be NULL */
+    PFNGLMAPBUFFERPROC              MapBuffer;
     PFNGLUNMAPBUFFERPROC            UnmapBuffer; /* can be NULL */
     PFNGLFENCESYNCPROC              FenceSync; /* can be NULL */
     PFNGLDELETESYNCPROC             DeleteSync; /* can be NULL */
