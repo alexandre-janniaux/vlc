@@ -107,7 +107,7 @@ vlc_win32_rc.$(OBJEXT): vlc_win32_rc.rc $(top_srcdir)/extras/package/win32/vlc.e
 #
 # Plug-ins cache generator
 #
-if HAVE_DYNAMIC_PLUGINS
+if HAVE_DYNAMIC_LOADER
 pkglibexec_PROGRAMS = vlc-cache-gen
 endif
 vlc_cache_gen_SOURCES = cachegen.c
@@ -124,7 +124,7 @@ endif
 #
 # Plug-ins cache
 #
-if HAVE_DYNAMIC_PLUGINS
+if HAVE_DYNAMIC_LOADER
 noinst_DATA = ../modules/plugins.dat
 endif
 MOSTLYCLEANFILES = $(noinst_DATA)

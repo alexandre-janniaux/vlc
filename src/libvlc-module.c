@@ -2936,6 +2936,6 @@ vlc_module_end ()
  * End configuration.
  *****************************************************************************/
 
-#ifdef HAVE_DYNAMIC_PLUGINS
+#ifdef HAVE_DYNAMIC_LOADER
 const char vlc_module_name[] = "main";
 #endif

@@ -131,7 +131,7 @@ VLC_SRC_DIR="$SCRIPT_PATH/../../../"
 
 echo $VLC_SRC_DIR
 # Don't create binaries in-tree
-if [[test "$VLC_BUILD_DIR" -eq "$VLC_SRC_DIR"]]; then
+if ["$VLC_BUILD_DIR" -eq "$VLC_SRC_DIR"]; then
     exit 1;
 fi
 
@@ -318,7 +318,7 @@ VLC_CONFIGURE_ARGS="\
     --enable-taglib \
     --enable-dvbpsi \
     --disable-vlc \
-    --enable-dynamic-plugins \
+    --disable-dynamic-plugins \
     --enable-dynamic-loader \
     --disable-update-check \
     --disable-vlm \
@@ -581,8 +581,6 @@ fi
 echo "Building"
 make $MAKEFLAGS
 avlc_checkfail "vlc: make failed"
-make install
-avlc_checkfail "vlc: make install failed"
 
 cd $VLC_SRC_DIR
 
@@ -590,7 +588,7 @@ cd $VLC_SRC_DIR
 # libVLC modules #
 ##################
 
-REDEFINED_VLC_MODULES_DIR=${VLC_BUILD_DIR}/install/lib/vlc/plugins
+REDEFINED_VLC_MODULES_DIR=${VLC_BUILD_DIR}/modules/.libs/
 
 echo "Generating static module list"
 blacklist_regexp=
@@ -608,8 +606,8 @@ VLC_MODULES=$(avlc_find_modules ${REDEFINED_VLC_MODULES_DIR})
 DEFINITION="";
 BUILTINS="";
 for file in $VLC_MODULES; do
-    outfile=${REDEFINED_VLC_MODULES_DIR}/$(basename $file)
-    category=$(basename $(dirname $file))
+    libtoolfile="$(dirname $file)/$(basename "${file}" .a).la"
+    category=$(basename $(grep "libdir=" "${libtoolfile}" | cut -d "'" -f 2))
     symbols=$("${CROSS_TOOLS}nm" -g $file)
 
     # assure that all modules have differents symbol names
@@ -651,12 +649,13 @@ rm -rf $VLC_OUT_PATH/Android.mk
 cat << 'EOF' > $VLC_OUT_PATH/Android.mk
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
-LOCAL_MODULE    := libvlc
+LOCAL_MODULE    := libvlcmodules_plugin
 LOCAL_SRC_FILES := libvlcjni-modules.c dummy.cpp
-LOCAL_LDFLAGS := -L$(VLC_CONTRIB)/lib -L$(VLC_BUILD_DIR)/install/lib/
+LOCAL_LDFLAGS := -L$(VLC_CONTRIB)/lib -L$(VLC_BUILD_DIR)/src/.libs/
 LOCAL_LDLIBS := \
     $(VLC_MODULES) \
     -lvlccore \
+    ${VLC_BUILD_DIR}/install/lib/vlc/libcompat.a \
     $(VLC_CONTRIB_LDFLAGS) \
     -ldl -lz -lm -llog \
     -la52 -ljpeg \
@@ -688,6 +687,10 @@ avlc_checkfail "ndk-build libvlc failed"
 # Remove gdbserver to avoid conflict with libvlcjni.so debug options
 rm -f $VLC_OUT_PATH/libs/${ANDROID_ABI}/gdb*
 
+# Copy the final binary to output path
+cp "${VLC_BUILD_DIR}/lib/.libs/libvlc.so" \
+   "${VLC_BUILD_DIR}/src/.libs/libvlccore.so" \
+   "${VLC_OUT_PATH}/libs/${ANDROID_ABI}/"
 } # avlc_build()
 
 if [ "$AVLC_SOURCED" != "1" ]; then

@@ -5,8 +5,8 @@ typedef int (*vlc_plugin_entry) (vlc_set_cb, void *);
 #define VLC_EXPORT __attribute__((visibility("default")))
 #define VLC_LOCAL __attribute__((visibility("hidden")))
 
-//VLC_EXPORT
-//const char vlc_module_name[] = "main";
+VLC_EXPORT
+const char vlc_module_name[] = "vlcplugins";
 
 VLC_LOCAL
 static const vlc_plugin_entry vlc_plugin_entries[];
@@ -14,7 +14,7 @@ static const vlc_plugin_entry vlc_plugin_entries[];
 VLC_EXPORT
 int vlc_entry(vlc_set_cb func_set, void *opaque)
 {{
-    for(vlc_plugin_entry *entry=vlc_plugin_entries;
+    for(const vlc_plugin_entry *entry=vlc_plugin_entries;
         *entry != NULL; entry++)
     {{
         int ret = (*entry)(func_set, opaque);
