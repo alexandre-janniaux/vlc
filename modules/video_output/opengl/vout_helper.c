@@ -340,7 +340,7 @@ static GLuint BuildVertexShader(const opengl_tex_converter_t *tc,
 
     GLuint shader = tc->vt->CreateShader(GL_VERTEX_SHADER);
     tc->vt->ShaderSource(shader, 1, (const char **) &code, NULL);
-    if (tc->b_dump_shaders)
+    //if (tc->b_dump_shaders)
         msg_Dbg(tc->gl, "\n=== Vertex shader for fourcc: %4.4s ===\n%s\n",
                 (const char *)&tc->interop->fmt.i_chroma, code);
     tc->vt->CompileShader(shader);
@@ -1725,4 +1725,3 @@ int vout_display_opengl_Display(vout_display_opengl_t *vgl,
 
     return VLC_SUCCESS;
 }
-
