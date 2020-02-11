@@ -898,7 +898,7 @@ have_dynamic_plugins=yes
 AS_IF([test "${enable_dynamic_plugins}" = "no"], [
   have_dynamic_plugins="no"
 ])
-AM_CONDITIONAL([HAVE_DYNAMIC_PLUGINS], [test "${have_dynamic_plugins}" = "yes"])
+AM_CONDITIONAL([HAVE_DYNAMIC_PLUGINS], [test "${have_dynamic_plugins}" != "no"])
 
 AC_SUBST([LIBDL])
 
