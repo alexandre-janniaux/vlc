@@ -871,7 +871,7 @@ AM_CONDITIONAL([HAVE_LIBFUZZER], [test "${with_libfuzzer}" != "no"])
 AS_IF([test "${enable_shared}" = "no"], [
   have_dynamic_objects=no
 ])
-AM_CONDITIONAL([HAVE_DYNAMIC_PLUGINS], [test "${have_dynamic_objects}" != "no"])
+dnl AM_CONDITIONAL([HAVE_DYNAMIC_PLUGINS], [test "${have_dynamic_objects}" != "no"])
 
 dnl
 dnl The dynamic plugin loader can be enforced regardless of whether we
@@ -890,6 +890,15 @@ AS_IF([test "${enable_dynamic_loader}" != "yes" -a "${enable_shared}" = "no"], [
   have_dynamic_loader="no"
 ])
 AM_CONDITIONAL([HAVE_DYNAMIC_LOADER], [test "${have_dynamic_loader}" = "yes"])
+
+AC_ARG_ENABLE([dynamic-plugins],
+  AS_HELP_STRING([--disable-dynamic-plugins],
+    [compile plugins as shared objects (default enabled)]))
+have_dynamic_plugins=yes
+AS_IF([test "${enable_dynamic_plugins}" = "no"], [
+  have_dynamic_plugins="no"
+])
+AM_CONDITIONAL([HAVE_DYNAMIC_PLUGINS], [test "${have_dynamic_plugins}" = "yes"])
 
 AC_SUBST([LIBDL])
 

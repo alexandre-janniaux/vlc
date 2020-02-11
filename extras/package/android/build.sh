@@ -81,18 +81,22 @@ HAVE_ARM=0
 # Set up ABI variables
 if [ "${ANDROID_ABI}" = "x86" ] ; then
     TARGET_TUPLE="i686-linux-android"
+    CLANG_PREFIX=${TARGET_TUPLE}
     PLATFORM_SHORT_ARCH="x86"
 elif [ "${ANDROID_ABI}" = "x86_64" ] ; then
     TARGET_TUPLE="x86_64-linux-android"
+    CLANG_PREFIX=${TARGET_TUPLE}
     PLATFORM_SHORT_ARCH="x86_64"
     HAVE_64=1
 elif [ "${ANDROID_ABI}" = "arm64-v8a" ] ; then
     TARGET_TUPLE="aarch64-linux-android"
+    CLANG_PREFIX=${TARGET_TUPLE}
     HAVE_ARM=1
     HAVE_64=1
     PLATFORM_SHORT_ARCH="arm64"
 elif [ "${ANDROID_ABI}" = "armeabi-v7a" ] ; then
     TARGET_TUPLE="arm-linux-androideabi"
+    CLANG_PREFIX="armv7a-linux-androideabi"
     HAVE_ARM=1
     PLATFORM_SHORT_ARCH="arm"
 else
@@ -107,14 +111,14 @@ fi
 # try to detect NDK version
 REL=$(grep -o '^Pkg.Revision.*[0-9]*.*' $ANDROID_NDK/source.properties |cut -d " " -f 3 | cut -d "." -f 1)
 
-if [ "$REL" -eq 18 ]; then
+if [ "$REL" -eq 21 ]; then
     if [ "${HAVE_64}" = 1 ]; then
         ANDROID_API=21
     else
         ANDROID_API=17
     fi
 else
-    echo "NDK v18 needed, cf. https://developer.android.com/ndk/downloads/"
+    echo "NDK v21 needed, cf. https://developer.android.com/ndk/downloads/"
     exit 1
 fi
 
@@ -139,11 +143,20 @@ VLC_OUT_LDLIBS="-L$VLC_OUT_PATH/libs/${ANDROID_ABI} -lvlc"
 #################
 # NDK TOOLCHAIN #
 #################
-NDK_TOOLCHAIN_DIR=${VLC_OUT_PATH}/toolchains
+host_tag=""
+case $(uname | tr '[:upper:]' '[:lower:]') in
+  linux*)   host_tag="linux" ;;
+  darwin*)  host_tag="darwin" ;;
+  msys*)    host_tag="windows" ;;
+  *)        echo "host OS not handled"; exit 1 ;;
+esac
+NDK_TOOLCHAIN_DIR=${ANDROID_NDK}/toolchains/llvm/prebuilt/${host_tag}-x86_64
 NDK_TOOLCHAIN_PATH=${NDK_TOOLCHAIN_DIR}/bin
+
 # Add the NDK toolchain to the PATH, needed both for contribs and for building
 # stub libraries
 CROSS_TOOLS=${NDK_TOOLCHAIN_PATH}/${TARGET_TUPLE}-
+CROSS_CLANG=${NDK_TOOLCHAIN_PATH}/${CLANG_PREFIX}${ANDROID_API}-clang
 
 export PATH="${NDK_TOOLCHAIN_PATH}:${PATH}"
 NDK_BUILD=$ANDROID_NDK/ndk-build
@@ -157,56 +170,24 @@ fi
 # CFLAGS #
 ##########
 
-VLC_CFLAGS="-std=gnu11"
-VLC_CXXFLAGS="-std=gnu++11"
+VLC_CFLAGS=""
+VLC_CXXFLAGS=""
 if [ "$NO_OPTIM" = "1" ];
 then
-     VLC_CFLAGS="${VLC_CFLAGS} -g -O0"
-     VLC_CXXFLAGS="${VLC_CXXFLAGS} -g -O0"
+     VLC_CFLAGS="-g -O0"
+     VLC_CXXFLAGS="-g -O0"
 else
-     VLC_CFLAGS="${VLC_CFLAGS} -g -O2"
-     VLC_CXXFLAGS="${VLC_CXXFLAGS} -g -O2"
+     VLC_CFLAGS="-g -O2"
+     VLC_CXXFLAGS="-g -O2"
 fi
 
-VLC_CFLAGS="${VLC_CFLAGS} -fstrict-aliasing -funsafe-math-optimizations"
-VLC_CXXFLAGS="${VLC_CXXFLAGS} -fstrict-aliasing -funsafe-math-optimizations"
-
-# Setup CFLAGS per ABI
-if [ "${ANDROID_ABI}" = "armeabi-v7a" ] ; then
-    EXTRA_CFLAGS="-march=armv7-a -mfpu=neon -mcpu=cortex-a8"
-    EXTRA_CFLAGS="${EXTRA_CFLAGS} -mthumb -mfloat-abi=softfp"
-elif [ "${ANDROID_ABI}" = "x86" ] ; then
-    EXTRA_CFLAGS="-mtune=atom -msse3 -mfpmath=sse -m32"
-fi
-
-EXTRA_CFLAGS="${EXTRA_CFLAGS} -MMD -MP -fpic -ffunction-sections -funwind-tables \
--fstack-protector-strong -Wno-invalid-command-line-argument -Wno-unused-command-line-argument \
--no-canonical-prefixes -fno-integrated-as"
-EXTRA_CXXFLAGS="${EXTRA_CXXFLAGS} -fexceptions -frtti"
-EXTRA_CXXFLAGS="${EXTRA_CXXFLAGS} -D__STDC_FORMAT_MACROS=1 -D__STDC_CONSTANT_MACROS=1 -D__STDC_LIMIT_MACROS=1"
-
-#################
-# Setup LDFLAGS #
-#################
-
-EXTRA_LDFLAGS="${VLC_LDFLAGS}"
-if [ ${ANDROID_ABI} = "armeabi-v7a" ]; then
-        EXTRA_PARAMS=" --enable-neon"
-        EXTRA_LDFLAGS="${EXTRA_LDFLAGS} -Wl,--fix-cortex-a8"
-fi
-NDK_LIB_DIR="${NDK_TOOLCHAIN_DIR}/${TARGET_TUPLE}/lib"
-if [ "${PLATFORM_SHORT_ARCH}" = "x86_64" ];then
-    NDK_LIB_DIR="${NDK_LIB_DIR}64"
-elif [ "${PLATFORM_SHORT_ARCH}" = "arm" ]; then
-    NDK_LIB_DIR="${NDK_LIB_DIR}/armv7-a"
-fi
-
-EXTRA_LDFLAGS="${EXTRA_LDFLAGS} -L${NDK_LIB_DIR} -lc++abi"
-VLC_LDFLAGS="${EXTRA_LDFLAGS}"
+# cf. GLOBAL_CFLAGS from ${ANDROID_NDK}/build/core/default-build-commands.mk
+VLC_CFLAGS="${VLC_CFLAGS} -fPIC -fdata-sections -ffunction-sections -funwind-tables \
+ -fstack-protector-strong -no-canonical-prefixes"
+VLC_CXXFLAGS="-fexceptions -frtti"
 
 # Release or not?
 if [ "$AVLC_RELEASE" = 1 ]; then
-    EXTRA_CFLAGS="${EXTRA_CFLAGS} -DNDEBUG "
     NDK_DEBUG=0
 else
     NDK_DEBUG=1
@@ -220,7 +201,6 @@ echo "ABI:        $ANDROID_ABI"
 echo "API:        $ANDROID_API"
 echo "PATH:       $PATH"
 
-echo "EXTRA_CFLAGS:      ${EXTRA_CFLAGS}"
 echo "VLC_CFLAGS:        ${VLC_CFLAGS}"
 echo "VLC_CXXFLAGS:      ${VLC_CXXFLAGS}"
 
@@ -246,34 +226,6 @@ avlc_checkfail()
     fi
 }
 
-avlc_make_toolchain()
-{
-NDK_TOOLCHAIN_PROPS=${NDK_TOOLCHAIN_DIR}/source.properties
-NDK_FORCE_ARG=
-if [ "`cat \"${NDK_TOOLCHAIN_PROPS}\" 2>/dev/null`" != "`cat \"${ANDROID_NDK}/source.properties\"`" ];then
-     echo "NDK changed, making new toolchain"
-     NDK_FORCE_ARG="--force"
-fi
-
-if [ ! -d ${NDK_TOOLCHAIN_DIR} ]; then
-    $ANDROID_NDK/build/tools/make_standalone_toolchain.py \
-        --arch ${PLATFORM_SHORT_ARCH} \
-        --api ${ANDROID_API} \
-        --stl libc++ \
-        ${NDK_FORCE_ARG} \
-        --install-dir ${NDK_TOOLCHAIN_DIR}
-fi
-if [ ! -d ${NDK_TOOLCHAIN_PATH} ];
-then
-    echo "make_standalone_toolchain.py failed"
-    exit 1
-fi
-
-if [ ! -z "${NDK_FORCE_ARG}" ];then
-    cp "$ANDROID_NDK/source.properties" "${NDK_TOOLCHAIN_PROPS}"
-fi
-} # avlc_make_toolchain()
-
 avlc_find_modules()
 {
     echo "$(find $1 -name 'lib*plugin.a' | grep -vE "lib(${blacklist_regexp})_plugin.a" | tr '\n' ' ')"
@@ -296,7 +248,6 @@ Cflags:" > contrib/${TARGET_TUPLE}/lib/pkgconfig/$(echo $1|tr 'A-Z' 'a-z').pc
 
 avlc_build()
 {
-avlc_make_toolchain
 
 ###########################
 # VLC BOOTSTRAP ARGUMENTS #
@@ -366,7 +317,8 @@ VLC_CONFIGURE_ARGS="\
     --enable-matroska \
     --enable-taglib \
     --enable-dvbpsi \
-    --disable-vlc --disable-shared \
+    --disable-vlc \
+    --enable-dynamic-plugins \
     --enable-dynamic-loader \
     --disable-update-check \
     --disable-vlm \
@@ -517,6 +469,10 @@ avlc_gen_pc_file GLESv2 2
 
 cd contrib/contrib-android-${TARGET_TUPLE}
 
+# TODO: VLC 4.0 won't rm config.mak after each call to bootstrap. Move it just
+# before ">> config.make" when switching to VLC 4.0
+rm -f config.mak
+
 export USE_FFMPEG=1
 ANDROID_ABI=${ANDROID_ABI} ANDROID_API=${ANDROID_API} \
     ../bootstrap --host=${TARGET_TUPLE} ${VLC_BOOTSTRAP_ARGS}
@@ -537,14 +493,14 @@ else
     # We append -marm to the CFLAGS of these libs to disable thumb mode
     [ ${ANDROID_ABI} = "armeabi-v7a" ] && echo "NOTHUMB := -marm" >> config.mak
 
-    echo "EXTRA_CFLAGS=${EXTRA_CFLAGS}" >> config.mak
-    echo "EXTRA_CXXFLAGS=${EXTRA_CXXFLAGS}" >> config.mak
-    echo "EXTRA_LDFLAGS=${EXTRA_LDFLAGS}" >> config.mak
-    echo "CC=${NDK_TOOLCHAIN_PATH}/clang" >> config.mak
-    echo "CXX=${NDK_TOOLCHAIN_PATH}/clang++" >> config.mak
-    echo "AR=${NDK_TOOLCHAIN_PATH}/${TARGET_TUPLE}-ar" >> config.mak
-    echo "RANLIB=${NDK_TOOLCHAIN_PATH}/${TARGET_TUPLE}-ranlib" >> config.mak
-    echo "LD=${NDK_TOOLCHAIN_PATH}/${TARGET_TUPLE}-ld" >> config.mak
+    echo "EXTRA_CFLAGS=${VLC_CFLAGS}" >> config.mak
+    echo "EXTRA_CXXFLAGS=${VLC_CXXFLAGS}" >> config.mak
+    echo "CC=${CROSS_CLANG}" >> config.mak
+    echo "CXX=${CROSS_CLANG}++" >> config.mak
+    echo "AR=${CROSS_TOOLS}ar" >> config.mak
+    echo "AS=${CROSS_TOOLS}as" >> config.mak
+    echo "RANLIB=${CROSS_TOOLS}ranlib" >> config.mak
+    echo "LD=${CROSS_TOOLS}ld" >> config.mak
 
     # fix modplug endianess check (narrowing error)
     export ac_cv_c_bigendian=no
@@ -584,12 +540,7 @@ if [ ${ANDROID_API} -lt "21" ] ; then
     # force uselocale using libandroid_support since it's present in libc++
     export ac_cv_func_uselocale=yes
 
-    # -l order is important here
-    VLC_LDFLAGS="${VLC_LDFLAGS} -L${NDK_LIB_DIR} -landroid_support"
-    if [ "${ANDROID_ABI}" = "armeabi-v7a" ]; then
-        VLC_LDFLAGS="${VLC_LDFLAGS} -lunwind"
-    fi
-    VLC_LDFLAGS="${VLC_LDFLAGS} -latomic -lgcc"
+    VLC_LDFLAGS="-landroid_support"
 fi
 
 # always use fixups for search.h and tdestroy
@@ -600,25 +551,26 @@ export ac_cv_func_tfind=no
 if [ ! -e ./config.h -o "$AVLC_RELEASE" = 1 ]; then
     VLC_CONFIGURE_DEBUG=""
     if [ ! "$AVLC_RELEASE" = 1 ]; then
-        VLC_CONFIGURE_DEBUG="--enable-debug"
+        VLC_CONFIGURE_DEBUG="--enable-debug --disable-branch-protection"
     fi
 
-    CFLAGS="${VLC_CFLAGS} ${EXTRA_CFLAGS}" \
-    CXXFLAGS="${VLC_CXXFLAGS} ${EXTRA_CFLAGS} ${EXTRA_CXXFLAGS}" \
-    CC="${CROSS_TOOLS}clang" \
-    CXX="${CROSS_TOOLS}clang++" \
+    CFLAGS="${VLC_CFLAGS}" \
+    CXXFLAGS="${VLC_CFLAGS} ${VLC_CXXFLAGS}" \
+    CC="${CROSS_CLANG}" \
+    CXX="${CROSS_CLANG}++" \
     NM="${CROSS_TOOLS}nm" \
     STRIP="${CROSS_TOOLS}strip" \
     RANLIB="${CROSS_TOOLS}ranlib" \
     AR="${CROSS_TOOLS}ar" \
+    AS="${CROSS_TOOLS}as" \
     PKG_CONFIG_LIBDIR=$VLC_SRC_DIR/contrib/$TARGET_TUPLE/lib/pkgconfig \
     PKG_CONFIG_PATH=$VLC_SRC_DIR/contrib/$TARGET_TUPLE/lib/pkgconfig \
     PATH=../contrib/bin:$PATH \
     sh ../configure --host=$TARGET_TUPLE --build=x86_64-unknown-linux \
         --with-contrib=${VLC_SRC_DIR}/contrib/${TARGET_TUPLE} \
         --prefix=${VLC_BUILD_DIR}/install/ \
-        --fast-install \
-        ${EXTRA_PARAMS} ${VLC_CONFIGURE_ARGS} ${VLC_CONFIGURE_DEBUG}
+        --enable-fast-install \
+        ${VLC_CONFIGURE_ARGS} ${VLC_CONFIGURE_DEBUG}
     avlc_checkfail "vlc: configure failed"
 fi
 
@@ -692,6 +644,7 @@ echo -e "ndk-build vlc"
 
 touch $VLC_OUT_PATH/dummy.cpp
 
+
 # This is ugly but it's better to use the linker from ndk-build that will use
 # the proper linkflags depending on ABI/API
 rm -rf $VLC_OUT_PATH/Android.mk
@@ -699,18 +652,18 @@ cat << 'EOF' > $VLC_OUT_PATH/Android.mk
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libvlc
-LOCAL_SRC_FILES := libvlcjni-modules.c libvlcjni-symbols.c dummy.cpp
-LOCAL_LDFLAGS := -L$(VLC_CONTRIB)/lib
+LOCAL_SRC_FILES := libvlcjni-modules.c dummy.cpp
+LOCAL_LDFLAGS := -L$(VLC_CONTRIB)/lib -L$(VLC_BUILD_DIR)/install/lib/
 LOCAL_LDLIBS := \
     $(VLC_MODULES) \
-    $(VLC_BUILD_DIR)/install/lib/libvlc.a \
-    $(VLC_BUILD_DIR)/install/lib/libvlccore.a \
-    $(VLC_BUILD_DIR)/install/lib/vlc/libcompat.a \
+    -lvlccore \
     $(VLC_CONTRIB_LDFLAGS) \
     -ldl -lz -lm -llog \
     -la52 -ljpeg \
     -llua \
     $(VLC_LDFLAGS)
+
+
 LOCAL_CXXFLAGS := -std=c++11
 include $(BUILD_SHARED_LIBRARY)
 EOF
