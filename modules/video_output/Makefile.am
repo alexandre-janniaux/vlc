@@ -78,6 +78,17 @@ libgles2_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(voutdir)'
 EXTRA_LTLIBRARIES += libgles2_plugin.la
 vout_LTLIBRARIES += $(LTLIBgles2)
 
+libglfb_filter_plugin_la_SOURCES = $(OPENGL_COMMONSOURCES) video_filter/glfb.c
+libglfb_filter_plugin_la_CFLAGS = $(AM_CFLAGS) $(OPENGL_COMMONCFLAGS) $(EGL_FLAGS)
+libglfb_filter_plugin_la_LIBADD = $(LIBM) $(OPENGL_COMMONLIBS) $(EGL_LIBS)
+
+#if HAVE_ANDROID
+libglfb_filter_plugin_la_CFLAGS += -DUSE_OPENGL_ES2
+libglfb_filter_plugin_la_LIBADD += $(GLES2_LIBS)
+#endif
+
+vout_LTLIBRARIES += libglfb_filter_plugin.la
+
 libgl_plugin_la_SOURCES = $(OPENGL_COMMONSOURCES) video_output/opengl/display.c
 libgl_plugin_la_CFLAGS = $(AM_CFLAGS) $(GL_CFLAGS) $(OPENGL_COMMONCFLAGS)
 libgl_plugin_la_LIBADD = $(LIBM) $(OPENGL_COMMONLIBS)
