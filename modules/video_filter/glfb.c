@@ -37,6 +37,15 @@
 
 #define BUFFER_COUNT 3
 
+struct pbo_picture_context
+{
+    struct picture_context_t context;
+    void *buffer_mapping;
+    int rc;
+    vlc_mutex_t *lock;
+    vlc_cond_t *cond;
+};
+
 struct vlc_gl_pbo_filter
 {
     vout_display_opengl_t   *vgl;
@@ -49,6 +58,7 @@ struct vlc_gl_pbo_filter
     GLuint                  pixelbuffers[BUFFER_COUNT];
     GLuint                  framebuffers[BUFFER_COUNT];
     GLuint                  textures[BUFFER_COUNT];
+    struct pbo_picture_context     picture_contexts[BUFFER_COUNT];
 
     opengl_vtable_t         glapi;
 
@@ -58,15 +68,6 @@ struct vlc_gl_pbo_filter
 
     PFNEGLCREATEIMAGEKHRPROC    eglCreateImageKHR;
     PFNEGLDESTROYIMAGEKHRPROC   eglDestroyImageKHR;
-};
-
-struct pbo_picture_context
-{
-    struct picture_context_t context;
-    void *buffer_mapping;
-    vlc_atomic_rc_t rc;
-    vlc_mutex_t *lock;
-    vlc_cond_t *cond;
 };
 
 static int MakeCurrent (vlc_gl_t *gl)
@@ -229,7 +230,9 @@ static picture_context_t *picture_context_copy(picture_context_t *input)
     struct pbo_picture_context *context =
         (struct pbo_picture_context *)input;
 
-    vlc_atomic_rc_inc(&context->rc);
+    vlc_mutex_lock(context->lock);
+    context->rc++;
+    vlc_mutex_unlock(context->lock);
     return input;
 }
 
@@ -238,19 +241,33 @@ static void picture_context_destroy(picture_context_t *input)
     struct pbo_picture_context *context =
         (struct pbo_picture_context *)input;
 
-    if (vlc_atomic_rc_dec(&context->rc))
-    {
-        vlc_mutex_lock(context->lock);
-        /* TODO */
-        vlc_cond_signal(context->cond);
-        vlc_mutex_unlock(context->lock);
-        free(context);
-    }
+    vlc_mutex_lock(context->lock);
+    context->rc--;
+    vlc_cond_signal(context->cond);
+    vlc_mutex_unlock(context->lock);
 }
 
 static picture_t *Filter(filter_t *filter, picture_t *input)
 {
     struct vlc_gl_pbo_filter *sys = filter->p_sys;
+
+    vlc_mutex_lock(&sys->lock);
+    size_t index;
+
+    do {
+        for (index=0; index<BUFFER_COUNT; ++index)
+        {
+            assert(sys->picture_contexts[index].rc >= 0);
+            if (sys->picture_contexts[index].rc == 0)
+                goto out_loop;
+        }
+        vlc_cond_wait(&sys->cond, &sys->lock);
+    } while(index == BUFFER_COUNT);
+out_loop:
+    vlc_mutex_unlock(&sys->lock);
+
+     struct pbo_picture_context *context = &sys->picture_contexts[index];
+     sys->current_flip = index;
 
     if (vlc_gl_MakeCurrent(sys->gl) != VLC_SUCCESS)
         return NULL;
@@ -259,6 +276,8 @@ static picture_t *Filter(filter_t *filter, picture_t *input)
 
     sys->glapi.BindBuffer(GL_PIXEL_PACK_BUFFER, sys->pixelbuffers[sys->current_flip]);
     sys->glapi.BindFramebuffer(GL_FRAMEBUFFER, sys->framebuffers[sys->current_flip]);
+    if (context->buffer_mapping != NULL)
+        sys->glapi.UnmapBuffer(GL_PIXEL_PACK_BUFFER);
 
     vout_display_opengl_Display(sys->vgl, &input->format);
 
@@ -271,6 +290,10 @@ static picture_t *Filter(filter_t *filter, picture_t *input)
 
     void *pixels = sys->glapi.MapBufferRange(
             GL_PIXEL_PACK_BUFFER, 0, width*height*4, GL_MAP_READ_BIT);
+
+    GLsizei stride;
+    sys->glapi.GetIntegerv(GL_PACK_ROW_LENGTH, &stride);
+    stride = width;
 
     sys->glapi.BindFramebuffer(GL_FRAMEBUFFER, 0);
     sys->glapi.BindBuffer(GL_PIXEL_PACK_BUFFER, 0);
@@ -285,11 +308,7 @@ static picture_t *Filter(filter_t *filter, picture_t *input)
 
     pict_resource.p[0].p_pixels = pixels;
     pict_resource.p[0].i_lines = height;
-    pict_resource.p[0].i_pitch = width;
-
-    struct pbo_picture_context *context = malloc(sizeof *context);
-    if (context == NULL)
-        return NULL;
+    pict_resource.p[0].i_pitch = stride * 4;
 
     picture_t *output = picture_NewFromResource(&filter->fmt_out.video, &pict_resource);
     if (output == NULL)
@@ -301,14 +320,10 @@ static picture_t *Filter(filter_t *filter, picture_t *input)
     picture_CopyProperties(output, input);
 
     context->buffer_mapping = pixels;
-    context->lock = &sys->lock;
-    context->cond = &sys->cond;
-    context->context.destroy = picture_context_destroy;
-    context->context.copy = picture_context_copy;
-    vlc_atomic_rc_init(&context->rc);
+    context->rc ++;
     output->context = (picture_context_t *)context;
     output->context->vctx = NULL;
-
+    output->format.orientation = ORIENT_VFLIPPED;
 
     picture_Release(input);
     return output;
@@ -329,7 +344,7 @@ static int Open( vlc_object_t *obj )
 
     filter->fmt_out.video.i_chroma
         = filter->fmt_out.i_codec
-        = VLC_CODEC_RGBA;
+        = VLC_CODEC_BGRA;
 
     unsigned width
         = filter->fmt_out.video.i_visible_width
@@ -448,7 +463,7 @@ static int Open( vlc_object_t *obj )
 
     for (size_t i=0; i<BUFFER_COUNT; ++i)
     {
-        sys->glapi.BindBuffer(GL_PIXEL_PACK_BUFFER, sys->pixelbuffers[0]);
+        sys->glapi.BindBuffer(GL_PIXEL_PACK_BUFFER, sys->pixelbuffers[i]);
         sys->glapi.BufferData(GL_PIXEL_PACK_BUFFER, width*height*4, NULL, GL_STREAM_READ);
         sys->glapi.BindFramebuffer(GL_FRAMEBUFFER, sys->framebuffers[i]);
         sys->glapi.BindTexture(GL_TEXTURE_2D, sys->textures[i]);
@@ -456,12 +471,21 @@ static int Open( vlc_object_t *obj )
                               GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         sys->glapi.FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                         GL_TEXTURE_2D, sys->textures[i], 0);
+
+        struct pbo_picture_context *context = &sys->picture_contexts[i];
+        context->buffer_mapping = NULL;
+        context->lock = &sys->lock;
+        context->cond = &sys->cond;
+        context->context.destroy = picture_context_destroy;
+        context->context.copy = picture_context_copy;
+        context->rc = 0;
     }
     sys->glapi.BindFramebuffer(GL_FRAMEBUFFER, 0);
     sys->glapi.BindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
     vlc_gl_ReleaseCurrent(sys->gl);
 
+    filter->fmt_out.video.orientation = ORIENT_VFLIPPED;
     filter->pf_video_filter = Filter;
     return VLC_SUCCESS;
 
@@ -478,17 +502,14 @@ static void Close( vlc_object_t *obj )
 
     if (sys != NULL)
     {
-        if (sys->gl != NULL)
-        {
-            vlc_gl_MakeCurrent(sys->gl);
-            vout_display_opengl_Delete(sys->vgl);
-            sys->glapi.DeleteBuffers(BUFFER_COUNT, sys->pixelbuffers);
-            sys->glapi.DeleteFramebuffers(BUFFER_COUNT, sys->framebuffers);
-            sys->glapi.DeleteTextures(BUFFER_COUNT, sys->textures);
-            vlc_gl_ReleaseCurrent(sys->gl);
+        vlc_gl_MakeCurrent(sys->gl);
+        vout_display_opengl_Delete(sys->vgl);
+        sys->glapi.DeleteBuffers(BUFFER_COUNT, sys->pixelbuffers);
+        sys->glapi.DeleteFramebuffers(BUFFER_COUNT, sys->framebuffers);
+        sys->glapi.DeleteTextures(BUFFER_COUNT, sys->textures);
+        vlc_gl_ReleaseCurrent(sys->gl);
 
-            vlc_gl_Release(sys->gl);
-        }
+        vlc_object_delete(sys->gl);
         free(sys);
     }
 }
