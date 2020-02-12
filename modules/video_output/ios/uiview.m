@@ -69,6 +69,9 @@
     /* Written from MT, read locked from vout */
     CGSize _viewSize;
     CGFloat _scaleFactor;
+
+    BOOL _enabled;
+    bool _hasSubView;
 }
 
 + (void)getNewView:(NSValue *)value;
@@ -110,6 +113,9 @@
 
 - (id)initWithFrame:(CGRect)frame
 {
+    _enabled = NO;
+    _hasSubview = NO;
+
     _appActive = ([UIApplication sharedApplication].applicationState == UIApplicationStateActive);
     if (unlikely(!_appActive))
         return nil;
@@ -179,14 +185,24 @@
     }
 }
 
+- (void)didAddSubview:(UIView)subview
+{
+    _hasSubview = YES;
+    if (_enabled)
+        [_viewContainer addSubview:self];
+}
+
 - (void)enable
 {
-    [_viewContainer addSubview:self];
+    _enabled = YES;
+    if (_hasSubView)
+        [_viewContainer addSubview:self];
 }
 
 - (void)disable
 {
-    [self removeFromSuperview];
+    if (_enabled && _hasSubView)
+        [self removeFromSuperview];
 }
 
 - (void)cleanAndReleaseFromMainThread
@@ -348,5 +364,3 @@ vlc_module_begin ()
     add_shortcut("uiview", "ios")
     add_glopts()
 vlc_module_end ()
-
-
