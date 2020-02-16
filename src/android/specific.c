@@ -313,6 +313,7 @@ char *config_GetSysPath(vlc_sysdir_t type, const char *filename)
             dir = strdup("/system/usr/share");
             break;
         case VLC_LIB_DIR:
+        case VLC_PKG_LIB_DIR:
             dir = config_GetLibDir();
             break;
         default:
