@@ -39,5 +39,5 @@ const char * vlc_entry_copyright()
 VLC_EXPORT
 const char * vlc_entry_api_version()
 {{
-    return "4.0.0";
+    return "4.0.4";
 }}
