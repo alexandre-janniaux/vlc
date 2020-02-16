@@ -498,6 +498,14 @@ static void AllocateAllPlugins (vlc_object_t *p_this)
 #if VLC_WINSTORE_APP
     /* Windows Store Apps can not load external plugins with absolute paths. */
     AllocatePluginPath (p_this, "plugins", mode);
+#elif __ANDROID__
+    char *vlcpath = config_GetSysPath(VLC_PKG_LIB_DIR, "");
+    if (likely(vlcpath != NULL))
+    {
+        AllocatePluginPath(p_this, vlcpath, mode);
+        free(vlcpath);
+    }
+
 #else
     /* Contruct the special search path for system that have a relocatable
      * executable. Set it to <vlc path>/plugins. */

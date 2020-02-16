@@ -76,7 +76,7 @@ get_java_string(JNIEnv *env, jclass clazz, const char *psz_name)
     return psz_strdup;
 }
 
-void
+VLC_EXPORT void
 JNI_OnUnload(JavaVM* vm, void* reserved)
 {
     (void) reserved;
@@ -98,7 +98,7 @@ JNI_OnUnload(JavaVM* vm, void* reserved)
 /* This function is called when the libvlcore dynamic library is loaded via the
  * java.lang.System.loadLibrary method. Therefore, s_jvm will be already set
  * when libvlc_InternalInit is called. */
-jint
+VLC_EXPORT jint
 JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     s_jvm = vm;
@@ -313,6 +313,7 @@ char *config_GetSysPath(vlc_sysdir_t type, const char *filename)
             dir = strdup("/system/usr/share");
             break;
         case VLC_LIB_DIR:
+        case VLC_PKG_LIB_DIR:
             dir = config_GetLibDir();
             break;
         default:

@@ -130,15 +130,12 @@ SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
 VLC_SRC_DIR="$SCRIPT_PATH/../../../"
 
 echo $VLC_SRC_DIR
-# Don't create binaries in-tree
-if ["$VLC_BUILD_DIR" -eq "$VLC_SRC_DIR"]; then
-    exit 1;
-fi
 
 VLC_BUILD_DIR=$(realpath $VLC_SRC_DIR/build-android-${TARGET_TUPLE})
-VLC_OUT_PATH="$VLC_BUILD_DIR/ndk"
+
+# VLC_OUT_PATH can be overriden by the --output parameter
+: ${VLC_OUT_PATH:="$VLC_BUILD_DIR/ndk"}
 mkdir -p $VLC_OUT_PATH
-VLC_OUT_LDLIBS="-L$VLC_OUT_PATH/libs/${ANDROID_ABI} -lvlc"
 
 #################
 # NDK TOOLCHAIN #
@@ -651,18 +648,18 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libvlcmodules_plugin
 LOCAL_SRC_FILES := libvlcjni-modules.c dummy.cpp
-LOCAL_LDFLAGS := -L$(VLC_CONTRIB)/lib -L$(VLC_BUILD_DIR)/src/.libs/
+LOCAL_LDFLAGS := -L$(VLC_CONTRIB)/lib -L$(VLC_BUILD_DIR)/src/.libs/ -Wl,--undefined=__emutls_get_address -lgcc_real
 LOCAL_LDLIBS := \
     $(VLC_MODULES) \
     -lvlccore \
-    ${VLC_BUILD_DIR}/install/lib/vlc/libcompat.a \
+    ${VLC_BUILD_DIR}/compat/.libs/libcompat.a \
     $(VLC_CONTRIB_LDFLAGS) \
     -ldl -lz -lm -llog \
     -la52 -ljpeg \
-    -llua \
+    -llua -lgcc_real \
     $(VLC_LDFLAGS)
 
-
+LOCAL_CFLAGS := -femulated-tls
 LOCAL_CXXFLAGS := -std=c++11
 include $(BUILD_SHARED_LIBRARY)
 EOF
@@ -690,7 +687,7 @@ rm -f $VLC_OUT_PATH/libs/${ANDROID_ABI}/gdb*
 # Copy the final binary to output path
 cp "${VLC_BUILD_DIR}/lib/.libs/libvlc.so" \
    "${VLC_BUILD_DIR}/src/.libs/libvlccore.so" \
-   "${VLC_OUT_PATH}/libs/${ANDROID_ABI}/"
+   "${NDK_OUTPUT}/"
 } # avlc_build()
 
 if [ "$AVLC_SOURCED" != "1" ]; then
