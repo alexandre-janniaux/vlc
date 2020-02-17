@@ -578,6 +578,8 @@ fi
 echo "Building"
 make $MAKEFLAGS
 avlc_checkfail "vlc: make failed"
+make -C src install-libLTLIBRARIES
+make -C lib install-libLTLIBRARIES install-pkgconfigDATA install-pkgincludeHEADERS install-nodist_pkgincludeHEADERS
 
 cd $VLC_SRC_DIR
 
