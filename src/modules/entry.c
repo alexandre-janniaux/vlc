@@ -198,6 +198,7 @@ static int vlc_plugin_desc_cb(void *ctx, void *tgt, int propid, ...)
     {
         case VLC_MODULE_CREATE:
         {
+            fprintf(stderr, " + Creating new module\n");
             module_t *super = plugin->module;
             module_t *submodule = vlc_module_create(plugin);
             if (unlikely(submodule == NULL))
@@ -294,6 +295,8 @@ static int vlc_plugin_desc_cb(void *ctx, void *tgt, int propid, ...)
 
             assert (module->psz_longname == NULL);
             module->psz_longname = value;
+
+            fprintf(stderr, " + name=%s, longname=%s\n", module->pp_shortcuts[0], module->psz_longname);
             break;
         }
 
