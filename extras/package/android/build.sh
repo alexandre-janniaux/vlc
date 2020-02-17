@@ -132,6 +132,7 @@ VLC_SRC_DIR="$SCRIPT_PATH/../../../"
 echo $VLC_SRC_DIR
 
 VLC_BUILD_DIR=$(realpath $VLC_SRC_DIR/build-android-${TARGET_TUPLE})
+NDK_OUTPUT=$VLC_BUILD_DIR/ndk/libs/${ANDROID_ABI}/
 
 # VLC_OUT_PATH can be overriden by the --output parameter
 : ${VLC_OUT_PATH:="$VLC_BUILD_DIR/ndk"}
