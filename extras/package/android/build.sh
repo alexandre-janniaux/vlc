@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -eux
 
 #############
 # ARGUMENTS #
@@ -243,9 +243,6 @@ Libs: -l$1
 Cflags:" > contrib/${TARGET_TUPLE}/lib/pkgconfig/$(echo $1|tr 'A-Z' 'a-z').pc
 }
 
-avlc_build()
-{
-
 ###########################
 # VLC BOOTSTRAP ARGUMENTS #
 ###########################
@@ -365,6 +362,7 @@ VLC_CONFIGURE_ARGS="\
     --disable-vnc \
     --enable-jpeg \
     --enable-smb2 \
+    --disable-medialibrary
 "
 
 ########################
@@ -607,7 +605,7 @@ BUILTINS="";
 for file in $VLC_MODULES; do
     libtoolfile="$(dirname $file)/$(basename "${file}" .a).la"
     category=$(basename $(grep "libdir=" "${libtoolfile}" | cut -d "'" -f 2))
-    symbols=$("${CROSS_TOOLS}nm" -g $file)
+    symbols=$("${CROSS_TOOLS}nm" -g "$file")
 
     # assure that all modules have differents symbol names
     entry=$(avlc_get_symbol "$symbols" _)
@@ -661,7 +659,7 @@ LOCAL_LDLIBS := \
     -llua -lgcc_real \
     $(VLC_LDFLAGS)
 
-LOCAL_CFLAGS := -femulated-tls
+LOCAL_CFLAGS := -femulated-tls -I"$(VLC_SRC_DIR)/include"
 LOCAL_CXXFLAGS := -std=c++11
 include $(BUILD_SHARED_LIBRARY)
 EOF
@@ -690,8 +688,3 @@ rm -f $VLC_OUT_PATH/libs/${ANDROID_ABI}/gdb*
 cp "${VLC_BUILD_DIR}/lib/.libs/libvlc.so" \
    "${VLC_BUILD_DIR}/src/.libs/libvlccore.so" \
    "${NDK_OUTPUT}/"
-} # avlc_build()
-
-if [ "$AVLC_SOURCED" != "1" ]; then
-    avlc_build
-fi
