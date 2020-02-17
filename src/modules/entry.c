@@ -211,13 +211,13 @@ static int vlc_plugin_desc_cb(void *ctx, void *tgt, int propid, ...)
                 break;
 
             /* Inheritance. Ugly!! */
-            submodule->pp_shortcuts = xmalloc (sizeof ( *submodule->pp_shortcuts ));
-            submodule->pp_shortcuts[0] = super->pp_shortcuts[0];
-            submodule->i_shortcuts = 1; /* object name */
+            //submodule->pp_shortcuts = xmalloc (sizeof ( *submodule->pp_shortcuts ));
+            //submodule->pp_shortcuts[0] = super->pp_shortcuts[0];
+            submodule->i_shortcuts = 0; /* object name */
 
-            submodule->psz_shortname = super->psz_shortname;
-            submodule->psz_longname = super->psz_longname;
-            submodule->psz_capability = super->psz_capability;
+            //submodule->psz_shortname = super->psz_shortname;
+            //submodule->psz_longname = super->psz_longname;
+            //submodule->psz_capability = super->psz_capability;
             break;
         }
 
