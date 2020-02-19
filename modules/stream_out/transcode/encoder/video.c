@@ -488,6 +488,15 @@ int transcode_encoder_video_open( transcode_encoder_t *p_enc,
     p_enc->p_buffers = NULL;
     p_enc->b_abort = false;
 
+    if( p_enc->p_encoder->b_packetized )
+    {
+        es_format_t packetizer_fmt;
+        es_format_Copy( &packetizer_fmt, &p_enc->p_encoder->fmt_out );
+        p_enc->p_packetizer = vlc_packetizer_New(
+                p_enc->p_encoder, &packetizer_fmt,
+                module_GetLongName(p_enc->p_encoder->p_module) );
+    }
+
     if( p_cfg->video.threads.i_count > 0 )
     {
         if( vlc_clone( &p_enc->thread, EncoderThread, p_enc, p_cfg->video.threads.i_priority ) )
