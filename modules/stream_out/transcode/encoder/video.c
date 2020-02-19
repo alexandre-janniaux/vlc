@@ -488,7 +488,7 @@ int transcode_encoder_video_open( transcode_encoder_t *p_enc,
     p_enc->p_buffers = NULL;
     p_enc->b_abort = false;
 
-    if( p_enc->p_encoder->b_packetized )
+    if( !p_enc->p_encoder->b_packetized )
     {
         es_format_t packetizer_fmt;
         es_format_Copy( &packetizer_fmt, &p_enc->p_encoder->fmt_out );
