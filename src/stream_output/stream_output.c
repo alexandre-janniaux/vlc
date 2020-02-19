@@ -1006,5 +1006,8 @@ rtp:
 encoder_t *sout_EncoderCreate( vlc_object_t *p_this, size_t owner_size )
 {
     assert( owner_size >= sizeof(encoder_t) );
-    return vlc_custom_create( p_this, owner_size, "encoder" );
+    encoder_t *encoder = vlc_custom_create( p_this, owner_size, "encoder" );
+    encoder->b_packetized = false;
+
+    return encoder;
 }
