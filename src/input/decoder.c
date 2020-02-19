@@ -2675,7 +2675,7 @@ int input_DecoderSetSpuHighlight( decoder_t *dec,
     return VLC_SUCCESS;
 }
 
-decoder_t *(vlc_packetizer_new)( vlc_object_t *p_parent, es_format_t *p_fmt,
+decoder_t *(vlc_packetizer_New)( vlc_object_t *p_parent, es_format_t *p_fmt,
                                  const char *psz_msg )
 {
     decoder_t *p_packetizer;
@@ -2705,7 +2705,7 @@ decoder_t *(vlc_packetizer_new)( vlc_object_t *p_parent, es_format_t *p_fmt,
     return p_packetizer;
 }
 
-void vlc_packetizer_destroy( decoder_t *p_packetizer )
+void vlc_packetizer_Destroy( decoder_t *p_packetizer )
 {
     if( p_packetizer->p_module )
         module_unneed( p_packetizer, p_packetizer->p_module );
