@@ -21,6 +21,7 @@
 struct transcode_encoder_t
 {
     encoder_t       *p_encoder;
+    decoder_t       *p_packetizer;
     vlc_thread_t    thread;
     vlc_mutex_t     lock_out;
     bool            b_abort;

@@ -698,9 +698,10 @@ int transcode_video_process( sout_stream_t *p_stream, sout_stream_id_sys_t *id,
 
                 if( p_in )
                 {
+                    /* If a packetizer is used, multiple blocks might be returned, in w */
                     block_t *p_encoded = transcode_encoder_encode( id->encoder, p_in );
-                    if( p_encoded )
-                        block_ChainAppend( out, p_encoded );
+                    block_ChainAppend( out, p_encoded );
+
                     picture_Release( p_in );
                 }
             }

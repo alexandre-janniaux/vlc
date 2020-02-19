@@ -84,6 +84,7 @@ transcode_encoder_t * transcode_encoder_new( encoder_t *p_encoder,
 
     p_enc->p_encoder = p_encoder;
     p_enc->p_encoder->p_module = NULL;
+    p_enc->p_packetizer = NULL;
 
     /* Create destination format */
     es_format_Init( &p_enc->p_encoder->fmt_in, p_fmt->i_cat, 0 );

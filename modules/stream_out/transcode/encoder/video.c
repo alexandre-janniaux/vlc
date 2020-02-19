@@ -350,6 +350,26 @@ int transcode_encoder_video_test( encoder_t *p_encoder,
     return p_module != NULL ? VLC_SUCCESS : VLC_EGENERIC;
 }
 
+static block_t * transcode_encoder_video_push( transcode_encoder_t *p_enc,
+                                               picture_t *p_pic )
+{
+    block_t *p_block = p_enc->p_encoder->pf_encode_video( p_enc->p_encoder, p_pic );
+
+    if( p_enc->p_packetizer == NULL )
+        return p_block;
+
+    block_t *p_chain = NULL, *p_packetized;
+    do {
+        p_packetized = p_enc->p_packetizer->pf_packetize(
+                p_enc->p_packetizer,
+                p_block ? &p_block : NULL );
+
+        block_ChainAppend( &p_chain, p_packetized );
+    } while( p_packetized );
+
+    return p_chain;
+}
+
 static void* EncoderThread( void *obj )
 {
     transcode_encoder_t *p_enc = obj;
@@ -370,10 +390,9 @@ static void* EncoderThread( void *obj )
         {
             /* release lock while encoding */
             vlc_mutex_unlock( &p_enc->lock_out );
-            p_block = p_enc->p_encoder->pf_encode_video( p_enc->p_encoder, p_pic );
+            p_block = transcode_encoder_video_push( p_enc, p_pic );
             picture_Release( p_pic );
             vlc_mutex_lock( &p_enc->lock_out );
-
             block_ChainAppend( &p_enc->p_buffers, p_block );
         }
 
@@ -385,14 +404,14 @@ static void* EncoderThread( void *obj )
     while( (p_pic = picture_fifo_Pop( p_enc->pp_pics )) != NULL )
     {
         vlc_sem_post( &p_enc->picture_pool_has_room );
-        p_block = p_enc->p_encoder->pf_encode_video( p_enc->p_encoder, p_pic );
+        p_block = transcode_encoder_video_push( p_enc, p_pic );
         picture_Release( p_pic );
         block_ChainAppend( &p_enc->p_buffers, p_block );
     }
 
-    /*Now flush encoder*/
+    /*Now drain encoder*/
     do {
-        p_block = p_enc->p_encoder->pf_encode_video(p_enc->p_encoder, NULL );
+        p_block = transcode_encoder_video_push( p_enc, NULL );
         block_ChainAppend( &p_enc->p_buffers, p_block );
     } while( p_block );
 
@@ -488,9 +507,7 @@ int transcode_encoder_video_open( transcode_encoder_t *p_enc,
 block_t * transcode_encoder_video_encode( transcode_encoder_t *p_enc, picture_t *p_pic )
 {
     if( !p_enc->b_threaded )
-    {
-        return p_enc->p_encoder->pf_encode_video( p_enc->p_encoder, p_pic );
-    }
+        return transcode_encoder_video_push( p_enc, p_pic );
 
     vlc_sem_wait( &p_enc->picture_pool_has_room );
     vlc_mutex_lock( &p_enc->lock_out );
