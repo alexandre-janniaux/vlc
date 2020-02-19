@@ -39,7 +39,7 @@
 #include "mediacodec.h"
 
 char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
-                         int profile, int *p_quirks);
+                         int profile, int *p_quirks, int flags);
 
 #define THREAD_NAME "mediacodec_jni"
 
@@ -348,7 +348,7 @@ end:
  * MediaCodec_GetName
  *****************************************************************************/
 char* MediaCodec_GetName(vlc_object_t *p_obj, const char *psz_mime,
-                         int profile, int *p_quirks)
+                         int profile, int *p_quirks, int flags)
 {
     JNIEnv *env;
     int num_codecs;
@@ -762,6 +762,94 @@ error:
     return i_ret;
 }
 
+static int StartEncoder(mc_api *api, const es_format_t *fmt_in, const es_format_t *fmt_out)
+{
+    mc_api_sys *p_sys = api->p_sys;
+    JNIEnv* env = NULL;
+    int i_ret = MC_API_ERROR;
+    jstring jmime = NULL;
+    jstring jcodec_name = NULL;
+    jobject jcodec = NULL;
+    jobject jformat = NULL;
+    jobject jbuffer_info = NULL;
+
+    assert(api->psz_mime && api->psz_name);
+
+    GET_ENV();
+
+    jmime = JNI_NEW_STRING(api->psz_mime);
+    jcodec_name = JNI_NEW_STRING(api->psz_name);
+
+    if (!jmime || !jcodec_name)
+        goto error;
+
+    jcodec = (*env)->CallStaticObjectMethod(env, jfields.media_codec_class,
+                                            jfields.create_by_codec_name,
+                                            jcodec_name);
+
+    if (CHECK_EXCEPTION())
+    {
+        msg_Warn(api->p_obj, "Exception occured in MediaCodec.createByCodecName");
+        goto error;
+    }
+    p_sys->codec = (*env)->NewGlobalRef(env, jcodec);
+
+    const video_format_t *p_vid_in  = &fmt_in->video;
+    const video_format_t *p_vid_out = &fmt_out->video;
+    jformat = (*env)->CallStaticObjectMethod(env,
+                                             jfields.media_format_class,
+                                             jfields.create_video_format,
+                                             jmime,
+                                             p_vid_in->i_visible_width,
+                                             p_vid_in->i_visible_height);
+    float framerate = p_vid_out->i_frame_rate / (float) p_vid_out->i_frame_rate_base;
+    //SET_STRING(jformat, "frame-rate", NULL);
+    //SET_FLOAT(jformat, "frame-rate", framerate);
+    SET_INTEGER(jformat, "max-input-size", 0);
+    SET_INTEGER(jformat, "color-format", 0x7f420888); // TODO: check negociated input format
+    SET_INTEGER(jformat, "bitrate", fmt_out->i_bitrate);
+    SET_INTEGER(jformat, "i-frame-interval", 4);
+    SET_INTEGER(jformat, "profile", 1);
+    SET_INTEGER(jformat, "level", 0x10);
+
+    (*env)->CallVoidMethod(env, p_sys->codec, jfields.configure,
+                           jformat, NULL, NULL, MC_API_FLAG_ENCODER);
+    if (CHECK_EXCEPTION())
+    {
+        msg_Warn(api->p_obj, "Exception occured in MediaCodec.configure");
+        goto error;
+    }
+    (*env)->CallVoidMethod(env, p_sys->codec, jfields.start);
+    if (CHECK_EXCEPTION())
+    {
+        msg_Warn(api->p_obj, "Exception occured in MediaCodec.start");
+        goto error;
+    }
+
+    api->b_started = true;
+    i_ret = 0;
+
+    jbuffer_info = (*env)->NewObject(env, jfields.buffer_info_class,
+                                             jfields.buffer_info_ctor);
+    p_sys->buffer_info = (*env)->NewGlobalRef(env, jbuffer_info);
+
+    (*env)->DeleteLocalRef(env, jbuffer_info);
+
+    msg_Dbg(api->p_obj, "MediaCodec via JNI opened");
+
+error:
+    if (jmime)
+        (*env)->DeleteLocalRef(env, jmime);
+    if (jcodec_name)
+        (*env)->DeleteLocalRef(env, jcodec_name);
+    if (jcodec)
+        (*env)->DeleteLocalRef(env, jcodec);
+    if (jformat)
+        (*env)->DeleteLocalRef(env, jformat);
+
+    return i_ret;
+}
+
 /*****************************************************************************
  * Flush
  *****************************************************************************/
@@ -1070,7 +1158,7 @@ static int Prepare(mc_api *api, int i_profile)
 
     api->i_quirks = 0;
     api->psz_name = MediaCodec_GetName(api->p_obj, api->psz_mime,
-                                       i_profile, &api->i_quirks);
+                                       i_profile, &api->i_quirks, MC_API_FLAG_DECODER);
     if (!api->psz_name)
         return MC_API_ERROR;
     api->i_quirks |= OMXCodec_GetQuirks(api->i_cat, api->i_codec, api->psz_name,
@@ -1102,6 +1190,7 @@ int MediaCodecJni_Init(mc_api *api)
     api->prepare = Prepare;
     api->configure_decoder = ConfigureDecoder;
     api->start = Start;
+    api->start_encoder = StartEncoder;
     api->stop = Stop;
     api->flush = Flush;
     api->dequeue_in = DequeueInput;
