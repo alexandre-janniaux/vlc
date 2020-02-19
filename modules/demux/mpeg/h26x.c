@@ -503,4 +503,3 @@ static int Control( demux_t *p_demux, int i_query, va_list args )
                                        0, -1,
                                        0, 1, i_query, args );
 }
-

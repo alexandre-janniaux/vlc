@@ -831,4 +831,3 @@ static void ParsePicture( demux_t *p_demux, const uint8_t *p_data, size_t i_data
 
     TAB_APPEND( p_sys->i_attachments, p_sys->attachments, p_attachment );
 }
-
