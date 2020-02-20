@@ -659,6 +659,7 @@ int MediaCodecNdk_Init(mc_api *api)
 
     api->clean = Clean;
     api->prepare = Prepare;
+    api->configure_encoder = NULL;
     api->configure_decoder = ConfigureDecoder;
     api->start = Start;
     api->stop = Stop;

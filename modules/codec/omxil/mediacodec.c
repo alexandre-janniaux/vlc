@@ -244,16 +244,17 @@ vlc_module_begin ()
         set_capability("audio decoder", 0)
         set_callbacks(OpenDecoderJni, CloseDecoder)
         add_shortcut("mediacodec_jni")
-        add_submodule ()
+    add_submodule ()
         set_description("Video encoder using Android MediaCodec via JNI")
         set_capability("encoder", 0)
         set_callbacks(OpenEncoderJni, CloseEncoder)
+        set_shortname("mediacodec_jni")
         add_shortcut("mediacodec_jni")
-    add_submodule ()
-        set_description("Video encoder using Android MediaCodec via NDK")
-        set_capability("encoder", 0)
-        set_callbacks(OpenEncoderNdk, CloseEncoder)
-        add_shortcut("mediacodec")
+    //add_submodule ()
+    //    set_description("Video encoder using Android MediaCodec via NDK")
+    //    set_capability("encoder", 0)
+    //    set_callbacks(OpenEncoderNdk, CloseEncoder)
+    //    set_shortname("mediacodec")
 vlc_module_end ()
 
 static void StopMediaCodec_Encoder(struct encoder_sys_t *p_sys)
@@ -1167,6 +1168,7 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         msg_Err(p_enc, "Can't initialize mediacodec API for mediacodec encoder");
         goto bailout;
     }
+    fprintf(stderr, "init MediaCodec API\n");
 
     /* Find the right codec and codec options */
     if (p_sys->api.configure_encoder(&p_sys->api, p_enc->fmt_out.i_profile) != 0)
@@ -1174,6 +1176,8 @@ static int OpenEncoder(vlc_object_t *p_this, pf_MediaCodecApi_init pf_init)
         msg_Err(p_enc, "Can't configure MediaCodec encoder for the given mime type");
         return VLC_EGENERIC;
     }
+
+    fprintf(stderr, "configure MediaCodec \n");
 
     p_enc->pf_encode_video = EncodeVideo;
     p_enc->pf_encode_audio = NULL;
@@ -1250,8 +1254,9 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
     if (picture)
     {
         fprintf(stderr, "PICTURE DATE: %"PRId64"\n", picture->date);
-        if (p_sys->i_last_date <= picture->date)
+        if (p_sys->i_last_date > picture->date)
         {
+
             fprintf(stderr, "DROPPING PICTURE BECAUSE IT WAS ANTERIOR TO THE PREVIOUS IMAGE\n");
             queue_picture = false;
         }

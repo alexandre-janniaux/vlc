@@ -132,7 +132,7 @@ struct mc_api
     void (*clean)(mc_api *);
     int (*prepare)(mc_api *, int i_profile);
     int (*configure_decoder)(mc_api *, union mc_api_args* p_args);
-    int (*configure_encoder)(mc_api *, union mc_api_args* p_args);
+    int (*configure_encoder)(mc_api *, int i_profile);
     int (*start)(mc_api *);
     int (*start_encoder)(mc_api *, const es_format_t *fmt_in,
                      const es_format_t *fmt_out);
