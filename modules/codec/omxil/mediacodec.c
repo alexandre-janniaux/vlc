@@ -1311,22 +1311,23 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
             if (p_sys->mc_out.type == MC_OUT_TYPE_BUF)
             {
 
-                out_block->i_dts = VLC_TICK_INVALID; //date_Get(&p_sys->dts)-1;
-                if (!p_sys->b_first_frame)
-                {
-                    fprintf(stderr, "Settings BASE DTS = %"PRId64"\n", i_ts);
-                    date_Set(&p_sys->dts, i_ts);
-                    out_block->i_dts = i_ts - 3 * CLOCK_FREQ * p_enc->fmt_out.video.i_frame_rate_base /
-                                       p_enc->fmt_out.video.i_frame_rate;
-                    p_sys->b_first_frame = true;
-                }
-                // Without -1, we can have dts > pts
+                out_block->i_dts = i_ts;// VLC_TICK_INVALID; //date_Get(&p_sys->dts)-1;
+                out_block->i_pts = i_ts;
+                //if (!p_sys->b_first_frame)
+                //{
+                //    fprintf(stderr, "Settings BASE DTS = %"PRId64"\n", i_ts);
+                //    date_Set(&p_sys->dts, i_ts);
+                //    out_block->i_dts = i_ts - 3 * CLOCK_FREQ * p_enc->fmt_out.video.i_frame_rate_base /
+                //                       p_enc->fmt_out.video.i_frame_rate;
+                //    p_sys->b_first_frame = true;
+                //}
+                //// Without -1, we can have dts > pts
                 out_block->i_pts = i_ts;
 
                 fprintf(stderr, "Setting DTS=%"PRId64" / PTS=%"PRId64"\n",
                         out_block->i_dts, out_block->i_pts);
 
-                date_Increment(&p_sys->dts, 1);
+                //date_Increment(&p_sys->dts, 1);
             }
             else
             {
@@ -1335,8 +1336,6 @@ static block_t* EncodeVideo(encoder_t *p_enc, picture_t *picture)
             }
             memcpy(out_block->p_buffer, p_sys->mc_out.buf.p_ptr, p_sys->mc_out.buf.i_size);
             const uint8_t* p = out_block->p_buffer;
-            if (p_sys->mc_out.buf.i_size >= 7)
-                fprintf(stderr, "DATA: %.2x %.2x %.2x %.2x %.2x %.2x\n", p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
 
             if (p_sys->mc_out.b_eos)
                 out_block->i_flags |= BLOCK_FLAG_END_OF_SEQUENCE;
