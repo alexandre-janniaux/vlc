@@ -356,7 +356,10 @@ static block_t * transcode_encoder_video_push( transcode_encoder_t *p_enc,
     block_t *p_block = p_enc->p_encoder->pf_encode_video( p_enc->p_encoder, p_pic );
 
     if( p_enc->p_packetizer == NULL )
+    {
+        p_enc->b_firstblock |= p_block != NULL;
         return p_block;
+    }
 
     block_t *p_chain = NULL, *p_packetized;
     do {
@@ -367,6 +370,7 @@ static block_t * transcode_encoder_video_push( transcode_encoder_t *p_enc,
         block_ChainAppend( &p_chain, p_packetized );
     } while( p_packetized );
 
+    p_enc->b_firstblock |= p_chain != NULL;
     return p_chain;
 }
 

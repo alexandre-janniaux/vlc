@@ -32,6 +32,7 @@ struct transcode_encoder_t
     /* output buffers */
     block_t         *p_buffers;
     bool b_threaded;
+    bool b_firstblock;
 };
 
 int transcode_encoder_audio_open( transcode_encoder_t *p_enc,

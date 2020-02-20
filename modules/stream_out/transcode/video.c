@@ -645,11 +645,15 @@ int transcode_video_process( sout_stream_t *p_stream, sout_stream_id_sys_t *id,
                                transcode_encoder_format_in( id->encoder )->video.i_width,
                                transcode_encoder_format_in( id->encoder )->video.i_height );
 
-            if( !id->downstream_id )
+            if( !id->downstream_id && transcode_encoder_format_out( id->encoder ) != NULL)
+            {
                 id->downstream_id =
                     id->pf_transcode_downstream_add( p_stream,
                                                      &id->p_decoder->fmt_in,
                                                      transcode_encoder_format_out( id->encoder ) );
+                id->b_added = true;
+            }
+
             if( !id->downstream_id )
             {
                 msg_Err( p_stream, "cannot output transcoded stream %4.4s",
@@ -701,6 +705,14 @@ int transcode_video_process( sout_stream_t *p_stream, sout_stream_id_sys_t *id,
                     /* If a packetizer is used, multiple blocks might be returned, in w */
                     block_t *p_encoded = transcode_encoder_encode( id->encoder, p_in );
                     block_ChainAppend( out, p_encoded );
+
+                    if( !id->b_added && transcode_encoder_format_out( id->encoder ) != NULL )
+                    {
+                        id->downstream_id = id->pf_transcode_downstream_add( p_stream,
+                                &id->p_decoder->fmt_in,
+                                transcode_encoder_format_out( id->encoder ) );
+                        id->b_added = true;
+                    }
 
                     picture_Release( p_in );
                 }
