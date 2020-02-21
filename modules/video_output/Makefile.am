@@ -373,6 +373,7 @@ endif
 plugin_manifests = $(patsubst %_plugin.la,video_output/%_plugin.manifest.h,$(vout_plugins))
 
 video_output/%.manifest.h: %.la
+	#TODO: verbosity
 	libfile=`grep dlname $< | cut -d"'" -f2`; \
 	symbols=`nm -g .libs/$$libfile`; \
 	entry=`echo "$${symbols}" | grep vlc_entry | cut -d" " -f3 | head -n1`; \
@@ -382,7 +383,10 @@ video_output/%.manifest.h: %.la
 # echo $$(basename $$(grep "libdir=" "$<" | cut -d "'" -f 2))
 
 video_output.manifest.h: $(plugin_manifests)
-	echo $< > $@
+	rm -f $@
+	for manifest in $^; do \
+		echo "#include \"$${manifest}\"" >> $@; \
+	done
 
 BUILT_SOURCES += $(plugin_manifests)
 nodist_libvideo_output_plugin_la_SOURCES = video_output.manifest.h
