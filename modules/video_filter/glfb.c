@@ -323,7 +323,15 @@ out_loop:
     context->rc ++;
     output->context = (picture_context_t *)context;
     output->context->vctx = NULL;
+
+#ifdef __ANDROID__
+    output->format.orientation = ORIENT_NORMAL;
+    output->format.i_chroma = VLC_CODEC_RGBA;
+#else
     output->format.orientation = ORIENT_VFLIPPED;
+    output->format.i_chroma = VLC_CODEC_BGRA;
+#endif
+
 
     picture_Release(input);
     return output;
@@ -333,8 +341,16 @@ static int Open( vlc_object_t *obj )
     filter_t *filter = (filter_t *)obj;
     struct vlc_gl_pbo_filter *sys = NULL;
 
-    if (filter->fmt_out.video.i_chroma != VLC_CODEC_BGRA)
-        return VLC_EGENERIC;
+    filter->fmt_out.video.i_chroma
+        = filter->fmt_out.i_codec
+        = VLC_CODEC_BGRA;
+#ifdef __ANDROID__
+    filter->fmt_out.video.i_chroma
+        = filter->fmt_out.i_codec
+        = VLC_CODEC_RGBA;
+#endif
+    //if (filter->fmt_out.video.i_chroma != VLC_CODEC_BGRA)
+    //    return VLC_EGENERIC;
 
     filter->p_sys
         = sys
@@ -342,9 +358,9 @@ static int Open( vlc_object_t *obj )
     if (sys == NULL)
         return VLC_ENOMEM;
 
-    filter->fmt_out.video.i_chroma
-        = filter->fmt_out.i_codec
-        = VLC_CODEC_BGRA;
+    //filter->fmt_out.video.i_chroma
+    //    = filter->fmt_out.i_codec
+    //    = VLC_CODEC_BGRA;
 
     unsigned width
         = filter->fmt_out.video.i_visible_width
@@ -377,6 +393,8 @@ static int Open( vlc_object_t *obj )
 
     vlc_viewpoint_t viewpoint;
     vlc_viewpoint_init(&viewpoint);
+    int previous_orientation = filter->fmt_in.video.orientation;
+    filter->fmt_in.video.orientation = ORIENT_HFLIPPED;
     sys->vgl = vout_display_opengl_New(&filter->fmt_in.video, &spu_chromas, sys->gl,
                                         &viewpoint, NULL);
 
@@ -483,9 +501,21 @@ static int Open( vlc_object_t *obj )
     sys->glapi.BindFramebuffer(GL_FRAMEBUFFER, 0);
     sys->glapi.BindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
+    vout_display_opengl_Viewport(sys->vgl, 0, 0,
+            filter->fmt_out.video.i_visible_width,
+            filter->fmt_out.video.i_visible_height);
+    vout_display_opengl_SetWindowAspectRatio(sys->vgl,
+            filter->fmt_out.video.i_visible_width / (float)
+            filter->fmt_out.video.i_visible_height);
+
     vlc_gl_ReleaseCurrent(sys->gl);
 
+#ifdef __ANDROID__
+    filter->fmt_out.video.orientation = ORIENT_NORMAL;
+#else
     filter->fmt_out.video.orientation = ORIENT_VFLIPPED;
+#endif
+
     filter->pf_video_filter = Filter;
     return VLC_SUCCESS;
 

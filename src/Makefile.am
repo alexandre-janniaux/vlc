@@ -398,16 +398,6 @@ libvlccore_la_LIBADD = $(LIBS_libvlccore) \
 	$(LTLIBINTL) $(LTLIBICONV) \
 	$(IDN_LIBS) $(SOCKET_LIBS) $(LIBRT) $(LIBDL) $(LIBM)
 
-if HAVE_ANDROID
-# Android support exports newlocale, but it's written in C++
-# with calls to operator new/delete.
-if HAVE_ARM64
-libvlccore_la_LIBADD += -lc++_shared
-else
-libvlccore_la_LIBADD += -landroid_support -lc++abi
-endif
-endif
-
 if HAVE_WIN32
 libvlccore_la_SOURCES += \
 	win32/dirs.c \
