@@ -75,11 +75,11 @@ libegl_wl_plugin_la_LIBADD = $(EGL_LIBS) $(WAYLAND_EGL_LIBS)
 
 if HAVE_WAYLAND
 BUILT_SOURCES += $(nodist_libwl_shm_plugin_la_SOURCES)
-vout_LTLIBRARIES += libwl_shm_plugin.la
-vout_LTLIBRARIES += libwl_shell_plugin.la
+vout_plugins += libwl_shm_plugin.la
+vout_plugins += libwl_shell_plugin.la
 BUILT_SOURCES += $(nodist_libxdg_shell_plugin_la_SOURCES)
-vout_LTLIBRARIES += libxdg_shell_plugin.la
+vout_plugins += libxdg_shell_plugin.la
 if HAVE_EGL
-vout_LTLIBRARIES += libegl_wl_plugin.la
+vout_plugins += libegl_wl_plugin.la
 endif
 endif
