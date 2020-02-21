@@ -370,19 +370,13 @@ if HAVE_GL
 vout_plugins += libvgl_plugin.la
 endif
 
-# modules/video_output/%_plugin_manifest.h: lib%_plugin.la
-
 plugin_manifests = $(patsubst %_plugin.la,video_output/%_plugin.manifest.h,$(vout_plugins))
 
 video_output/%.manifest.h: %.la
-	#TODO: verbosity
 	libfile=`grep dlname $< | cut -d"'" -f2`; \
 	symbols=`nm -g .libs/$$libfile`; \
 	entry=`echo "$${symbols}" | grep vlc_entry | cut -d" " -f3 | head -n1`; \
 	echo "VLC_PLUGIN($${entry})" > $@
-
-# echo $$(basename $<) # $$(basename $$(grep "libdir=" "$<" | cut -d "'" -f 2))
-# echo $$(basename $$(grep "libdir=" "$<" | cut -d "'" -f 2))
 
 video_output.manifest.h: $(plugin_manifests)
 	rm -f $@
@@ -390,8 +384,12 @@ video_output.manifest.h: $(plugin_manifests)
 		echo "#include \"$${manifest}\"" >> $@; \
 	done
 
-BUILT_SOURCES += $(plugin_manifests)
-nodist_libvideo_output_plugin_la_SOURCES = video_output.manifest.h
+plugins.manifest.h: video_output.manifest.h
+	echo '#include "video_output.manifest.h"' > $@
+
+BUILT_SOURCES += $(plugin_manifests) video_output.manifest.h plugins.manifest.h
+nodist_libvideo_output_plugin_la_SOURCES = plugin.manifest.h video_output.manifest.h ../extras/package/android/plugin.c
 libvideo_output_plugin_la_LIBADD = $(vout_plugins)
+libvideo_output_plugin_la_CFLAGS = -I$(builddir)
 
 vout_LTLIBRARIES = $(vout_plugins) libvideo_output_plugin.la
