@@ -82,10 +82,12 @@ libglfb_filter_plugin_la_SOURCES = $(OPENGL_COMMONSOURCES) video_filter/glfb.c
 libglfb_filter_plugin_la_CFLAGS = $(AM_CFLAGS) $(OPENGL_COMMONCFLAGS) $(EGL_FLAGS)
 libglfb_filter_plugin_la_LIBADD = $(LIBM) $(OPENGL_COMMONLIBS) $(EGL_LIBS)
 
-#if HAVE_ANDROID
+if HAVE_ANDROID
 libglfb_filter_plugin_la_CFLAGS += -DUSE_OPENGL_ES2
 libglfb_filter_plugin_la_LIBADD += $(GLES2_LIBS)
-#endif
+else
+libglfb_filter_plugin_la_LIBADD += $(GL_LIBS)
+endif
 
 vout_plugins += libglfb_filter_plugin.la
 
