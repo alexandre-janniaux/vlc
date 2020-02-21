@@ -557,8 +557,9 @@ static const struct wl_registry_listener registry_cbs =
     registry_global_remove_cb,
 };
 
-struct wl_surface *window_get_cursor(vout_window_t *wnd, int32_t *restrict hsx,
-                                     int32_t *restrict hsy)
+static struct wl_surface *window_get_cursor(vout_window_t *wnd,
+                                            int32_t *restrict hsx,
+                                            int32_t *restrict hsy)
 {
     vout_window_sys_t *sys = wnd->sys;
 
