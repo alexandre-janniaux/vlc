@@ -373,7 +373,7 @@ endif
 plugin_manifests = $(patsubst %_plugin.la,video_output/%_plugin.manifest.h,$(vout_plugins))
 
 video_output/%.manifest.h: %.la
-	libfile=`grep dlname $< | cut -d"'" -f2`; \
+	libfile=`grep old_library $< | cut -d"'" -f2`; \
 	symbols=`nm -g .libs/$$libfile`; \
 	entry=`echo "$${symbols}" | grep vlc_entry | cut -d" " -f3 | head -n1`; \
 	echo "VLC_PLUGIN($${entry})" > $@
@@ -391,5 +391,7 @@ BUILT_SOURCES += $(plugin_manifests) video_output.manifest.h plugins.manifest.h
 nodist_libvideo_output_plugin_la_SOURCES = plugin.manifest.h video_output.manifest.h ../extras/package/android/plugin.c
 libvideo_output_plugin_la_LIBADD = $(vout_plugins)
 libvideo_output_plugin_la_CFLAGS = -I$(builddir)
+libvideo_output_plugin_la_LDFLAGS =
+
 
 vout_LTLIBRARIES = $(vout_plugins) libvideo_output_plugin.la
