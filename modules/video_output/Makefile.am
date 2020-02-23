@@ -376,7 +376,7 @@ plugin_objects = $(patsubst %_plugin.la,video_output/%_plugin-partial.o,$(vout_p
 video_output/%.manifest.h: %.la
 	libfile=`grep old_library $< | cut -d"'" -f2`; \
 	symbols=`nm -g .libs/$$libfile`; \
-	entry=`echo "$${symbols}" | grep vlc_entry | cut -d" " -f3 | head -n1`; \
+	entry=`echo "$${symbols}" | grep vlc_entry__ | cut -d" " -f3 | head -n1`; \
 	echo "VLC_PLUGIN($${entry})" > $@
 
 video_output.manifest.h: $(plugin_manifests)
@@ -393,13 +393,14 @@ video_output/%-partial.o: %.la
 	libfile=`grep old_library $< | cut -d"'" -f2`; \
 	cd "video_output/$<-objects/" && ar x "../../.libs/$${libfile}"
 	objects=$$(find "video_output/$<-objects/" -name "*.o"); \
-	deps=$($(patsubst %.la,%_la,$<)_LIBADD); \
-	echo $${deps}; \
-	set -x; \
 	gcc -r -o "$@" $${objects}
-	objcopy --wildcard --localize-hidden \
-		--globalize-symbol="^vlc_entry__" \
-		--strip-unneeded --discard-locals $@
+	objcopy --wildcard \
+		--localize-hidden \
+		--globalize-symbol="vlc_entry__\*" \
+		--strip-symbol="vlc_entry_api_version*" \
+		--strip-symbol="vlc_entry_copyright*" \
+		--strip-symbol="vlc_entry_license*" \
+		--strip-unneeded $@
 
 # --strip-symbol=vlc_module_name
 
