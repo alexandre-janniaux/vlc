@@ -4,7 +4,6 @@
 #define __PLUGIN__
 #define MODULE_STRING "vlcplugins"
 #include <vlc_plugin.h>
-typedef int (*vlc_set_cb) (void *, void *, int, ...);
 typedef int (*vlc_plugin_entry) (vlc_set_cb, void *);
 
 #define VLC_EXPORT __attribute__((visibility("default")))
@@ -15,7 +14,6 @@ typedef int (*vlc_plugin_entry) (vlc_set_cb, void *);
 #undef VLC_PLUGIN
 
 #define VLC_PLUGIN(name) name,
-VLC_LOCAL
 static const vlc_plugin_entry vlc_plugin_entries[] = {
 #   include "plugins.manifest.h"
     NULL
