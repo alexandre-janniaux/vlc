@@ -217,7 +217,7 @@ enum vlc_module_properties
 #endif
 
 #define CDECL_SYMBOL
-#if defined (__PLUGIN__)
+#if defined (__PLUGIN__) || 1
 # if defined (_WIN32)
 #   define DLL_SYMBOL              __declspec(dllexport)
 #   undef CDECL_SYMBOL
