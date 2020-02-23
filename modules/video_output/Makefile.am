@@ -371,6 +371,7 @@ vout_plugins += libvgl_plugin.la
 endif
 
 plugin_manifests = $(patsubst %_plugin.la,video_output/%_plugin.manifest.h,$(vout_plugins))
+plugin_objects = $(patsubst %_plugin.la,video_output/%_plugin-partial.o,$(vout_plugins))
 
 video_output/%.manifest.h: %.la
 	libfile=`grep old_library $< | cut -d"'" -f2`; \
@@ -387,11 +388,35 @@ video_output.manifest.h: $(plugin_manifests)
 plugins.manifest.h: video_output.manifest.h
 	echo '#include "video_output.manifest.h"' > $@
 
+video_output/%-partial.o: %.la
+	mkdir -p "video_output/$<-objects/"
+	libfile=`grep old_library $< | cut -d"'" -f2`; \
+	cd "video_output/$<-objects/" && ar x "../../.libs/$${libfile}"
+	objects=$$(find "video_output/$<-objects/" -name "*.o"); \
+	deps=$($(patsubst %.la,%_la,$<)_LIBADD); \
+	echo $${deps}; \
+	set -x; \
+	gcc -r -o "$@" $${objects}
+	objcopy --wildcard --localize-hidden \
+		--globalize-symbol="^vlc_entry__" \
+		--strip-unneeded --discard-locals $@
+
+# --strip-symbol=vlc_module_name
+
 BUILT_SOURCES += $(plugin_manifests) video_output.manifest.h plugins.manifest.h
 nodist_libvideo_output_plugin_la_SOURCES = plugin.manifest.h video_output.manifest.h ../extras/package/android/plugin.c
-libvideo_output_plugin_la_LIBADD = $(vout_plugins)
+libvideo_output_plugin_la_LIBADD = $(plugin_objects)
 libvideo_output_plugin_la_CFLAGS = -I$(builddir)
-libvideo_output_plugin_la_LDFLAGS =
+libvideo_output_plugin_la_LDFLAGS = \
+	-avoid-version -module -export-symbols-regex ^vlc_entry \
+	-shrext $(LIBEXT) -no-undefined \
+	$(top_builddir)/compat/libcompat.la $(LTLIBVLCCORE)
 
+dependencies = $(patsubst %.la,%_la,$(vout_plugins))
+dep_dependencies = $(foreach plugin,$(dependencies),$($(plugin)_LIBADD))
+libvideo_output_plugin_la_LIBADD += $(dep_dependencies)
+
+debug-info:
+	echo $(libvideo_output_plugin_la_LIBADD)
 
 vout_LTLIBRARIES = $(vout_plugins) libvideo_output_plugin.la
