@@ -396,7 +396,6 @@ video_output/%-partial.o: %.la
 	gcc -r -o "$@" $${objects}
 	objcopy --wildcard \
 		--localize-hidden \
-		--globalize-symbol="vlc_entry__\*" \
 		--strip-symbol="vlc_entry_api_version*" \
 		--strip-symbol="vlc_entry_copyright*" \
 		--strip-symbol="vlc_entry_license*" \
