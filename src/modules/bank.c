@@ -212,7 +212,6 @@ static void *module_Open(struct vlc_logger *log,
     {
         char *errmsg = vlc_dlerror();
 
-        fprintf(stderr, "cannot open: %s\n", errmsg);
         vlc_error(log, "cannot load plug-in %s: %s", path,
                   errmsg ? errmsg : "unknown error");
         free(errmsg);
@@ -221,7 +220,6 @@ static void *module_Open(struct vlc_logger *log,
 
     const char *str = module_GetVersion(handle);
     if (str == NULL) {
-        fprintf(stderr, "no version\n");
         vlc_error(log, "cannot load plug-in %s: %s", path,
                   "unknown version or not a plug-in");
 error:
@@ -232,7 +230,6 @@ error:
     if (strcmp(str, VLC_API_VERSION_STRING)) {
         vlc_error(log, "cannot load plug-in %s: unsupported version %s", path,
                   str);
-        fprintf(stderr, "unsupported version %s, only support %s\n", str, VLC_API_VERSION_STRING);
         goto error;
     }
 
@@ -251,20 +248,15 @@ error:
 static vlc_plugin_t *module_InitDynamic(vlc_object_t *obj, const char *path,
                                         bool fast)
 {
-    fprintf(stderr, "Initialize dynamic plugin %s\n", path);
     void *handle = module_Open(obj->logger, path, fast);
     if (handle == NULL)
-    {
-        fprintf(stderr, "module open failed for %s\n", path);
         return NULL;
-    }
 
     /* Try to resolve the symbol */
     vlc_plugin_cb entry = vlc_dlsym(handle, "vlc_entry");
     if (entry == NULL)
     {
         msg_Warn (obj, "cannot find plug-in entry point in %s", path);
-        fprintf(stderr, "No entrypoint for %s\n", path);
         goto error;
     }
 
@@ -310,8 +302,6 @@ static int AllocatePluginFile (module_bank_t *bank, const char *abspath,
                                const char *relpath, const struct stat *st)
 {
     vlc_plugin_t *plugin = NULL;
-
-    fprintf(stderr, "AllocatePluginFile abspath=%s | relpath=%s\n", abspath, relpath);
 
     /* Check our plugins cache first then load plugin if needed */
     if (bank->mode & CACHE_READ_FILE)
@@ -369,7 +359,6 @@ static int AllocatePluginFile (module_bank_t *bank, const char *abspath,
 static void AllocatePluginDir (module_bank_t *bank, unsigned maxdepth,
                                const char *absdir, const char *reldir)
 {
-    fprintf(stderr, "AllocatePluginDir absdir=%s | reldir=%s\n", absdir, reldir);
     if (maxdepth == 0)
         return;
     maxdepth--;
@@ -389,8 +378,6 @@ static void AllocatePluginDir (module_bank_t *bank, unsigned maxdepth,
         /* Skip ".", ".." */
         if (!strcmp (file, ".") || !strcmp (file, ".."))
             continue;
-
-        fprintf(stderr, "-> analysing file %s\n", file);
 
         /* Compute path relative to plug-in base directory */
         if (reldir != NULL)
@@ -450,7 +437,6 @@ static void AllocatePluginDir (module_bank_t *bank, unsigned maxdepth,
 static void AllocatePluginPath(vlc_object_t *obj, const char *path,
                                cache_mode_t mode)
 {
-    fprintf(stderr, "AllocatePluginPath; %s\n", path);
     module_bank_t bank =
     {
         .obj = obj,
@@ -501,7 +487,6 @@ static void AllocateAllPlugins (vlc_object_t *p_this)
 {
     char *paths;
     cache_mode_t mode = 0;
-    fprintf(stderr, "AllocateAllPlugins \n");
 
     if (var_InheritBool(p_this, "plugins-cache"))
         mode |= CACHE_READ_FILE;
