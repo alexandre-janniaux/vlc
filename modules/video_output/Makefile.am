@@ -399,9 +399,8 @@ video_output/%-partial.o: %.la
 		--strip-symbol="vlc_entry_api_version*" \
 		--strip-symbol="vlc_entry_copyright*" \
 		--strip-symbol="vlc_entry_license*" \
+		--localize-symbol=vlc_module_name \
 		--strip-unneeded $@
-
-# --strip-symbol=vlc_module_name
 
 BUILT_SOURCES += $(plugin_manifests) video_output.manifest.h plugins.manifest.h
 nodist_libvideo_output_plugin_la_SOURCES = plugin.manifest.h video_output.manifest.h ../extras/package/android/plugin.c
