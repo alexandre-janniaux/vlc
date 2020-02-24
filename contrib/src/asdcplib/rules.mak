@@ -38,4 +38,6 @@ DEPS_asdcplib = nettle $(DEPS_nettle)
 	cd $< && $(MAKE) install
 	mkdir -p -- "$(PREFIX)/lib/pkgconfig"
 	cp $</asdcplib.pc "$(PREFIX)/lib/pkgconfig/"
+	sed -i.orig "/prefix=/c prefix=${PREFIX}" "$(PREFIX)/lib/pkgconfig/asdcplib.pc"
+
 	touch $@
