@@ -429,15 +429,20 @@ AS_IF([test "$SYS" = linux],[
     ],[
       HAVE_ANDROID="1"
       AC_MSG_RESULT([yes])
-      AS_IF([test "${host_cpu}" = "aarch64"], [
-          AC_LIBOBJ([sendmsg])
-      ])
-      dnl Android support exports newlocale, but it's written in C++
-      dnl with calls to operator new/delete.
-      AS_IF([test "${host_cpu}" = "aarch64" -o "${host_cpu}" = "x86_64"],
-            [VLC_ADD_LIBS([libvlccore],[-lc++_shared])])
-      AS_IF([test "${host_cpu}" = "armv7" -o "${host_cpu}" = "x86"],
-            [VLC_ADD_LIBS([libvlccore],[-landroid_support -lc++abi])])
+      case "$host_cpu" in
+         "arm"|"armv7"|"armv7a")
+           dnl Android support exports newlocale, but it's written in C++
+           dnl with calls to operator new/delete.
+           VLC_ADD_LIBS([libvlccore],[-landroid_support -lc++abi])
+           ;;
+         "aaarch64")
+           AC_LIBOBJ([sendmsg])
+           VLC_ADD_LIBS([libvlccore],[-lc++_shared])
+           ;;
+         "x86"|"x86_64")
+           VLC_ADD_LIBS([libvlccore],[-lc++_shared])
+           ;;
+      esac
     ],[
       AC_MSG_RESULT([no])
     ])
