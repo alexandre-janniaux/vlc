@@ -39,6 +39,7 @@ enum AWindow_ID {
     AWindow_Video,
     AWindow_Subtitles,
     AWindow_SurfaceTexture,
+    AWindow_PersistentSurfaceTexture,
     AWindow_Max,
 };
 

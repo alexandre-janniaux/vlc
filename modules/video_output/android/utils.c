@@ -29,6 +29,7 @@
 typedef ANativeWindow* (*ptr_ANativeWindow_fromSurface)(JNIEnv*, jobject);
 typedef ANativeWindow* (*ptr_ANativeWindow_fromSurfaceTexture)(JNIEnv*, jobject);
 typedef void (*ptr_ANativeWindow_release)(ANativeWindow*);
+typedef jobject (*ptr_MediaCodec_createPersistentInputSurface)(JNIEnv *);
 
 struct AWindowHandler
 {
@@ -87,6 +88,14 @@ static struct
         jmethodID waitAndUpdateTexImage;
         jmethodID getSurface;
     } SurfaceTexture;
+    struct {
+        jclass clazz;
+        jmethodID release;
+    } Surface;
+    struct {
+        jclass clazz;
+        jmethodID createPersistentInputSurface;
+    } MediaCodec;
 } jfields;
 
 /*
@@ -412,8 +421,20 @@ InitJNIFields(JNIEnv *env, vlc_object_t *p_obj, jobject *jobj)
     jfields.id = (*env)->GetMethodID(env, clazz, (str), (args)); \
     CHECK_EXCEPTION("GetMethodID("str")", critical); \
 } while( 0 )
+#define GET_STATIC_METHOD(id, str, args, critical) do { \
+    jfields.id = (*env)->GetStaticMethodID(env, clazz, (str), (args)); \
+    CHECK_EXCEPTION("GetStaticMethodID("str")", critical); \
+} while( 0 )
 
-    clazz = (*env)->GetObjectClass(env, jobj);
+    jobject clazz_anativewindow = (*env)->GetObjectClass(env, jobj);
+    jobject clazz_mediacodec = (*env)->FindClass(env, "android/media/MediaCodec");
+
+    clazz = clazz_mediacodec;
+    GET_STATIC_METHOD(MediaCodec.createPersistentInputSurface,
+                      "createPersistentInputSurface", "()Landroid/view/Surface", false);
+
+    clazz = clazz_anativewindow;
+
     CHECK_EXCEPTION("AndroidNativeWindow clazz", true);
     GET_METHOD(AndroidNativeWindow.getVideoSurface,
                "getVideoSurface", "()Landroid/view/Surface;", true);
@@ -442,8 +463,11 @@ InitJNIFields(JNIEnv *env, vlc_object_t *p_obj, jobject *jobj)
         i_init_state = 0;
         goto end;
     }
-    jfields.AndroidNativeWindow.clazz = (*env)->NewGlobalRef(env, clazz);
-    (*env)->DeleteLocalRef(env, clazz);
+    jfields.AndroidNativeWindow.clazz = (*env)->NewGlobalRef(env, clazz_anativewindow);
+    (*env)->DeleteLocalRef(env, clazz_anativewindow);
+
+    jfields.MediaCodec.clazz = (*env)->NewGlobalRef(env, clazz_mediacodec);
+    (*env)->DeleteLocalRef(env, clazz_mediacodec);
 
 #undef GET_METHOD
 #undef CHECK_EXCEPTION
@@ -616,6 +640,11 @@ WindowHandler_NewSurfaceEnv(AWindowHandler *p_awh, JNIEnv *p_env,
             break;
         case AWindow_SurfaceTexture:
             jsurface = JNI_STEXCALL(CallObjectMethod, getSurface);
+            break;
+        case AWindow_PersistentSurfaceTexture:
+            jsurface = (*p_env)->CallStaticObjectMethod(
+                    p_env, jfields.MediaCodec.clazz,
+                    jfields.MediaCodec.createPersistentInputSurface);
             break;
         default:
             vlc_assert_unreachable();

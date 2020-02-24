@@ -35,6 +35,10 @@
 #  include <OpenGLES/ES2/gl.h>
 #  include <OpenGLES/ES2/glext.h>
 # endif
+#else if defined(__ANDROID__)
+# define USE_OPENGL_ES2
+# include <GLES2/gl2.h>
+# include <GLES2/gl2ext.h>
 #else /* !defined (__APPLE__) */
 # if defined (USE_OPENGL_ES2)
 #  include <GLES2/gl2.h>
