@@ -1,4 +1,5 @@
 neondir = $(pluginsdir)/arm_neon
+neon_plugins =
 
 libchroma_yuv_neon_plugin_la_SOURCES = \
 	arm_neon/deinterleave_chroma.S \
@@ -23,7 +24,7 @@ libyuv_rgb_neon_plugin_la_CFLAGS = $(AM_CFLAGS)
 libyuv_rgb_neon_plugin_LIBTOOLFLAGS = --tag=CC
 
 if HAVE_NEON
-neon_LTLIBRARIES = \
+neon_plugins += \
 	libchroma_yuv_neon_plugin.la \
 	libvolume_neon_plugin.la \
 	libyuv_rgb_neon_plugin.la

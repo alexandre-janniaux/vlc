@@ -34,7 +34,7 @@ libspatializer_plugin_la_SOURCES = \
 	audio_filter/spatializer/spatializer.cpp
 libspatializer_plugin_la_LIBADD = $(LIBM)
 
-audio_filter_LTLIBRARIES = \
+audio_filter_plugins = \
 	libaudiobargraph_a_plugin.la \
 	libchorus_flanger_plugin.la \
 	libcompressor_plugin.la \
@@ -77,7 +77,7 @@ libsimple_channel_mixer_plugin_la_SOURCES += \
 	audio_filter/channel_mixer/simple_neon.h
 endif
 
-audio_filter_LTLIBRARIES += \
+audio_filter_plugins += \
 	libdolby_surround_decoder_plugin.la \
 	libheadphone_channel_mixer_plugin.la \
 	libmono_plugin.la \
@@ -92,7 +92,7 @@ libspatialaudio_plugin_la_CXXFLAGS = $(AM_CXXFLAGS) $(SPATIALAUDIO_CFLAGS)
 libspatialaudio_plugin_la_LIBADD = $(SPATIALAUDIO_LIBS)
 libspatialaudio_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(audio_filterdir)'
 EXTRA_LTLIBRARIES += libspatialaudio_plugin.la
-audio_filter_LTLIBRARIES += $(LTLIBspatialaudio)
+audio_filter_plugins += $(LTLIBspatialaudio)
 
 # Converters
 libaudio_format_plugin_la_SOURCES = audio_filter/converter/format.c
@@ -103,7 +103,7 @@ libtospdif_plugin_la_SOURCES = audio_filter/converter/tospdif.c \
 	packetizer/a52.h \
 	packetizer/dts_header.c packetizer/dts_header.h
 
-audio_filter_LTLIBRARIES += \
+audio_filter_plugins += \
 	libtospdif_plugin.la \
 	libaudio_format_plugin.la
 
@@ -122,7 +122,7 @@ libsoxr_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(SOXR_CFLAGS)
 libsoxr_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(audio_filterdir)'
 libsoxr_plugin_la_LIBADD = $(SOXR_LIBS) $(LIBM)
 
-audio_filter_LTLIBRARIES += \
+audio_filter_plugins += \
 	$(LTLIBsamplerate) \
 	$(LTLIBsoxr) \
 	libugly_resampler_plugin.la
@@ -135,5 +135,5 @@ libspeex_resampler_plugin_la_SOURCES = audio_filter/resampler/speex.c
 libspeex_resampler_plugin_la_CFLAGS = $(AM_CFLAGS) $(SPEEXDSP_CFLAGS)
 libspeex_resampler_plugin_la_LIBADD = $(SPEEXDSP_LIBS)
 if HAVE_SPEEXDSP
-audio_filter_LTLIBRARIES += libspeex_resampler_plugin.la
+audio_filter_plugins += libspeex_resampler_plugin.la
 endif

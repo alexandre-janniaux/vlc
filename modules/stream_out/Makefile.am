@@ -31,7 +31,7 @@ libstream_out_transcode_plugin_la_SOURCES = \
 libstream_out_transcode_plugin_la_CFLAGS = $(AM_CFLAGS)
 libstream_out_transcode_plugin_la_LIBADD = $(LIBM)
 
-sout_LTLIBRARIES = \
+sout_plugins = \
 	libstream_out_dummy_plugin.la \
 	libstream_out_cycle_plugin.la \
 	libstream_out_delay_plugin.la \
@@ -73,11 +73,11 @@ libstream_out_sdi_plugin_la_SOURCES = stream_out/sdi/sdiout.cpp \
         stream_out/sdi/SDIStream.hpp \
         stream_out/sdi/V210.cpp \
         stream_out/sdi/V210.hpp
-sout_LTLIBRARIES += libstream_out_sdi_plugin.la
+sout_plugins += libstream_out_sdi_plugin.la
 endif
 
 # RTP plugin
-sout_LTLIBRARIES += libstream_out_rtp_plugin.la
+sout_plugins += libstream_out_rtp_plugin.la
 libstream_out_rtp_plugin_la_SOURCES = \
 	stream_out/rtp.c stream_out/rtp.h stream_out/rtpfmt.c \
 	stream_out/rtcp.c stream_out/rtsp.c stream_out/vod.c
@@ -97,7 +97,7 @@ libstream_out_chromaprint_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(CHROMAPRINT_CFLA
 libstream_out_chromaprint_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(soutdir)'
 libstream_out_chromaprint_plugin_la_LIBADD = $(CHROMAPRINT_LIBS)
 EXTRA_LTLIBRARIES += libstream_out_chromaprint_plugin.la
-sout_LTLIBRARIES += $(LTLIBstream_out_chromaprint)
+sout_plugins += $(LTLIBstream_out_chromaprint)
 
 # Chromecast plugin
 SUFFIXES += .proto .pb.cc
@@ -123,7 +123,7 @@ CLEANFILES += $(nodist_libstream_out_chromecast_plugin_la_SOURCES)
 if ENABLE_SOUT
 if BUILD_CHROMECAST
 BUILT_SOURCES += stream_out/chromecast/cast_channel.pb.h
-sout_LTLIBRARIES += libstream_out_chromecast_plugin.la
-demux_LTLIBRARIES += libdemux_chromecast_plugin.la
+sout_plugins += libstream_out_chromecast_plugin.la
+demux_plugins += libdemux_chromecast_plugin.la
 endif
 endif

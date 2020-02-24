@@ -1,11 +1,11 @@
 guidir = $(pluginsdir)/gui
-gui_LTLIBRARIES =
+gui_plugins =
 
 libncurses_plugin_la_SOURCES = gui/ncurses.c
 libncurses_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(NCURSES_CFLAGS)
 libncurses_plugin_la_LIBADD = $(NCURSES_LIBS) $(LIBM)
 if HAVE_NCURSES
-gui_LTLIBRARIES += libncurses_plugin.la
+gui_plugins += libncurses_plugin.la
 endif
 
 EXTRA_DIST += gui/eject.c
@@ -18,7 +18,7 @@ libminimal_macosx_plugin_la_SOURCES = \
 libminimal_macosx_plugin_la_OBJCFLAGS = $(AM_OBJCFLAGS) -fobjc-arc -fobjc-exceptions
 libminimal_macosx_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(guidir)' -Wl,-framework,Cocoa
 EXTRA_LTLIBRARIES += libminimal_macosx_plugin.la
-gui_LTLIBRARIES += $(LTLIBminimal_macosx)
+gui_plugins += $(LTLIBminimal_macosx)
 
 include gui/macosx/Makefile.am
 include gui/qt/Makefile.am

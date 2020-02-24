@@ -48,7 +48,7 @@ libpacketizer_avparser_plugin_la_LIBADD = $(AVCODEC_LIBS) $(AVUTIL_LIBS) $(LIBM)
 
 noinst_HEADERS += packetizer/packetizer_helper.h packetizer/startcode_helper.h
 
-packetizer_LTLIBRARIES = \
+packetizer_plugins = \
 	libpacketizer_av1_plugin.la \
 	libpacketizer_mpegvideo_plugin.la \
 	libpacketizer_mpeg4video_plugin.la \
@@ -67,7 +67,6 @@ packetizer_LTLIBRARIES = \
 
 if HAVE_AVCODEC
 if !MERGE_FFMPEG
-packetizer_LTLIBRARIES += libpacketizer_avparser_plugin.la
+packetizer_plugins += libpacketizer_avparser_plugin.la
 endif
 endif
-

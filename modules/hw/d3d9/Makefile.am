@@ -9,6 +9,6 @@ libdirect3d9_filters_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(d3d9dir)'
 libdirect3d9_filters_plugin_la_LIBADD = libchroma_copy.la libdeinterlace_common.la libd3d9_common.la $(LIBCOM)
 
 if HAVE_WIN32_DESKTOP
-d3d9_LTLIBRARIES = $(LTLIBdirect3d9_filters)
+d3d9_plugins = $(LTLIBdirect3d9_filters)
 EXTRA_LTLIBRARIES += libdirect3d9_filters_plugin.la
 endif

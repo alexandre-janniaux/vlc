@@ -1,5 +1,5 @@
 visudir = $(pluginsdir)/visualization
-visu_LTLIBRARIES =
+visualization_plugins =
 
 libglspectrum_plugin_la_SOURCES = \
 	visualization/glspectrum.c \
@@ -8,7 +8,7 @@ libglspectrum_plugin_la_SOURCES = \
 	visualization/visual/window_presets.h
 libglspectrum_plugin_la_LIBADD = $(GL_LIBS) $(LIBM)
 if HAVE_GL
-visu_LTLIBRARIES += libglspectrum_plugin.la
+visualization_plugins += libglspectrum_plugin.la
 endif
 
 libgoom_plugin_la_SOURCES = visualization/goom.c
@@ -16,14 +16,14 @@ libgoom_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(GOOM_CFLAGS)
 libgoom_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(visudir)'
 libgoom_plugin_la_LIBADD = $(GOOM_LIBS) $(LIBM)
 EXTRA_LTLIBRARIES += libgoom_plugin.la
-visu_LTLIBRARIES += $(LTLIBgoom)
+visualization_plugins += $(LTLIBgoom)
 
 libprojectm_plugin_la_SOURCES = visualization/projectm.cpp
 libprojectm_plugin_la_CXXFLAGS = $(AM_CXXFLAGS) $(PROJECTM_CFLAGS)
 libprojectm_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(visudir)'
 libprojectm_plugin_la_LIBADD = $(PROJECTM_LIBS)
 EXTRA_LTLIBRARIES += libprojectm_plugin.la
-visu_LTLIBRARIES += $(LTLIBprojectm)
+visualization_plugins += $(LTLIBprojectm)
 
 libvisual_plugin_la_SOURCES = \
 	visualization/visual/visual.c visualization/visual/visual.h \
@@ -32,11 +32,11 @@ libvisual_plugin_la_SOURCES = \
 	visualization/visual/window.c visualization/visual/window.h \
 	visualization/visual/window_presets.h
 libvisual_plugin_la_LIBADD = $(LIBM)
-visu_LTLIBRARIES += libvisual_plugin.la
+visualization_plugins += libvisual_plugin.la
 
 libvsxu_plugin_la_SOURCES = visualization/vsxu.cpp visualization/cyclic_buffer.h
 libvsxu_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(VSXU_CFLAGS)
 libvsxu_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(visudir)'
 libvsxu_plugin_la_LIBADD = $(VSXU_LIBS) $(LIBM)
 EXTRA_LTLIBRARIES += libvsxu_plugin.la
-visu_LTLIBRARIES += $(LTLIBvsxu)
+visualization_plugins += $(LTLIBvsxu)

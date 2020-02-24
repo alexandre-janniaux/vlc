@@ -20,6 +20,8 @@ TESTS =
 dist_noinst_SCRIPTS = module.rc.in
 EXTRA_LTLIBRARIES =
 
+all_plugins =
+
 include common.am
 include access/Makefile.am
 include access/http/Makefile.am
@@ -61,6 +63,43 @@ include mux/Makefile.am
 include stream_out/Makefile.am
 endif
 
+all_plugins += \
+	$(access_plugins) \
+	$(neon_plugins) \
+	$(audio_filter_plugins) \
+	$(audio_mixer_plugins) \
+	$(aout_plugins) \
+	$(codec_plugins) \
+	$(control_plugins) \
+	$(demux_plugins) \
+	$(gui_plugins) \
+	$(nvdec_plugins) \
+	$(d3d9_plugins) \
+	$(d3d11_plugins) \
+	$(vaapi_plugins) \
+	$(vdpau_plugins) \
+	$(gbm_plugins) \
+	$(keystore_plugins) \
+	$(logger_plugins) \
+	$(lua_plugins) \
+	$(meta_engine_plugins) \
+	$(misc_plugins) \
+	$(notify_plugins) \
+	$(packetizer_plugins) \
+	$(sd_plugins) \
+	$(spu_plugins) \
+	$(stream_filter_plugins) \
+	$(stream_extractor_plugins) \
+	$(text_plugins) \
+	$(chroma_plugins) \
+	$(video_filter_plugins) \
+	$(splitter_plugins) \
+	$(vout_plugins) \
+	$(visualization_plugins) \
+	$(access_out_plugins) \
+	$(mux_plugins) \
+	$(sout_plugins)
+
 BUILT_SOURCES += dummy.cpp
 
 dummy.cpp:
@@ -91,3 +130,65 @@ SUFFIXES += -client-protocol.h -protocol.c .xml
 .xml-protocol.c:
 	$(AM_V_GEN)$(WAYLAND_SCANNER) private-code < "$^" > "$@.tmp"
 	$(AM_V_at)mv -f -- "$@.tmp" "$@"
+
+###
+### Handling of plugin merging
+###
+
+plugin_manifests = $(patsubst %_plugin.la,%_plugin.manifest.h,$(all_plugins))
+plugin_objects = $(patsubst %_plugin.la,%_plugin-partial.o,$(all_plugins))
+
+%.manifest.h: %.la
+	$(AM_V_GEN) libfile=`grep old_library $< | cut -d"'" -f2`; \
+	symbols=`nm -g .libs/$$libfile`; \
+	entry=`echo "$${symbols}" | grep vlc_entry__ | cut -d" " -f3 | head -n1`; \
+	echo "VLC_PLUGIN($${entry})" > $@
+
+plugins.manifest.h: $(plugin_manifests)
+	$(AM_V_GEN) rm -f $@; \
+	for manifest in $^; do \
+		echo "#include \"$${manifest}\"" >> $@; \
+	done
+
+if HAVE_ANDROID
+INCR_LD := $(LD) -r
+else
+INCR_LD := $(LD) -r -Ur
+endif
+
+%-partial.o: %.la
+	mkdir -p "$<-objects/"
+	libfile=`grep old_library $< | cut -d"'" -f2`; \
+	cd "$<-objects/" && ar x "../.libs/$${libfile}"
+	objects=$$(find "$<-objects/" -name "*.o"); \
+	echo $${objects}; \
+	$(INCR_LD) -o "$@" $${objects}
+	$(OBJCOPY) --wildcard \
+		--localize-hidden \
+		--strip-symbol="vlc_entry_api_version*" \
+		--strip-symbol="vlc_entry_copyright*" \
+		--strip-symbol="vlc_entry_license*" \
+		--localize-symbol=vlc_module_name \
+		$@
+
+AR_WRAPPER = "$(top_srcdir)/extras/package/android/ar.sh" $@
+# Assignment is needed to evaluate the foreach command
+# Enfore link variable on plugin targets
+
+dependencies = $(patsubst %.la,%_la,$(all_plugins))
+dep_dependencies = $(foreach plugin,$(dependencies),$($(plugin)_LIBADD))
+
+BUILT_SOURCES += $(plugin_manifests) plugins.manifest.h
+nodist_libvlcmodules_plugin_la_SOURCES = plugin.manifest.h
+libvlcmodules_plugin_la_SOURCES = ../extras/package/android/plugin.c
+libvlcmodules_plugin_la_LIBADD = $(plugin_objects)
+libvlcmodules_plugin_la_CFLAGS = -I$(builddir)
+libvlcmodules_plugin_la_LDFLAGS = \
+	$(dep_dependencies) \
+	-avoid-version -module -export-symbols-regex ^vlc_entry \
+	-shrext $(LIBEXT) -no-undefined \
+	-rpath $(pluginsdir) \
+	$(top_builddir)/compat/libcompat.la $(LTLIBVLCCORE) -lc++_shared
+
+plugins_LTLIBRARIES = libvlcmodules_plugin.la
+noinst_LTLIBRARIES += $(all_plugins)
