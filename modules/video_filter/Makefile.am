@@ -69,7 +69,7 @@ libwave_plugin_la_LIBADD = $(LIBM)
 #liboffscreengbm_plugin_la_SOURCES = video_filter/gbm.c $(OPENGL_COMMONSOURCES)
 #liboffscreengbm_plugin_la_LDFLAGS = $(AM_LDFLAGS) -lplacebo -lgbm
 
-video_filter_plugins = \
+video_filter_LTLIBRARIES = \
 	libadjust_plugin.la \
 	libalphamask_plugin.la \
 	libball_plugin.la \
@@ -114,11 +114,11 @@ libci_filters_plugin_la_SOURCES = video_filter/ci_filters.m codec/vt_utils.c cod
 if HAVE_OSX
 libci_filters_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)' \
 	-Wl,-framework,Foundation -Wl,-framework,CoreGraphics -Wl,-framework,CoreImage -Wl,-framework,CoreVideo
-video_filter_plugins += libci_filters_plugin.la
+video_filter_LTLIBRARIES += libci_filters_plugin.la
 endif
 
 if HAVE_IOS
-video_filter_plugins += libci_filters_plugin.la
+video_filter_LTLIBRARIES += libci_filters_plugin.la
 endif
 
 libdeinterlace_common_la_SOURCES = video_filter/deinterlace/common.c video_filter/deinterlace/common.h
@@ -154,29 +154,29 @@ libdeinterlace_plugin_la_SOURCES += video_filter/deinterlace/merge_sve.S
 libdeinterlace_plugin_la_CFLAGS += -DCAN_COMPILE_SVE
 endif
 libdeinterlace_plugin_la_LIBADD = libdeinterlace_common.la
-video_filter_plugins += libdeinterlace_plugin.la
+video_filter_LTLIBRARIES += libdeinterlace_plugin.la
 
 libopencv_wrapper_plugin_la_SOURCES = video_filter/opencv_wrapper.c
 libopencv_wrapper_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(OPENCV_CFLAGS)
 libopencv_wrapper_plugin_la_LIBADD = $(OPENCV_LIBS)
 libopencv_wrapper_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
-video_filter_plugins += $(LTLIBopencv_wrapper)
+video_filter_LTLIBRARIES += $(LTLIBopencv_wrapper)
 EXTRA_LTLIBRARIES += libopencv_wrapper_plugin.la
 
 libpostproc_plugin_la_SOURCES = video_filter/postproc.c
 libpostproc_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(POSTPROC_CFLAGS) $(AVUTIL_CFLAGS)
 libpostproc_plugin_la_LIBADD = $(LIBM) $(POSTPROC_LIBS) $(AVUTIL_LIBS)
 libpostproc_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
-video_filter_plugins += $(LTLIBpostproc)
+video_filter_LTLIBRARIES += $(LTLIBpostproc)
 EXTRA_LTLIBRARIES += libpostproc_plugin.la
 
 # misc
 libblend_plugin_la_SOURCES = video_filter/blend.cpp
-video_filter_plugins += libblend_plugin.la
+video_filter_LTLIBRARIES += libblend_plugin.la
 
 libopencv_example_plugin_la_SOURCES = video_filter/opencv_example.cpp video_filter/filter_event_info.h
 libopencv_example_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) $(OPENCV_CFLAGS)
 libopencv_example_plugin_la_LIBADD = $(OPENCV_LIBS)
 libopencv_example_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(video_filterdir)'
-video_filter_plugins += $(LTLIBopencv_example)
+video_filter_LTLIBRARIES += $(LTLIBopencv_example)
 EXTRA_LTLIBRARIES += libopencv_example_plugin.la

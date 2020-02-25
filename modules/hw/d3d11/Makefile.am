@@ -12,5 +12,6 @@ if HAVE_WINSTORE
 libdirect3d11_filters_plugin_la_LIBADD += -ld3d11
 endif
 
-d3d11_plugins = $(LTLIBdirect3d11_filters)
+d3d11_LTLIBRARIES = $(LTLIBdirect3d11_filters)
 EXTRA_LTLIBRARIES += libdirect3d11_filters_plugin.la
+

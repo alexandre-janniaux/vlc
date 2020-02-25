@@ -1,5 +1,5 @@
 # RTP plugin
-access_plugins += librtp_plugin.la
+access_LTLIBRARIES += librtp_plugin.la
 librtp_plugin_la_SOURCES = \
 	access/rtp/input.c \
 	access/rtp/session.c \

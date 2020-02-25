@@ -9,5 +9,5 @@ libnotify_plugin_la_CFLAGS = $(AM_CFLAGS) $(NOTIFY_CFLAGS)
 libnotify_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(notifydir)'
 libnotify_plugin_la_LIBADD = $(NOTIFY_LIBS)
 
-notify_plugins = $(LTLIBosx_notifications) $(LTLIBnotify)
+notify_LTLIBRARIES = $(LTLIBosx_notifications) $(LTLIBnotify)
 EXTRA_LTLIBRARIES += libosx_notifications_plugin.la libnotify_plugin.la

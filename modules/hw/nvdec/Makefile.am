@@ -1,5 +1,4 @@
 nvdecdir = $(pluginsdir)/nvdec
-nvdec_plugins =
 
 libnvdec_plugin_la_SOURCES = \
 	hw/nvdec/nvdec.c codec/hxxx_helper.c codec/hxxx_helper.h \
@@ -9,13 +8,13 @@ libnvdec_plugin_la_SOURCES = \
 	hw/nvdec/nvdec_fmt.h
 libnvdec_plugin_la_LIBADD = $(LIBDL)
 if HAVE_NVDEC
-nvdec_plugins += libnvdec_plugin.la
+codec_LTLIBRARIES += libnvdec_plugin.la
 endif
 
 libnvdec_chroma_plugin_la_SOURCES = hw/nvdec/chroma.c hw/nvdec/nvdec_fmt.h
 libnvdec_chroma_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(nvdecdir)'
 if HAVE_NVDEC
-nvdec_plugins += libnvdec_chroma_plugin.la
+nvdec_LTLIBRARIES = libnvdec_chroma_plugin.la
 endif
 
 libglinterop_nvdec_plugin_la_SOURCES = hw/nvdec/nvdec_gl.c \
@@ -23,6 +22,6 @@ libglinterop_nvdec_plugin_la_SOURCES = hw/nvdec/nvdec_gl.c \
 libglinterop_nvdec_plugin_la_LIBADD = $(LIBDL)
 if HAVE_GL
 if HAVE_NVDEC
-nvdec_plugins += libglinterop_nvdec_plugin.la
+nvdec_LTLIBRARIES += libglinterop_nvdec_plugin.la
 endif
 endif

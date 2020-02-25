@@ -1,5 +1,4 @@
 vaapidir = $(pluginsdir)/vaapi
-vaapi_plugins =
 
 libdecdev_vaapi_wl_plugin_la_SOURCES = hw/vaapi/decoder_device.c \
 	hw/vaapi/vlc_vaapi.c hw/vaapi/vlc_vaapi.h
@@ -23,18 +22,18 @@ libvaapi_filters_plugin_la_CFLAGS = $(AM_CFLAGS) $(LIBVA_CFLAGS)
 libvaapi_filters_plugin_la_LIBADD = libchroma_copy.la $(AM_LIBADD) $(LIBVA_LIBS)
 
 if HAVE_VAAPI
-vaapi_plugins += libvaapi_filters_plugin.la
+vaapi_LTLIBRARIES = libvaapi_filters_plugin.la
 if HAVE_WAYLAND
 if HAVE_VAAPI_WL
-vaapi_plugins += libdecdev_vaapi_wl_plugin.la
+vaapi_LTLIBRARIES += libdecdev_vaapi_wl_plugin.la
 endif
 endif
 if HAVE_XCB
 if HAVE_VAAPI_X11
-vaapi_plugins += libdecdev_vaapi_x11_plugin.la
+vaapi_LTLIBRARIES += libdecdev_vaapi_x11_plugin.la
 endif
 endif
 if HAVE_VAAPI_DRM
-vaapi_plugins += libdecdev_vaapi_drm_plugin.la
+vaapi_LTLIBRARIES += libdecdev_vaapi_drm_plugin.la
 endif
 endif

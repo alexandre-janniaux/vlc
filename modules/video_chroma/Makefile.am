@@ -43,7 +43,7 @@ libyuy2_i422_plugin_la_SOURCES = video_chroma/yuy2_i422.c
 
 libyuvp_plugin_la_SOURCES = video_chroma/yuvp.c
 
-chroma_plugins = \
+chroma_LTLIBRARIES = \
 	libi420_rgb_plugin.la \
 	libi420_yuy2_plugin.la \
 	libi420_nv12_plugin.la \
@@ -66,7 +66,7 @@ libi420_yuy2_altivec_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) \
 libi420_yuy2_altivec_plugin_la_CFLAGS = $(AM_CFLAGS) $(ALTIVEC_CFLAGS)
 
 if HAVE_ALTIVEC
-chroma_plugins += \
+chroma_LTLIBRARIES += \
 	libi420_yuy2_altivec_plugin.la
 endif
 
@@ -84,7 +84,7 @@ libi422_yuy2_mmx_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) \
 	-DMODULE_NAME_IS_i422_yuy2_mmx
 
 if HAVE_MMX
-chroma_plugins += \
+chroma_LTLIBRARIES += \
 	libi420_rgb_mmx_plugin.la \
 	libi420_yuy2_mmx_plugin.la \
 	libi422_yuy2_mmx_plugin.la
@@ -104,7 +104,7 @@ libi422_yuy2_sse2_plugin_la_CPPFLAGS = $(AM_CPPFLAGS) \
 	-DMODULE_NAME_IS_i422_yuy2_sse2
 
 if HAVE_SSE2
-chroma_plugins += \
+chroma_LTLIBRARIES += \
 	libi420_rgb_sse2_plugin.la \
 	libi420_yuy2_sse2_plugin.la \
 	libi422_yuy2_sse2_plugin.la
@@ -120,7 +120,7 @@ endif
 libcvpx_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(chromadir)' -Wl,-framework,Foundation -Wl,-framework,VideoToolbox -Wl,-framework,CoreMedia -Wl,-framework,CoreVideo
 libcvpx_plugin_la_LIBADD = libchroma_copy.la
 EXTRA_LTLIBRARIES += libcvpx_plugin.la
-chroma_plugins += $(LTLIBcvpx)
+chroma_LTLIBRARIES += $(LTLIBcvpx)
 
 # Tests
 chroma_copy_sse_test_SOURCES = $(libchroma_copy_la_SOURCES)

@@ -690,7 +690,7 @@ vlc_qt_check_CXXFLAGS = $(AM_CXXFLAGS) $(QT_CFLAGS) -fPIC
 vlc_qt_check_LDADD = $(QT_LIBS)
 
 if ENABLE_QT
-gui_plugins += libqt_plugin.la
+gui_LTLIBRARIES += libqt_plugin.la
 BUILT_SOURCES += $(nodist_libqt_plugin_la_SOURCES)
 if !HAVE_WIN32
 if !HAVE_OS2
