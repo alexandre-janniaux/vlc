@@ -150,32 +150,26 @@ plugins.manifest.h: $(plugin_manifests)
 		echo "#include \"$${manifest}\"" >> $@; \
 	done
 
-#if HAVE_ANDROID
-#INCR_LD := $(LD) -r
-#else
-
-OBJCOPY ?= objcopy
-LD ?= ld
-
-INCR_LD := $(LD) -Ur
-#endif
+if HAVE_ANDROID
+INCR_LD := $(LD) -r
+else
+INCR_LD := $(LD) -r -Ur
+endif
 
 %-partial.o: %.la
-	mkdir -p "$<-objects-objcopy/"
+	mkdir -p "$<-objects/"
 	libfile=`grep old_library $< | cut -d"'" -f2`; \
-	cd "$<-objects-objcopy/" && ar x "../.libs/$${libfile}"
-	objects=$$(find "$<-objects-objcopy/" -name "*.o"); \
+	cd "$<-objects/" && ar x "../.libs/$${libfile}"
+	objects=$$(find "$<-objects/" -name "*.o"); \
 	echo $${objects}; \
 	$(INCR_LD) -o "$@" $${objects}
 	$(OBJCOPY) --wildcard \
 		--localize-hidden \
-		--localize-symbol="!vlc_entry" \
-		--localize-symbol="*" \
 		--strip-symbol="vlc_entry_api_version*" \
 		--strip-symbol="vlc_entry_copyright*" \
 		--strip-symbol="vlc_entry_license*" \
 		--localize-symbol=vlc_module_name \
-		--strip-unneeded $@
+		$@
 
 AR_WRAPPER = "$(top_srcdir)/extras/package/android/ar.sh" $@
 # Assignment is needed to evaluate the foreach command
@@ -184,20 +178,17 @@ AR_WRAPPER = "$(top_srcdir)/extras/package/android/ar.sh" $@
 dependencies = $(patsubst %.la,%_la,$(all_plugins))
 dep_dependencies = $(foreach plugin,$(dependencies),$($(plugin)_LIBADD))
 
-libvlc_libs = libvlc_http.la libvlc_srtp.la libchroma_copy.la libavcodec_common.la libvlc_vaapi.la libxiph_metadata
-
 BUILT_SOURCES += $(plugin_manifests) plugins.manifest.h
 nodist_libvlcmodules_plugin_la_SOURCES = plugin.manifest.h
-libvlcmodules_plugin_la_SOURCES = ../extras/package/android/plugin.c dummy.cpp
+libvlcmodules_plugin_la_SOURCES = ../extras/package/android/plugin.c
 libvlcmodules_plugin_la_LIBADD = $(plugin_objects)
-libvlcmodules_plugin_la_CFLAGS = -I$(builddir) -frtti -fexceptions
+libvlcmodules_plugin_la_CFLAGS = -I$(builddir)
 libvlcmodules_plugin_la_LDFLAGS = \
-	-llua \
-	$(filter-out $(libvlc_libs),$(dep_dependencies)) \
-	-avoid-version -module -export-symbols-regex "^vlc_entry" \
+	$(dep_dependencies) \
+	-avoid-version -module -export-symbols-regex ^vlc_entry \
 	-shrext $(LIBEXT) -no-undefined \
 	-rpath $(pluginsdir) \
-	$(top_builddir)/compat/libcompat.la $(LTLIBVLCCORE)
+	$(top_builddir)/compat/libcompat.la $(LTLIBVLCCORE) -lc++_shared
 
 plugins_LTLIBRARIES = libvlcmodules_plugin.la
 noinst_LTLIBRARIES += $(all_plugins)

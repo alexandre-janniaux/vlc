@@ -2,7 +2,7 @@
 #include <stdint.h>
 #define __LIBVLC__
 #define __PLUGIN__
-//#define MODULE_STRING "vlcplugins"
+#define MODULE_STRING "vlcplugins"
 #include <vlc_plugin.h>
 typedef int (*vlc_plugin_entry) (vlc_set_cb, void *);
 
