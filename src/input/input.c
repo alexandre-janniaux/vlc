@@ -328,7 +328,10 @@ static input_thread_t *Create( vlc_object_t *p_parent,
     if (p_viewpoint != NULL)
         priv->viewpoint = *p_viewpoint;
     else
+    {
         vlc_viewpoint_init( &priv->viewpoint );
+        vlc_viewpoint_from_euler( &priv->viewpoint, 90.f, 0.f, 0.f );
+    }
 
     input_item_Hold( p_item ); /* Released in Destructor() */
     priv->p_item = p_item;
