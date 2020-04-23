@@ -78,6 +78,7 @@ struct AWindowHandler
 
     struct SurfaceTextureHandler st;
     struct ASurfaceTextureAPI ast_api;
+    bool b_has_ast_api;
 
     struct {
         awh_events_t cb;
@@ -373,10 +374,19 @@ LoadNativeWindowAPI(AWindowHandler *p_awh, JNIEnv *p_env)
      && p_awh->anw_api.winLock && p_awh->anw_api.unlockAndPost
      && p_awh->anw_api.setBuffersGeometry)
     {
-        LoadSurfaceTextureAPI(p_awh, p_library);
-        p_awh->st.pf_attachToGL = JNISurfaceTexture_attachToGLContext;
-        p_awh->st.pf_updateTexImage = JNISurfaceTexture_waitAndUpdateTexImage;
-        p_awh->st.pf_detachFromGL = JNISurfaceTexture_detachFromGLContext;
+        p_awh->b_has_ast_api = !LoadSurfaceTextureAPI(p_awh, p_library) && !JNI_getSurfaceTexture(p_env);
+        if (p_awh->b_has_ast_api)
+        {
+            p_awh->st.pf_attachToGL = ASurfaceTexture_attachToGLContext;
+            p_awh->st.pf_updateTexImage = ASurfaceTexture_updateTexImage;
+            p_awh->st.pf_detachFromGL = ASurfaceTexture_detachFromGLContext;
+        }
+        else
+        {
+            p_awh->st.pf_attachToGL = JNISurfaceTexture_attachToGLContext;
+            p_awh->st.pf_updateTexImage = JNISurfaceTexture_waitAndUpdateTexImage;
+            p_awh->st.pf_detachFromGL = JNISurfaceTexture_detachFromGLContext;
+        }
         p_awh->p_anw_dl = p_library;
     }
     else
@@ -672,6 +682,18 @@ AWindowHandler_destroy(AWindowHandler *p_awh)
 
     if (p_env)
     {
+        if (p_awh->b_has_ast_api)
+        {
+            AWindowHandler_releaseANativeWindowEnv(p_awh, p_env, AWindow_SurfaceTexture);
+            (*p_env)->DeleteGlobalRef(p_env, p_awh->ast_api.surfacetexture);
+            if (p_awh->ast_api.p_ast != NULL)
+            {
+                p_awh->ast_api.pf_releaseAst(p_awh->ast_api.p_ast);
+                p_awh->ast_api.p_ast = NULL;
+            }
+            (*p_env)->DeleteGlobalRef(p_env, jfields.SurfaceTexture.clazz);
+        }
+
         JNI_ANWCALL(CallVoidMethod, unregisterNative);
         AWindowHandler_releaseANativeWindowEnv(p_awh, p_env, AWindow_Video);
         AWindowHandler_releaseANativeWindowEnv(p_awh, p_env, AWindow_Subtitles);
@@ -746,8 +768,13 @@ WindowHandler_NewSurfaceEnv(AWindowHandler *p_awh, JNIEnv *p_env,
             jsurface = JNI_ANWCALL(CallObjectMethod, getSubtitlesSurface);
             break;
         case AWindow_SurfaceTexture:
-            jsurface = JNI_STEXCALL(CallObjectMethod, getSurface);
+        {
+            if (p_awh->b_has_ast_api)
+                jsurface = InitSurfaceTextureNDK(p_awh, p_env, id);
+            else
+                jsurface = JNI_STEXCALL(CallObjectMethod, getSurface);
             break;
+        }
         default:
             vlc_assert_unreachable();
     }
@@ -777,7 +804,8 @@ AWindowHandler_getANativeWindow(AWindowHandler *p_awh, enum AWindow_ID id)
         return NULL;
     assert(p_awh->views[id].jsurface != NULL);
 
-    p_awh->views[id].p_anw = p_awh->pf_winFromSurface(p_env,
+    if (!p_awh->b_has_ast_api || id != AWindow_SurfaceTexture)
+        p_awh->views[id].p_anw = p_awh->pf_winFromSurface(p_env,
                                                       p_awh->views[id].jsurface);
     return p_awh->views[id].p_anw;
 }
