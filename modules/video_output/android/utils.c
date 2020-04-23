@@ -46,6 +46,8 @@ struct AWindowHandler
     ptr_ANativeWindow_release pf_winRelease;
     native_window_api_t anw_api;
 
+    struct SurfaceTextureHandler st;
+
     struct {
         awh_events_t cb;
     } event;
@@ -272,6 +274,9 @@ LoadNativeWindowAPI(AWindowHandler *p_awh)
      && p_awh->anw_api.winLock && p_awh->anw_api.unlockAndPost
      && p_awh->anw_api.setBuffersGeometry)
     {
+        p_awh->st.pf_attachToGL = JNISurfaceTexture_attachToGLContext;
+        p_awh->st.pf_updateTexImage = JNISurfaceTexture_waitAndUpdateTexImage;
+        p_awh->st.pf_detachFromGL = JNISurfaceTexture_detachFromGLContext;
         p_awh->p_anw_dl = p_library;
     }
     else
@@ -707,8 +712,9 @@ AWindowHandler_setVideoLayout(AWindowHandler *p_awh,
     return VLC_SUCCESS;
 }
 
-int
-SurfaceTexture_attachToGLContext(AWindowHandler *p_awh, int tex_name)
+
+static int
+JNISurfaceTexture_attachToGLContext(AWindowHandler *p_awh, uint32_t tex_name)
 {
     JNIEnv *p_env = android_getEnvCommon(NULL, p_awh->p_jvm, "SurfaceTexture");
     if (!p_env)
@@ -718,8 +724,14 @@ SurfaceTexture_attachToGLContext(AWindowHandler *p_awh, int tex_name)
            VLC_SUCCESS : VLC_EGENERIC;
 }
 
-void
-SurfaceTexture_detachFromGLContext(AWindowHandler *p_awh)
+int
+SurfaceTexture_attachToGLContext(AWindowHandler *p_awh, uint32_t tex_name)
+{
+    return p_awh->st.pf_attachToGL(p_awh, tex_name);
+}
+
+static void
+JNISurfaceTexture_detachFromGLContext(AWindowHandler *p_awh)
 {
     JNIEnv *p_env = android_getEnvCommon(NULL, p_awh->p_jvm, "SurfaceTexture");
     if (!p_env)
@@ -738,9 +750,15 @@ SurfaceTexture_detachFromGLContext(AWindowHandler *p_awh)
     }
 }
 
-int
-SurfaceTexture_waitAndUpdateTexImage(AWindowHandler *p_awh,
-                                     const float **pp_transform_mtx)
+void
+SurfaceTexture_detachFromGLContext(AWindowHandler *p_awh)
+{
+    p_awh->st.pf_detachFromGL(p_awh);
+}
+
+static int
+JNISurfaceTexture_waitAndUpdateTexImage(AWindowHandler *p_awh,
+                                            const float **pp_transform_mtx)
 {
     JNIEnv *p_env = android_getEnvCommon(NULL, p_awh->p_jvm, "SurfaceTexture");
     if (!p_env)
@@ -765,4 +783,10 @@ SurfaceTexture_waitAndUpdateTexImage(AWindowHandler *p_awh,
         p_awh->stex.jtransform_mtx = NULL;
         return VLC_EGENERIC;
     }
+}
+
+int
+SurfaceTexture_updateTexImage(AWindowHandler *p_awh, const float **pp_transform_mtx)
+{
+    return p_awh->st.pf_updateTexImage(p_awh, pp_transform_mtx);
 }
