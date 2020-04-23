@@ -101,6 +101,8 @@ static struct
         jmethodID setVideoLayout;
     } AndroidNativeWindow;
     struct {
+        jclass clazz;
+        jmethodID constructor;
         jmethodID attachToGLContext;
         jmethodID detachFromGLContext;
         jmethodID waitAndUpdateTexImage;
@@ -285,6 +287,30 @@ LoadNativeSurfaceAPI(AWindowHandler *p_awh)
  * Android ASurfaceTexture Android NDK
  */
 
+#define GET_CLASS(clazz, str, b_globlal) do { \
+    (clazz) = (*env)->FindClass(env, (str)); \
+    if (!(clazz)) { \
+        return -1; \
+    } \
+    if (b_globlal) { \
+        (clazz) = (jclass) (*env)->NewGlobalRef(env, (clazz)); \
+        if (!(clazz)) { \
+            return -1; \
+        } \
+    } \
+} while (0)
+
+static int JNI_getSurfaceTexture(JNIEnv *env)
+{
+    GET_CLASS(jfields.SurfaceTexture.clazz, "android/graphics/SurfaceTexture", true);
+
+    jfields.SurfaceTexture.constructor =
+        (*env)->GetMethodID(env, jfields.SurfaceTexture.clazz, "<init>", "(Z)V");
+    if (jfields.SurfaceTexture.constructor == NULL)
+        return -1;
+    return 0;
+}
+
 static int
 LoadSurfaceTextureAPI(AWindowHandler *p_awh, void *p_library)
 {
@@ -328,7 +354,7 @@ LoadSurfaceTextureAPI(AWindowHandler *p_awh, void *p_library)
  */
 
 static void
-LoadNativeWindowAPI(AWindowHandler *p_awh)
+LoadNativeWindowAPI(AWindowHandler *p_awh, JNIEnv *p_env)
 {
     void *p_library = dlopen("libandroid.so", RTLD_NOW);
     if (!p_library)
@@ -597,7 +623,7 @@ AWindowHandler_new(vout_window_t *wnd, awh_events_t *p_events)
         free(p_awh);
         return NULL;
     }
-    LoadNativeWindowAPI(p_awh);
+    LoadNativeWindowAPI(p_awh, p_env);
 
     p_awh->b_has_video_layout_listener =
         flags & AWINDOW_REGISTER_FLAGS_HAS_VIDEO_LAYOUT_LISTENER;
@@ -663,6 +689,46 @@ native_window_api_t *
 AWindowHandler_getANativeWindowAPI(AWindowHandler *p_awh)
 {
     return &p_awh->anw_api;
+}
+
+static jobject InitSurfaceTextureNDK(AWindowHandler *p_awh, JNIEnv *p_env,
+        enum AWindow_ID id)
+{
+    jobject surfacetexture = (*p_env)->NewObject(p_env,
+            jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.constructor, false);
+
+    if (surfacetexture == NULL)
+        goto error;
+
+    p_awh->ast_api.surfacetexture = (*p_env)->NewGlobalRef(p_env, surfacetexture);
+
+    p_awh->ast_api.p_ast = p_awh->ast_api.pf_astFromst(p_env,
+            p_awh->ast_api.surfacetexture);
+    if (p_awh->ast_api.p_ast == NULL)
+        goto error;
+
+    p_awh->views[id].p_anw = p_awh->ast_api.pf_acquireAnw(p_awh->ast_api.p_ast);
+    if (p_awh->views[id].p_anw == NULL)
+        goto error;
+
+    jobject jsurface = p_awh->ast_api.pf_anwToSurface(p_env, p_awh->views[id].p_anw);
+    if (jsurface == NULL)
+        goto error;
+    (*p_env)->DeleteLocalRef(p_env, surfacetexture);
+    return jsurface;
+
+error:
+    if (surfacetexture == NULL)
+        return NULL;
+    (*p_env)->DeleteLocalRef(p_env, surfacetexture);
+    p_awh->ast_api.surfacetexture = (*p_env)->NewGlobalRef(p_env, surfacetexture);
+    if (p_awh->ast_api.p_ast == NULL)
+        return NULL;
+    p_awh->ast_api.pf_releaseAst(p_awh->ast_api.p_ast);
+    if (p_awh->views[id].p_anw == NULL)
+        return NULL;
+    AWindowHandler_releaseANativeWindow(p_awh, id);
+    return NULL;
 }
 
 static int
