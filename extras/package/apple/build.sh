@@ -304,14 +304,24 @@ set_host_envvars()
 set_hosttools_envvar()
 {
     # Tools to be used
-    export CC="clang"
-    export CPP="clang -E"
-    export CXX="clang++"
-    export OBJC="clang"
-    export LD="ld"
-    export AR="ar"
-    export STRIP="strip"
-    export RANLIB="ranlib"
+    CC="$(xcrun --find clang)"
+    CPP="$(xcrun --find clang) -E"
+    CXX="$(xcrun --find clang++)"
+    OBJC="$(xcrun --find clang)"
+    LD="$(xcrun --find ld)"
+    AR="$(xcrun --find ar)"
+    STRIP="$(xcrun --find strip)"
+    RANLIB="$(xcrun --find ranlib)"
+
+    HOSTTOOLS=\
+        "CC=${CC}" \
+        "CPP=${CPP}" \
+        "CXX=${CXX}" \
+        "OBJC=${OBJC}" \
+        "LD=${LD}" \
+        "AR=${AR}" \
+        "STRIP=${STRIP}" \
+        "RANLIB=${RANLIB}"
 }
 
 # Write config.mak for contribs
@@ -345,14 +355,14 @@ write_config_mak()
     printf '%s := %s\n' "CXXFLAGS" "${vlc_cxxflags}" >&3
     printf '%s := %s\n' "OBJCFLAGS" "${vlc_objcflags}" >&3
     printf '%s := %s\n' "LDFLAGS" "${vlc_ldflags}" >&3
-    printf '%s := %s\n' "CC" "clang" >&3
-    printf '%s := %s\n' "CPP" "clang -E" >&3
-    printf '%s := %s\n' "CXX" "clang++" >&3
-    printf '%s := %s\n' "OBJC" "clang" >&3
-    printf '%s := %s\n' "LD" "ld" >&3
-    printf '%s := %s\n' "AR" "ar" >&3
-    printf '%s := %s\n' "STRIP" "strip" >&3
-    printf '%s := %s\n' "RANLIB" "ranlib" >&3
+    printf '%s := %s\n' "CC" "${CC}" >&3
+    printf '%s := %s\n' "CPP" "${CPP}" >&3
+    printf '%s := %s\n' "CXX" "${CXX}" >&3
+    printf '%s := %s\n' "OBJC" "${OBJC}" >&3
+    printf '%s := %s\n' "LD" "${LD}" >&3
+    printf '%s := %s\n' "AR" "${AR}" >&3
+    printf '%s := %s\n' "STRIP" "${STRIP}" >&3
+    printf '%s := %s\n' "RANLIB" "${RANLIB}" >&3
 }
 
 # Generate the source file with the needed array for
@@ -566,6 +576,7 @@ mkdir -p "$VLC_CONTRIB_INSTALL_DIR"
 write_config_mak "-Werror=partial-availability"
 
 # Bootstrap contribs
+${HOSTTOOLS} \
 ../bootstrap \
     --host="$VLC_HOST_TRIPLET" \
     --prefix="$VLC_CONTRIB_INSTALL_DIR" \
@@ -636,6 +647,7 @@ cd "${VLC_BUILD_DIR}/build" || abort_err "Failed cd to VLC build dir"
 # Create VLC install dir if it does not already exist
 mkdir -p "$VLC_INSTALL_DIR"
 
+${HOSTTOOLS} \
 ../../configure \
     --with-contrib="$VLC_CONTRIB_INSTALL_DIR" \
     --host="$VLC_HOST_TRIPLET" \
