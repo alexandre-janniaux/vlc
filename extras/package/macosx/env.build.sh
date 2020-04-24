@@ -39,6 +39,8 @@ vlcSetBaseEnvironment() {
     export CXX="$(xcrun --find clang++)"
     export OBJC="$(xcrun --find clang)"
     export OBJCXX="$(xcrun --find clang++)"
+    export AR="$(xcrun --find ar)"
+    export RANLIB="$(xcrun --find ranlib)"
 
     python3Path=$(echo /Library/Frameworks/Python.framework/Versions/3.*/bin | awk '{print $1;}')
     if [ ! -d "$python3Path" ]; then
