@@ -299,7 +299,10 @@ set_host_envvars()
     export OBJCFLAGS="$clike_flags"
 
     export LDFLAGS="$VLC_DEPLOYMENT_TARGET_LDFLAG -arch $VLC_HOST_ARCH"
+}
 
+set_hosttools_envvar()
+{
     # Tools to be used
     export CC="clang"
     export CPP="clang -E"
@@ -454,6 +457,9 @@ validate_sdk_name "$VLC_APPLE_SDK_NAME"
 
 # Validate architecture argument
 validate_architecture "$VLC_HOST_ARCH"
+
+# Fetch tools, as CC is needed for set_host_triplet
+set_hosttools_envvar
 
 # Set triplet (needs to be called after validating the arch)
 set_host_triplet "$VLC_HOST_ARCH"
