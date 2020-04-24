@@ -92,3 +92,7 @@ libbonjour_plugin_la_LDFLAGS = $(AM_LDFLAGS) -rpath '$(sddir)' -Wl,-framework,Fo
 if HAVE_DARWIN
 sd_LTLIBRARIES += libbonjour_plugin.la
 endif
+
+libimobiledevice_plugin_la_SOURCES = services_discovery/imobiledevice.c
+libimobiledevice_plugin_la_LIBADD = -limobiledevice
+sd_LTLIBRARIES += libimobiledevice_plugin.la
