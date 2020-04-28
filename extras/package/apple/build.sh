@@ -555,7 +555,7 @@ else
 fi
 
 # Set symbol blacklist for autoconf
-vlcSetSymbolEnvironment > /dev/null
+. "${VLC_SCRIPT_DIR}/symbols.mak"
 
 # Combine settings from config file
 VLC_CONTRIB_OPTIONS=( "${VLC_CONTRIB_OPTIONS_BASE[@]}" )

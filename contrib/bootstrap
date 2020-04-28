@@ -258,12 +258,16 @@ test -z "$WITH_OPTIMIZATION" || add_make_enabled "WITH_OPTIMIZATION"
 test -z "$ENABLE_PDB" || add_make_enabled "ENABLE_PDB"
 test "`uname -o 2>/dev/null`" != "Msys" || add_make "CMAKE_GENERATOR := -G \"MSYS Makefiles\""
 
+# Additional file used by Darwin to opt-out some function detection
+SYMBOL_FILE=
+
 #
 # Checks
 #
 OS="${HOST#*-}" # strip architecture
 case "${OS}" in
 	*-darwin*)
+		SYMBOL_FILE="\$(TOPSRC)/../extras/package/apple/symbols.mak"
 		if test -z "$BUILDFORIOS"
 		then
 			check_macosx_sdk
@@ -358,6 +362,11 @@ TOPSRC_BUILT=$(python3 -c "import os; print(os.path.relpath('$BOOTSTRAP_PATH', '
 add_make "TOPSRC = $TOPSRC"
 add_make "TOPSRC_BUILT = $TOPSRC_BUILT"
 add_make "TOPDST = .."
+
+if [ ! -z "${SYMBOL_FILE}" ]; then
+add_make "include ${SYMBOL_FILE}"
+fi
+
 add_make "-include config.mak"
 add_make 'include $(TOPSRC)/src/main.mak'
 echo "Bootstrap completed."
