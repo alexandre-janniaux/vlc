@@ -21,6 +21,7 @@ ifdef HAVE_ANDROID
 	cp "${ANDROID_NDK}"/sources/android/cpufeatures/cpu-features.c $(UNPACK_DIR)/vpx_ports
 	cp "${ANDROID_NDK}"/sources/android/cpufeatures/cpu-features.h $(UNPACK_DIR)
 endif
+	$(APPLY) $(SRC)/vpx/libvpx-remove-bitcode.patch
 	$(MOVE)
 
 DEPS_vpx =
