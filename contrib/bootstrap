@@ -264,7 +264,6 @@ test "`uname -o 2>/dev/null`" != "Msys" || add_make "CMAKE_GENERATOR := -G \"MSY
 OS="${HOST#*-}" # strip architecture
 case "${OS}" in
 	*-darwin*)
-		#SYMBOL_FILE="\$(TOPSRC)/../extras/package/apple/symbols.mak"
 		if test -z "$BUILDFORIOS"
 		then
 			check_macosx_sdk
