@@ -946,7 +946,21 @@ AC_SUBST([LIBRT])
 
 dnl  Check for clock_* functions, needs to be done here,
 dnl  after the -lrt check
-AC_REPLACE_FUNCS([clock_gettime clock_nanosleep clock_getres])
+AS_IF([test "$SYS" = "darwin"], [
+  AC_MSG_CHECKING([whether clock_gettime() is supported])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <time.h>
+  struct timespec ts;
+  ]], [[return clock_gettime(CLOCK_MONOTONIC, &ts);]])],
+    [AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
+       [Define if clock_gettime() is available.])
+     AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])])
+],[
+  AC_REPLACE_FUNCS([clock_gettime])
+])
+
+AC_REPLACE_FUNCS([clock_nanosleep clock_getres])
+
 
 dnl
 dnl Check for headers
