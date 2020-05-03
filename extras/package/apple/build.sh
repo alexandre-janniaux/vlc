@@ -665,6 +665,10 @@ $MAKE -j$VLC_USE_NUMBER_OF_CORES || abort_err "Building VLC failed"
 
 $MAKE install || abort_err "Installing VLC failed"
 
+echo "Done"
+
+exit 0
+
 echo ""
 
 ##########################################################
