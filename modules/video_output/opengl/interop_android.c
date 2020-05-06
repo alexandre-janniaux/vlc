@@ -108,16 +108,18 @@ Open(vlc_object_t *obj)
 {
     struct vlc_gl_interop *interop = (void *) obj;
 
-    if (interop->fmt.i_chroma != VLC_CODEC_ANDROID_OPAQUE
-     || !interop->gl->surface->handle.anativewindow
-     || !interop->vctx)
+    if (interop->fmt.i_chroma != VLC_CODEC_ANDROID_OPAQUE || !interop->vctx)
         return VLC_EGENERIC;
 
     android_video_context_t *avctx =
         vlc_video_context_GetPrivate(interop->vctx, VLC_VIDEO_CONTEXT_AWINDOW);
 
-    if (avctx->id != AWindow_SurfaceTexture)
+    if (avctx == NULL
+     || avctx->anativewindow == NULL
+     || avctx->id != AWindow_SurfaceTexture)
+    {
         return VLC_EGENERIC;
+    }
 
     interop->priv = malloc(sizeof(struct priv));
     if (unlikely(interop->priv == NULL))

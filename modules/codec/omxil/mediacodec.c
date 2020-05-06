@@ -673,6 +673,7 @@ CreateVideoContext(decoder_t *p_dec)
     android_video_context_t *avctx =
         vlc_video_context_GetPrivate(p_sys->video.ctx, VLC_VIDEO_CONTEXT_AWINDOW);
     avctx->id = id;
+    avctx->anativewindow = awh;
     avctx->dec_opaque = p_dec->p_sys;
     avctx->render = PictureContextRenderPic;
     avctx->render_ts = p_sys->api.release_out_ts ? PictureContextRenderPicTs : NULL;

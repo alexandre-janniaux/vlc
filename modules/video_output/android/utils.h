@@ -74,6 +74,7 @@ typedef struct android_video_context_t android_video_context_t;
 struct android_video_context_t
 {
     enum AWindow_ID id;
+    AWindowHandler *anativewindow;
     void *dec_opaque;
     bool (*render)(struct picture_context_t *ctx);
     bool (*render_ts)(struct picture_context_t *ctx, vlc_tick_t ts);
