@@ -615,6 +615,9 @@ ifdef HAVE_CROSS_COMPILE
 	echo "set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)" >> $@
 	echo "set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)" >> $@
 endif
+ifdef HAVE_ANDROID
+	echo "include(\"$(abspath $(ANDROID_NDK))/build/cmake/android.toolchain.cmake\")" >> $@
+endif
 
 MESON_SYSTEM_NAME =
 ifdef HAVE_WIN32
