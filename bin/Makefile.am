@@ -6,11 +6,6 @@ bin_PROGRAMS = vlc-osx
 noinst_PROGRAMS = vlc-osx-static
 else
 if HAVE_IOS
-vlc_ios_SOURCES = iosvlc.m
-vlc_ios_LDFLAGS = $(LDFLAGS_vlc) -Wl,-framework,Foundation,-framework,UIKit
-vlc_ios_LDFLAGS += -Xlinker -rpath -Xlinker "$(libdir)"
-vlc_ios_CFLAGS = -fobjc-arc
-vlc_ios_LDADD = ../lib/libvlc.la ../src/libvlccore.la
 bin_PROGRAMS = vlc-ios
 else
 bin_PROGRAMS = vlc
@@ -78,6 +73,12 @@ vlc_osx_static_LDFLAGS += -Wl,-framework,Breakpad
 vlc_osx_static_OBJCFLAGS += -F$(CONTRIB_DIR)/Frameworks
 vlc_osx_static_CPPFLAGS = -DHAVE_BREAKPAD
 endif
+
+vlc_ios_SOURCES = iosvlc.m
+vlc_ios_LDFLAGS = $(LDFLAGS_vlc) -Wl,-framework,Foundation,-framework,UIKit
+vlc_ios_LDFLAGS += -Xlinker -rpath -Xlinker "$(libdir)"
+vlc_ios_CFLAGS = -fobjc-arc
+vlc_ios_LDADD = ../lib/libvlc.la ../src/libvlccore.la
 
 #
 # Static (debug) VLC executable
