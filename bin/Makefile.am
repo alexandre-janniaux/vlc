@@ -8,8 +8,12 @@ else
 if HAVE_IOS
 bin_PROGRAMS = vlc-ios
 else
+if HAVE_ANDROID
+bin_PROGRAMS = vlc-android
+else
 bin_PROGRAMS = vlc
 noinst_PROGRAMS = vlc-static
+endif
 endif
 endif
 endif
@@ -79,6 +83,10 @@ vlc_ios_LDFLAGS = $(LDFLAGS_vlc) -Wl,-framework,Foundation,-framework,UIKit
 vlc_ios_LDFLAGS += -Xlinker -rpath -Xlinker "$(libdir)"
 vlc_ios_CFLAGS = -fobjc-arc
 vlc_ios_LDADD = ../lib/libvlc.la ../src/libvlccore.la
+
+vlc_android_SOURCES = androidvlc.c
+vlc_android_LDFLAGS = $(LDFLAGS_vlc)
+vlc_android_LDADD = ../lib/libvlc.la ../src/libvlccore.la
 
 #
 # Static (debug) VLC executable
