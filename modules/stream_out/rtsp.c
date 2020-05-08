@@ -44,7 +44,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#ifndef _WIN32
+#if !defined(_WIN32) && defined(HAVE_USELOCALE)
 # include <locale.h>
 #endif
 #ifdef HAVE_XLOCALE_H
