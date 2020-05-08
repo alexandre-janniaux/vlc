@@ -41,11 +41,10 @@
 #include "../libs.h"
 #include "../vlc.h"
 #include "../../audio_filter/equalizer_presets.h"
-
-#if !defined _WIN32
-# include <locale.h>
-#else
+#if defined _WIN32
 # include <windows.h>
+#elif defined (HAVE_USELOCALE)
+# include <locale.h>
 #endif
 
 #ifdef __APPLE__
