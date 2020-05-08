@@ -29,10 +29,10 @@
 
 #include <vlc_common.h>
 
-#if !defined _WIN32
-# include <locale.h>
-#else
+#if defined(_WIN32)
 # include <windows.h>
+#elif defined(HAVE_USELOCALE)
+# include <locale.h>
 #endif
 
 #ifdef __APPLE__
