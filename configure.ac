@@ -974,7 +974,14 @@ dnl Check for headers
 dnl
 
 dnl  POSIX
-AC_CHECK_HEADERS([arpa/inet.h pthread.h search.h sys/shm.h sys/socket.h sys/uio.h])
+
+dnl Android may have incomplete sys/shm.h header so
+dnl we check that the header is correct.
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+  [[#include <sys/shm.h>]], [[shmat; shmctl; shmdt; shmget;]])],
+  [AC_DEFINE([HAVE_SYS_SHM_H], [1], [Define to 1 if sys/shm.h is available])])
+
+AC_CHECK_HEADERS([arpa/inet.h pthread.h search.h sys/socket.h sys/uio.h])
 AC_CHECK_HEADERS([net/if.h], [], [],
 [
 #include <sys/types.h>
