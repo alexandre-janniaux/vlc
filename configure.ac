@@ -687,15 +687,15 @@ VLC_LIBRARY_SUFFIX
 dnl Check for system libs needed
 need_libc=false
 
-dnl Android has uselocale through Android support on API < 21
-AC_SEARCH_LIBS([uselocale], [android_support], [
-  AS_IF([test "$ac_cv_search_newlocale" = "-landroid_support"], [
-    AX_APPEND_FLAG([-landroid_support -lc++abi], [LDFLAGS]) ])
-  AC_DEFINE([HAVE_USELOCALE], [1], [Define if uselocale() is available.])
-],,[-lc++abi])
+dnl HACK:
+dnl If locate_t is defined but uselocale/newlocale symbol doesn't exist,
+dnl we probably cannot redefine locale_t
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+  [[#include <locale.h>]], [[locale_t  l;]])],
+  [AC_DEFINE([HAVE_LOCALE_T], [1], [Define if locale_t is defined])])
 
 dnl Check for usual libc functions
-AC_CHECK_FUNCS([accept4 fcntl flock fstatat fstatvfs fork getmntent_r getenv getpwuid_r isatty memalign mkostemp mmap open_memstream newlocale pipe2 pread posix_fadvise posix_madvise setlocale stricmp strnicmp strptime])
+AC_CHECK_FUNCS([accept4 fcntl flock fstatat fstatvfs fork getmntent_r getenv getpwuid_r isatty memalign mkostemp mmap open_memstream newlocale pipe2 pread posix_fadvise posix_madvise setlocale stricmp strnicmp strptime uselocale])
 AC_REPLACE_FUNCS([aligned_alloc atof atoll dirfd fdopendir flockfile fsync getdelim getpid lfind lldiv memrchr nrand48 poll posix_memalign recvmsg rewind sendmsg setenv strcasecmp strcasestr strdup strlcpy strndup strnlen strnstr strsep strtof strtok_r strtoll swab tdestroy tfind timegm timespec_get strverscmp pathconf])
 AC_REPLACE_FUNCS([gettimeofday])
 AC_CHECK_FUNC(fdatasync,,
