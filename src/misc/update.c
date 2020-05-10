@@ -403,11 +403,18 @@ void update_Check( update_t *p_update, void (*pf_callback)( void*, bool ), void 
     if( !p_uct ) return;
 
     p_uct->p_update = p_update;
-    p_update->p_check = p_uct;
     p_uct->pf_callback = pf_callback;
     p_uct->p_data = p_data;
+    p_update->p_check = p_uct;
 
-    vlc_clone( &p_uct->thread, update_CheckReal, p_uct, VLC_THREAD_PRIORITY_LOW );
+    int ret = vlc_clone( &p_uct->thread, update_CheckReal, p_uct,
+                         VLC_THREAD_PRIORITY_LOW );
+
+    if( ret == VLC_SUCCESS )
+        return;
+
+    p_update->p_check = NULL;
+    free(p_uct);
 }
 
 void* update_CheckReal( void *obj )
