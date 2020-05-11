@@ -185,7 +185,8 @@ static int  ASF_ReadObject_Header( stream_t *s, asf_object_t *p_obj )
     asf_object_t        *p_subobj;
     const uint8_t       *p_peek;
 
-    if( vlc_stream_Peek( s, &p_peek, 30 ) < 30 )
+    if( vlc_stream_Peek( s, &p_peek, ASF_OBJECT_HEADER_SIZE )
+            < ASF_OBJECT_HEADER_SIZE )
        return VLC_EGENERIC;
 
     p_hdr->i_sub_object_count = GetDWLE( p_peek + ASF_OBJECT_COMMON_SIZE );
@@ -202,7 +203,8 @@ static int  ASF_ReadObject_Header( stream_t *s, asf_object_t *p_obj )
              p_hdr->i_reserved2 );
 #endif
 
-    if( vlc_stream_Read( s, NULL, 30 ) != 30 )
+    if( vlc_stream_Read( s, NULL, ASF_OBJECT_HEADER_SIZE )
+            != ASF_OBJECT_HEADER_SIZE )
         return VLC_EGENERIC;
 
     /* Now load sub object */
@@ -314,7 +316,8 @@ static int ASF_ReadObject_file_properties( stream_t *s, asf_object_t *p_obj )
     asf_object_file_properties_t *p_fp = &p_obj->file_properties;
     const uint8_t *p_peek;
 
-    if( vlc_stream_Peek( s, &p_peek,  104 ) < 104 )
+    if( vlc_stream_Peek( s, &p_peek,  ASF_OBJECT_FILEPROPERTIES_SIZE)
+            < ASF_OBJECT_FILEPROPERTIES_SIZE )
        return VLC_EGENERIC;
 
     ASF_GetGUID( &p_fp->i_file_id, p_peek + ASF_OBJECT_COMMON_SIZE );
@@ -1537,7 +1540,8 @@ static int ASF_ReadObject( stream_t *s, asf_object_t *p_obj,
 
     if( p_obj->common.i_object_size < ASF_OBJECT_COMMON_SIZE )
     {
-        msg_Warn( s, "found a corrupted asf object (size<24)" );
+        msg_Warn( s, "found a corrupted asf object (size<%d)",
+                  ASF_OBJECT_COMMON_SIZE );
         return VLC_EGENERIC;
     }
 
