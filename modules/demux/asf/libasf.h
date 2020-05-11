@@ -24,6 +24,8 @@
 
 #define ASF_MAX_STREAMNUMBER 127
 #define ASF_OBJECT_COMMON_SIZE 24
+#define ASF_OBJECT_HEADER_SIZE 30
+#define ASF_OBJECT_FILEPROPERTIES_SIZE 104
 
 /*****************************************************************************
  * Structure needed for decoder
