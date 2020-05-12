@@ -31,6 +31,10 @@
 #include <pthread.h>
 #include <assert.h>
 
+#include <EGL/egl.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+
 typedef ANativeWindow* (*ptr_ANativeWindow_fromSurface)(JNIEnv*, jobject);
 typedef ANativeWindow* (*ptr_ANativeWindow_fromSurfaceTexture)(JNIEnv*, jobject);
 typedef void (*ptr_ANativeWindow_release)(ANativeWindow*);
@@ -869,6 +873,182 @@ native_window_api_t *
 AWindowHandler_getANativeWindowAPI(AWindowHandler *p_awh)
 {
     return &p_awh->anw_api;
+}
+
+static struct SurfaceTextureHandle* SurfaceTextureHandle_Create(
+        AWindowHandler *p_awh, JNIEnv *p_env)
+{
+    /* Needed in case of old API, see comments below. */
+    EGLDisplay display = EGL_NO_DISPLAY;
+    EGLSurface surface = EGL_NO_SURFACE;
+    EGLContext context = EGL_NO_CONTEXT;
+
+    EGLContext current_context = EGL_NO_CONTEXT;
+    EGLContext current_surface = EGL_NO_SURFACE;
+
+    jobject surfacetexture;
+
+    struct SurfaceTextureHandle *handle = malloc(sizeof *handle);
+    if (handle == NULL)
+        return NULL;
+
+    handle->awh = p_awh;
+
+    /* API 26 */
+    if (jfields.SurfaceTexture.init_z == NULL)
+        goto init_iz;
+
+    /* We can create a SurfaceTexture in detached mode directly */
+    surfacetexture = (*p_env)->NewObject(p_env,
+      jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_z, false);
+
+    if (surfacetexture == NULL)
+        goto error;
+
+    goto success;
+
+init_iz:
+    /* Old Android APIs are constructing SurfaceTexture in an attached state
+     * so we need a dummy context before detaching it, for any other
+     * constructor than the previous one. That's crap.
+     * At least, Android EGL display are using reference counting so we don't
+     * need to care about display lifecycle. */
+    display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    EGLint major, minor;
+    if (eglInitialize(display, &major, &minor) != EGL_TRUE)
+        goto error;
+
+    current_context = eglGetCurrentContext();
+    current_surface = eglGetCurrentSurface(EGL_READ);
+
+    static const EGLint conf_attr[] = {
+        EGL_RED_SIZE, 5,
+        EGL_GREEN_SIZE, 5,
+        EGL_BLUE_SIZE, 5,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+        EGL_NONE
+    };
+    EGLConfig cfgv[1];
+    EGLint cfgc;
+
+    if (eglChooseConfig(display, conf_attr, cfgv, 1, &cfgc) != EGL_TRUE
+     || cfgc == 0)
+    {
+        goto error;
+    }
+
+    static const EGLint surface_attr[] =
+    {
+        EGL_WIDTH, 1,
+        EGL_HEIGHT, 1,
+        EGL_NONE,
+    };
+
+    surface = eglCreatePbufferSurface(display, cfgv[0], surface_attr);
+    if (surface == EGL_NO_SURFACE)
+        goto error;
+
+    static const EGLint context_attr[] =
+    {
+        EGL_CONTEXT_CLIENT_VERSION, 2,
+        EGL_NONE,
+    };
+
+    context = eglCreateContext(display, cfgv[0], EGL_NO_CONTEXT,
+                               context_attr);
+
+    eglMakeCurrent(display, surface, surface, context);
+
+    /* We'll need to reserve a name in the opengl context */
+    GLuint texture;
+    glGenTextures(1, &texture);
+
+    /* API 19 */
+    if (jfields.SurfaceTexture.init_iz == NULL)
+        goto init_i;
+
+    msg_Info(p_awh->wnd, "Using SurfaceTexture constructor init_iz");
+    surfacetexture = (*p_env)->NewObject(p_env,
+      jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_iz, texture, false);
+
+    if (surfacetexture == NULL)
+        goto error;
+
+    goto success;
+
+init_i:
+    /* We can't get here without this constructor being loaded. */
+    assert(jfields.SurfaceTexture.init_i != NULL);
+    msg_Info(p_awh->wnd, "Using SurfaceTexture constructor init_i");
+
+    surfacetexture = (*p_env)->NewObject(p_env,
+      jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_i, texture);
+
+    if (surfacetexture == NULL)
+        goto error;
+
+    /* fall-through success */
+success:
+
+    msg_Info(p_awh->wnd, "Adding reference to surfacetexture");
+    handle->jtexture = (*p_env)->NewGlobalRef(p_env, surfacetexture);
+    (*p_env)->DeleteLocalRef(p_env, surfacetexture);
+
+    if (p_awh->b_has_ndk_ast_api)
+    {
+        msg_Info(p_awh->wnd, "Using NDK API to init SurfaceTextureHandle");
+        handle->texture = p_awh->ndk_ast_api.pf_astFromst(p_env, handle->jtexture);
+        handle->window = p_awh->ndk_ast_api.pf_acquireAnw(handle->texture);
+        handle->jsurface = p_awh->ndk_ast_api.pf_anwToSurface(p_env, handle->window);
+        handle->surface = NDKSurfaceAPI;
+    }
+    else
+    {
+        msg_Info(p_awh->wnd, "Using JNI API to init SurfaceTextureHandle");
+        handle->texture = NULL;
+        jobject jsurface = (*p_env)->NewObject(p_env,
+            jfields.Surface.clazz, jfields.Surface.init_st, handle->jtexture);
+        if (!jsurface)
+            goto error; // TODO
+        handle->jsurface = (*p_env)->NewGlobalRef(p_env, jsurface); // TODO
+        (*p_env)->DeleteLocalRef(p_env, jsurface);
+
+        handle->window = p_awh->pf_winFromSurface(p_env, handle->jsurface);
+        handle->surface = JNISurfaceAPI;
+    }
+
+    msg_Info(p_awh->wnd, "Successfully initialized SurfaceTexture");
+
+    if (display != EGL_NO_DISPLAY)
+    {
+        /* Fake the attachment */
+        handle->env = p_env;
+        handle->surface.detach_from_gl_context(&handle->surface);
+        glDeleteTextures(1, &texture);
+        eglMakeCurrent(display, current_surface, current_surface, current_context);
+        eglDestroyContext(display, context);
+        eglDestroySurface(display, surface);
+        eglTerminate(display);
+    }
+
+    return handle;
+
+error:
+    if (context != EGL_NO_CONTEXT)
+    {
+        glDeleteTextures(1, &texture);
+        eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglDestroyContext(display, context);
+    }
+
+    if (surface != EGL_NO_SURFACE)
+        eglDestroySurface(display, surface);
+
+    if (display != EGL_NO_DISPLAY)
+        eglTerminate(display);
+
+    free(handle);
+    return NULL;
 }
 
 static jobject InitNDKSurfaceTexture(AWindowHandler *p_awh, JNIEnv *p_env,
