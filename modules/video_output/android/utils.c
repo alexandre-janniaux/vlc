@@ -901,48 +901,95 @@ AWindowHandler_getANativeWindowAPI(AWindowHandler *p_awh)
     return &p_awh->anw_api;
 }
 
-static jobject InitNDKSurfaceTexture(AWindowHandler *p_awh, JNIEnv *p_env,
-        enum AWindow_ID id)
+static struct SurfaceTextureHandle* SurfaceTextureHandle_Create(
+        AWindowHandler *p_awh, JNIEnv *p_env)
 {
-    /* This API should be available if using NDK SurfaceTexture API */
-    if (!jfields.SurfaceTexture.init_z)
+    jobject surfacetexture;
+
+    struct SurfaceTextureHandle *handle = malloc(sizeof *handle);
+    if (handle == NULL)
         return NULL;
 
-    jobject surfacetexture = (*p_env)->NewObject(p_env,
+    handle->awh = p_awh;
+    handle->texture = NULL;
+    handle->jtexture = NULL;
+    handle->jsurface = NULL;
+    handle->surface.window = NULL;
+    handle->surface.ops = NULL;
+
+    /* API 26 */
+    if (jfields.SurfaceTexture.init_z == NULL)
+        goto error;
+
+    msg_Info(p_awh->wnd, "Using SurfaceTexture constructor init_z");
+
+    /* We can create a SurfaceTexture in detached mode directly */
+    surfacetexture = (*p_env)->NewObject(p_env,
       jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_z, false);
 
     if (surfacetexture == NULL)
         goto error;
 
-    p_awh->ndk_ast_api.surfacetexture = (*p_env)->NewGlobalRef(p_env,
-                                                             surfacetexture);
-
-    p_awh->ndk_ast_api.p_ast = p_awh->ndk_ast_api.pf_astFromst(p_env,
-            p_awh->ndk_ast_api.surfacetexture);
-    if (p_awh->ndk_ast_api.p_ast == NULL)
-        goto error;
-
-    p_awh->views[id].p_anw = p_awh->ndk_ast_api.pf_acquireAnw(p_awh->ndk_ast_api.p_ast);
-    if (p_awh->views[id].p_anw == NULL)
-        goto error;
-
-    jobject jsurface = p_awh->ndk_ast_api.pf_anwToSurface(p_env, p_awh->views[id].p_anw);
-    if (jsurface == NULL)
-        goto error;
+    msg_Info(p_awh->wnd, "Adding reference to surfacetexture");
+    handle->jtexture = (*p_env)->NewGlobalRef(p_env, surfacetexture);
     (*p_env)->DeleteLocalRef(p_env, surfacetexture);
-    return jsurface;
+
+    if (handle->jtexture == NULL)
+        goto error;
+
+    if (p_awh->b_has_ndk_ast_api)
+    {
+        msg_Info(p_awh->wnd, "Using NDK API to init SurfaceTextureHandle");
+        handle->texture = p_awh->ndk_ast_api.pf_astFromst(p_env, handle->jtexture);
+        handle->surface.ops = &NDKSurfaceAPI;
+        handle->surface.window = p_awh->ndk_ast_api.pf_acquireAnw(handle->texture);
+        jobject jsurface = p_awh->ndk_ast_api.pf_anwToSurface(p_env, handle->surface.window);
+        if (jsurface == NULL) // TODO IsSame NULL
+            goto error;
+
+        handle->surface.jsurface = (*p_env)->NewGlobalRef(p_env, jsurface);
+        (*p_env)->DeleteLocalRef(p_env, jsurface);
+
+        if (handle->surface.jsurface == NULL)
+            goto error;
+    }
+    else
+    {
+        msg_Info(p_awh->wnd, "Using JNI API to init SurfaceTextureHandle");
+        handle->texture = NULL;
+        /* Create Surface(SurfaceTexture), ie. producer side of the buffer
+         * queue in Android. */
+        jobject jsurface = (*p_env)->NewObject(p_env,
+            jfields.Surface.clazz, jfields.Surface.init_st, handle->jtexture);
+        if (!jsurface)
+            goto error;
+        handle->surface.jsurface = (*p_env)->NewGlobalRef(p_env, jsurface);
+        (*p_env)->DeleteLocalRef(p_env, jsurface);
+
+        handle->surface.window =
+            p_awh->pf_winFromSurface(p_env, handle->surface.jsurface);
+        handle->surface.ops = &JNISurfaceAPI;
+    }
+
+    msg_Info(p_awh->wnd, "Successfully initialized SurfaceTexture");
+
+    return handle;
 
 error:
-    if (surfacetexture == NULL)
-        return NULL;
-    (*p_env)->DeleteLocalRef(p_env, surfacetexture);
-    (*p_env)->DeleteGlobalRef(p_env, p_awh->ndk_ast_api.surfacetexture);
-    if (p_awh->ndk_ast_api.p_ast == NULL)
-        return NULL;
-    p_awh->ndk_ast_api.pf_releaseAst(p_awh->ndk_ast_api.p_ast);
-    if (p_awh->views[id].p_anw == NULL)
-        return NULL;
-    AWindowHandler_releaseANativeWindow(p_awh, id);
+
+    if (handle->surface.window != NULL)
+        p_awh->pf_winRelease(handle->surface.window);
+
+    if (handle->jsurface != NULL)
+        (*p_env)->DeleteGlobalRef(p_env, handle->jsurface);
+
+    if (handle->texture != NULL)
+        p_awh->ndk_ast_api.pf_releaseAst(p_awh->ndk_ast_api.p_ast);
+
+    if (handle->jtexture != NULL)
+        (*p_env)->DeleteGlobalRef(p_env, handle->jtexture);
+
+    free(handle);
     return NULL;
 }
 
@@ -962,37 +1009,48 @@ WindowHandler_NewSurfaceEnv(AWindowHandler *p_awh, JNIEnv *p_env,
             break;
         case AWindow_SurfaceTexture:
         {
-            struct SurfaceTextureHandle *surfacetexture =
-                malloc(sizeof *surfacetexture);
-            if (surfacetexture == NULL)
-                return VLC_EGENERIC;
+            struct SurfaceTextureHandle *surfacetexture = NULL;
 
             if (p_awh->b_has_ndk_ast_api)
             {
-                jsurface = InitNDKSurfaceTexture(p_awh, p_env, id);
+                surfacetexture = SurfaceTextureHandle_Create(p_awh, p_env);
+
+                if (surfacetexture == NULL)
+                    return VLC_EGENERIC;
+
                 surfacetexture->surface.ops = &NDKSurfaceAPI;
-                surfacetexture->surface.window = p_awh->views[id].p_anw;
+                p_awh->views[id].p_anw = surfacetexture->surface.window;
+                p_awh->views[id].jsurface = surfacetexture->jsurface;
+                p_awh->ndk_ast_api.p_ast = surfacetexture->texture;
+                p_awh->ndk_ast_api.surfacetexture = surfacetexture->jtexture;
             }
             else
             {
+                surfacetexture = malloc(sizeof *surfacetexture);
+               /* We use AWindow wrapper functions for SurfaceTexture. */
                 jsurface = JNI_STEXCALL(CallObjectMethod, getSurface);
+                surfacetexture->jsurface = (*p_env)->NewGlobalRef(p_env, jsurface);
+                (*p_env)->DeleteLocalRef(p_env, jsurface);
                 surfacetexture->surface.ops = &JNISurfaceAPI;
                 surfacetexture->surface.window
                     = p_awh->views[id].p_anw
-                    = p_awh->pf_winFromSurface(p_env, jsurface);
-            }
+                    = p_awh->pf_winFromSurface(p_env, surfacetexture->jsurface);
+                surfacetexture->awh = p_awh;
+                surfacetexture->jtexture = NULL;
+                surfacetexture->texture = NULL;
 
-            surfacetexture->awh = p_awh;
-            surfacetexture->jtexture = p_awh->ndk_ast_api.surfacetexture;
-            surfacetexture->texture = p_awh->ndk_ast_api.p_ast;
-            surfacetexture->surface.jsurface = jsurface;
+                p_awh->views[id].p_anw = surfacetexture->surface.window;
+                p_awh->views[id].jsurface = surfacetexture->jsurface;
+                p_awh->ndk_ast_api.p_ast = NULL;
+                p_awh->ndk_ast_api.surfacetexture = NULL;
+            }
 
             assert(surfacetexture->surface.window);
             assert(surfacetexture->surface.jsurface);
 
             /* Store the vlc_asurfacetexture pointer for current AWH wrapper */
             p_awh->st = &surfacetexture->surface;
-            break;
+            return VLC_SUCCESS;
         }
         default:
             vlc_assert_unreachable();
