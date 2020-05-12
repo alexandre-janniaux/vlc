@@ -224,6 +224,7 @@ VLC_USED;
  * The buffer remains valid until the next read/peek or seek operation on the
  * same stream. In case of error, the buffer address is undefined.
  *
+ * \param stream the stream to read from
  * \param bufp storage space for the buffer address [OUT]
  * \param len number of bytes to peek
  * \return the number of bytes actually available (shorter than requested if
