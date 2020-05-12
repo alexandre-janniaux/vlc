@@ -137,6 +137,10 @@ static struct
           jmethodID init_iz;
           jmethodID init_z;
     } SurfaceTexture;
+    struct {
+        jclass clazz;
+        jmethodID init_st;
+    } Surface;
 } jfields;
 
 // TODO
@@ -585,10 +589,6 @@ LoadNDKSurfaceTextureAPI(AWindowHandler *p_awh, void *p_library, JNIEnv *p_env)
     if (p_awh->ndk_ast_api.pf_anwToSurface == NULL) return VLC_EGENERIC;
 
     return VLC_SUCCESS;
-
-error:
-    (*p_env)->DeleteGlobalRef(p_env, jfields.SurfaceTexture.clazz);
-    return VLC_EGENERIC;
 }
 
 /*
@@ -644,6 +644,25 @@ LoadNativeWindowAPI(AWindowHandler *p_awh, JNIEnv *p_env)
 
     if (!jfields.SurfaceTexture.init_i)
         return; // TODO
+
+    // TODO: only load when NDK surfacetexture API is not available
+    jclass surface_class = (*p_env)->FindClass(p_env, "android/view/Surface");
+    if (!surface_class)
+        return; // TODO
+
+    jfields.Surface.clazz = (*p_env)->NewGlobalRef(p_env, surface_class);
+    (*p_env)->DeleteLocalRef(p_env, surface_class);
+    if (!jfields.Surface.clazz)
+        return; // TODO
+
+    jfields.Surface.init_st = (*p_env)->GetMethodID(p_env,
+                            jfields.Surface.clazz, "<init>", "(Landroid/graphics/SurfaceTexture;)V");
+    if (!jfields.Surface.init_st)
+        return; // TODO
+
+    return;
+error:
+    (*p_env)->DeleteGlobalRef(p_env, jfields.SurfaceTexture.clazz);
 }
 
 static void
