@@ -95,6 +95,7 @@ struct AWindowHandler
     } views[AWindow_Max];
 
     void *p_anw_dl;
+    ptr_ANativeWindow_toSurface pf_winToSurface;
     ptr_ANativeWindow_fromSurface pf_winFromSurface;
     ptr_ANativeWindow_release pf_winRelease;
     native_window_api_t anw_api;
@@ -304,7 +305,6 @@ NativeSurface_getHandle(JNIEnv *p_env, jobject jsurf)
     return (void *)p_surface_handle;
 }
 
-
 static ANativeWindow*
 NativeSurface_fromSurface(JNIEnv *p_env, jobject jsurf)
 {
@@ -393,6 +393,7 @@ NativeSurface_unlockAndPost(ANativeWindow *p_anw)
 static void
 LoadNativeSurfaceAPI(AWindowHandler *p_awh)
 {
+    //p_awh->pf_winToSurface = NativeSurface_toSurface;
     p_awh->pf_winFromSurface = NativeSurface_fromSurface;
     p_awh->pf_winRelease = NativeSurface_release;
     p_awh->anw_api.winLock = NativeSurface_lock;
@@ -592,6 +593,7 @@ LoadNDKSurfaceTextureAPI(AWindowHandler *p_awh, void *p_library, JNIEnv *p_env)
     if (!jfields.SurfaceTexture.init_i)
         goto error;
 
+    // TODO: only load when NDK surfacetexture API is not available
     jclass surface_class = (*p_env)->FindClass(p_env, "android/view/Surface");
     if (!surface_class)
         return VLC_EGENERIC; // TODO
