@@ -1113,12 +1113,11 @@ WindowHandler_NewSurfaceEnv(AWindowHandler *p_awh, JNIEnv *p_env,
         case AWindow_SurfaceTexture:
         {
             struct SurfaceTextureHandle *surfacetexture =
-                malloc(sizeof *surfacetexture);
-            if (surfacetexture == NULL)
-            {/* TODO */}
+                SurfaceTextureHandle_Create(p_awh, p_env);
 
             if (p_awh->b_has_ndk_ast_api)
             {
+
                 jsurface = InitNDKSurfaceTexture(p_awh, p_env, id);
                 surfacetexture->surface = NDKSurfaceAPI;
             }
@@ -1134,6 +1133,7 @@ WindowHandler_NewSurfaceEnv(AWindowHandler *p_awh, JNIEnv *p_env,
             surfacetexture->texture = p_awh->ndk_ast_api.p_ast;
             surfacetexture->jsurface = jsurface;
             surfacetexture->window = p_awh->views[id].p_anw;
+            p_awh->views[id].p_anw = surfacetexture->
 
             /* Store the vlc_android_surfacetexture pointer as visible API */
             p_awh->st = &surfacetexture->surface;
