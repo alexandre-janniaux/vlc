@@ -133,6 +133,10 @@ static struct
           jmethodID init_iz;
           jmethodID init_z;
     } SurfaceTexture;
+    struct {
+        jclass clazz;
+        jmethodID init_st;
+    } Surface;
 } jfields;
 
 #define JNI_CALL(what, obj, method, ...) \
@@ -630,6 +634,7 @@ LoadNativeWindowAPI(AWindowHandler *p_awh, JNIEnv *p_env)
         LoadNativeSurfaceAPI(p_awh);
     }
     jfields.SurfaceTexture.clazz = NULL;
+    jfields.Surface.clazz = NULL;
 
     jclass surfacetexture_class = (*p_env)->FindClass(p_env,
                                             "android/graphics/SurfaceTexture");
@@ -656,10 +661,27 @@ LoadNativeWindowAPI(AWindowHandler *p_awh, JNIEnv *p_env)
         !jfields.SurfaceTexture.init_z)
         goto error;
 
+    jclass surface_class = (*p_env)->FindClass(p_env, "android/view/Surface");
+    if (surface_class == NULL)
+        goto error;
+
+    jfields.Surface.clazz = (*p_env)->NewGlobalRef(p_env, surface_class);
+    (*p_env)->DeleteLocalRef(p_env, surface_class);
+    if (jfields.Surface.clazz == NULL)
+        goto error;
+
+    jfields.Surface.init_st = (*p_env)->GetMethodID(p_env,
+                            jfields.Surface.clazz, "<init>", "(Landroid/graphics/SurfaceTexture;)V");
+    if (jfields.Surface.init_st == NULL)
+        goto error;
+
     return;
 
 error:
     if (jfields.SurfaceTexture.clazz != NULL)
+        (*p_env)->DeleteGlobalRef(p_env, jfields.SurfaceTexture.clazz);
+
+    if (jfields.Surface.clazz != NULL)
         (*p_env)->DeleteGlobalRef(p_env, jfields.SurfaceTexture.clazz);
 }
 
@@ -870,6 +892,9 @@ AWindowHandler_destroy(AWindowHandler *p_awh)
 
         if (jfields.SurfaceTexture.clazz)
             (*p_env)->DeleteGlobalRef(p_env, jfields.SurfaceTexture.clazz);
+
+        if (jfields.Surface.clazz)
+            (*p_env)->DeleteGlobalRef(p_env, jfields.Surface.clazz);
 
         JNI_ANWCALL(CallVoidMethod, unregisterNative);
         AWindowHandler_releaseANativeWindowEnv(p_awh, p_env, AWindow_Video);
