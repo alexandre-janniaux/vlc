@@ -35,9 +35,10 @@
 
 #include <libprojectM/projectM.hpp>
 
-#ifndef _WIN32
-# include <locale.h>
+#if defined(HAVE_USELOCALE)
+# include <locale>
 #endif
+
 #ifdef HAVE_XLOCALE_H
 # include <xlocale.h>
 #endif

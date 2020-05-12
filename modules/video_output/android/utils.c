@@ -203,7 +203,6 @@ NativeSurface_getHandle(JNIEnv *p_env, jobject jsurf)
     return (void *)p_surface_handle;
 }
 
-
 static ANativeWindow*
 NativeSurface_fromSurface(JNIEnv *p_env, jobject jsurf)
 {
