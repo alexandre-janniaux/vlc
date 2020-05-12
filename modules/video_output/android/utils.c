@@ -127,7 +127,9 @@ static struct
     } AWindow;
     struct {
           jclass clazz;
-          jmethodID constructor;
+          jmethodID init_i;
+          jmethodID init_iz;
+          jmethodID init_z;
     } SurfaceTexture;
 } jfields;
 
@@ -572,15 +574,21 @@ LoadNDKSurfaceTextureAPI(AWindowHandler *p_awh, void *p_library, JNIEnv *p_env)
     if (!jfields.SurfaceTexture.clazz)
         return VLC_EGENERIC;
 
-    jfields.SurfaceTexture.constructor = (*p_env)->GetMethodID(p_env,
+    jfields.SurfaceTexture.init_i = (*p_env)->GetMethodID(p_env,
+                               jfields.SurfaceTexture.clazz, "<init>", "(I)V");
+    jfields.SurfaceTexture.init_iz = (*p_env)->GetMethodID(p_env,
+                               jfields.SurfaceTexture.clazz, "<init>", "(IZ)V");
+    jfields.SurfaceTexture.init_z = (*p_env)->GetMethodID(p_env,
                                jfields.SurfaceTexture.clazz, "<init>", "(Z)V");
-    if (!jfields.SurfaceTexture.constructor)
-    {
-        (*p_env)->DeleteGlobalRef(p_env, jfields.SurfaceTexture.clazz);
-        return VLC_EGENERIC;
-    }
+
+    if (!jfields.SurfaceTexture.init_i)
+        goto error;
 
     return VLC_SUCCESS;
+
+error:
+    (*p_env)->DeleteGlobalRef(p_env, jfields.SurfaceTexture.clazz);
+    return VLC_EGENERIC;
 }
 
 /*
@@ -848,8 +856,12 @@ AWindowHandler_getANativeWindowAPI(AWindowHandler *p_awh)
 static jobject InitNDKSurfaceTexture(AWindowHandler *p_awh, JNIEnv *p_env,
         enum AWindow_ID id)
 {
+    /* This API should be available if using NDK SurfaceTexture API */
+    if (!jfields.SurfaceTexture.init_z)
+        return NULL;
+
     jobject surfacetexture = (*p_env)->NewObject(p_env,
-      jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.constructor, false);
+      jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_z, false);
 
     if (surfacetexture == NULL)
         goto error;
