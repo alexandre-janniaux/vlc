@@ -81,6 +81,25 @@ struct android_video_context_t
 };
 
 /**
+ * Wrapper structure for Android SurfaceTexture object.
+ *
+ * It can use either the NDK API or JNI API.
+ */
+struct vlc_android_surfacetexture
+{
+    int (*attach_to_gl_context)(
+            struct vlc_android_surfacetexture *surface,
+            uint32_t tex_name);
+
+    void (*detach_from_gl_context)(
+            struct vlc_android_surfacetexture *surface);
+
+    int (*update_tex_image)(
+            struct vlc_android_surfacetexture *surface,
+            const float **pp_transform_mtx);
+};
+
+/**
  * Attach or get a JNIEnv*
  *
  * The returned JNIEnv* is created from the android JavaVM attached to the VLC
