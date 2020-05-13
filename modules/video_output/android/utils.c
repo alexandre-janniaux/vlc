@@ -1117,29 +1117,20 @@ WindowHandler_NewSurfaceEnv(AWindowHandler *p_awh, JNIEnv *p_env,
             struct SurfaceTextureHandle *surfacetexture =
                 SurfaceTextureHandle_Create(p_awh, p_env);
 
-            if (p_awh->b_has_ndk_ast_api)
-            {
+            if (surfacetexture == NULL)
+                return VLC_EGENERIC;
 
-                jsurface = InitNDKSurfaceTexture(p_awh, p_env, id);
-                surfacetexture->surface = NDKSurfaceAPI;
-            }
-            else
-            {
-                jsurface = JNI_STEXCALL(CallObjectMethod, getSurface);
-                surfacetexture->surface = JNISurfaceAPI;
-            }
+            p_awh->views[id].p_anw = surfacetexture->window;
+            p_awh->views[id].jsurface = surfacetexture->jsurface;
+            p_awh->ndk_ast_api.p_ast = surfacetexture->texture;
+            p_awh->ndk_ast_api.surfacetexture = surfacetexture->jtexture;
 
-            surfacetexture->awh = p_awh;
-            surfacetexture->env = NULL;
-            surfacetexture->jtexture = p_awh->ndk_ast_api.surfacetexture;
-            surfacetexture->texture = p_awh->ndk_ast_api.p_ast;
-            surfacetexture->jsurface = jsurface;
-            surfacetexture->window = p_awh->views[id].p_anw;
-            p_awh->views[id].p_anw = surfacetexture->
+            assert(surfacetexture->window);
+            assert(surfacetexture->jsurface);
 
             /* Store the vlc_android_surfacetexture pointer as visible API */
             p_awh->st = &surfacetexture->surface;
-            break;
+            return VLC_SUCCESS;
         }
         default:
             vlc_assert_unreachable();
