@@ -1061,49 +1061,27 @@ error:
     return NULL;
 }
 
-static jobject InitNDKSurfaceTexture(AWindowHandler *p_awh, JNIEnv *p_env,
-        enum AWindow_ID id)
+struct vlc_android_surfacetexture *
+vlc_android_surfacetexture_New(AWindowHandler *p_awh)
 {
-    /* This API should be available if using NDK SurfaceTexture API */
-    if (!jfields.SurfaceTexture.init_z)
-        return NULL;
+    JNIEnv *p_env = android_getEnvCommon(NULL, p_awh->p_jvm, "SurfaceTexture");
+    return &SurfaceTextureHandle_Create(p_awh, p_env)->surface;
+}
 
-    jobject surfacetexture = (*p_env)->NewObject(p_env,
-      jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_z, false);
+ANativeWindow *
+vlc_android_surfacetexture_GetANativeWindow(struct vlc_android_surfacetexture *st)
+{
+    struct SurfaceTextureHandle *handle =
+        container_of(st, struct SurfaceTextureHandle, surface);
+    return handle->window;
+}
 
-    if (surfacetexture == NULL)
-        goto error;
-
-    p_awh->ndk_ast_api.surfacetexture = (*p_env)->NewGlobalRef(p_env,
-                                                             surfacetexture);
-
-    p_awh->ndk_ast_api.p_ast = p_awh->ndk_ast_api.pf_astFromst(p_env,
-            p_awh->ndk_ast_api.surfacetexture);
-    if (p_awh->ndk_ast_api.p_ast == NULL)
-        goto error;
-
-    p_awh->views[id].p_anw = p_awh->ndk_ast_api.pf_acquireAnw(p_awh->ndk_ast_api.p_ast);
-    if (p_awh->views[id].p_anw == NULL)
-        goto error;
-
-    jobject jsurface = p_awh->ndk_ast_api.pf_anwToSurface(p_env, p_awh->views[id].p_anw);
-    if (jsurface == NULL)
-        goto error;
-    (*p_env)->DeleteLocalRef(p_env, surfacetexture);
-    return jsurface;
-
-error:
-    if (surfacetexture == NULL)
-        return NULL;
-    (*p_env)->DeleteLocalRef(p_env, surfacetexture);
-    (*p_env)->DeleteGlobalRef(p_env, p_awh->ndk_ast_api.surfacetexture);
-    if (p_awh->ndk_ast_api.p_ast == NULL)
-        return NULL;
-    p_awh->ndk_ast_api.pf_releaseAst(p_awh->ndk_ast_api.p_ast);
-    if (p_awh->views[id].p_anw == NULL)
-        return NULL;
-    AWindowHandler_releaseANativeWindow(p_awh, id);
-    return NULL;
+jobject
+vlc_android_surfacetexture_GetSurface(struct vlc_android_surfacetexture *st)
+{
+    struct SurfaceTextureHandle *handle =
+        container_of(st, struct SurfaceTextureHandle, surface);
+    return handle->jsurface;
 }
 
 static int

@@ -75,6 +75,7 @@ struct android_video_context_t
 {
     enum AWindow_ID id;
     AWindowHandler *anativewindow;
+    struct vlc_android_surfacetexture *texture;
     void *dec_opaque;
     bool (*render)(struct picture_context_t *ctx);
     bool (*render_ts)(struct picture_context_t *ctx, vlc_tick_t ts);
@@ -181,6 +182,26 @@ SurfaceTexture_attachToGLContext(struct vlc_android_surfacetexture *st, uint32_t
  */
 void
 SurfaceTexture_detachFromGLContext(struct vlc_android_surfacetexture *st);
+
+/**
+ * Create a new SurfaceTexture object.
+ *
+ * See Android SurfaceTexture
+ */
+struct vlc_android_surfacetexture *
+vlc_android_surfacetexture_New(AWindowHandler *p_awh);
+
+/**
+ * Delete a SurfaceTexture object created with SurfaceTexture_New.
+ */
+void
+vlc_android_surfacetexture_Delete(struct vlc_android_surfacetexture *st);
+
+ANativeWindow *
+vlc_android_surfacetexture_GetANativeWindow(struct vlc_android_surfacetexture *st);
+
+jobject
+vlc_android_surfacetexture_GetSurface(struct vlc_android_surfacetexture *st);
 
 /**
  * Get a Java Surface from the attached SurfaceTexture
