@@ -457,7 +457,6 @@ JNISurfaceTexture_attachToGLContext(
     if (!p_env)
         return VLC_EGENERIC;
 
-    handle->env = p_env;
     AWindowHandler *p_awh = handle->awh;
 
     (*p_env)->CallVoidMethod(p_env, handle->jtexture,
@@ -474,11 +473,11 @@ JNISurfaceTexture_detachFromGLContext(
     struct SurfaceTextureHandle *handle =
         container_of(surface, struct SurfaceTextureHandle, surface);
 
-    /* We should detach surface as soon as they are destroyed. */
-    assert(handle->env);
-    JNIEnv *p_env = handle->env;
     AWindowHandler *p_awh = handle->awh;
 
+    JNIEnv *p_env = android_getEnvCommon(NULL, handle->awh->p_jvm, "SurfaceTexture");
+    if (!p_env)
+        return;
 
     (*p_env)->CallVoidMethod(p_env, handle->jtexture,
                              jfields.SurfaceTexture.detachFromGLContext);
@@ -490,9 +489,6 @@ JNISurfaceTexture_detachFromGLContext(
                                             JNI_ABORT);
         handle->awh->stex.jtransform_mtx = NULL;
     }
-
-    // TODO: how to destroy JNIEnv ?
-    handle->env = NULL;
 }
 
 static int
@@ -503,11 +499,7 @@ JNISurfaceTexture_waitAndUpdateTexImage(
     struct SurfaceTextureHandle *handle =
         container_of(surface, struct SurfaceTextureHandle, surface);
 
-    /* The surface must have been attached before, so env
-     * must exist already. */
-    assert(handle->env);
     AWindowHandler *p_awh = handle->awh;
-
     JNIEnv *p_env = android_getEnvCommon(NULL, handle->awh->p_jvm, "SurfaceTexture");
     if (!p_env)
         return VLC_EGENERIC;
@@ -537,7 +529,6 @@ static const struct vlc_android_surfacetexture JNISurfaceAPI =
     .update_tex_image = JNISurfaceTexture_waitAndUpdateTexImage,
     .detach_from_gl_context = JNISurfaceTexture_detachFromGLContext,
 };
-
 
 static int
 LoadNDKSurfaceTextureAPI(AWindowHandler *p_awh, void *p_library, JNIEnv *p_env)
