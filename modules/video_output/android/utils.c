@@ -148,7 +148,7 @@ static struct
 #define JNI_ANWCALL(what, method, ...) \
     (*p_env)->what(p_env, p_awh->jobj, jfields.AWindow.method, ##__VA_ARGS__)
 #define JNI_STEXCALL(what, method, ...) \
-    (*p_env)->what(p_env, p_awh->views[AWindow_SurfaceTexture].jsurface, jfields.SurfaceTexture.method, ##__VA_ARGS__)
+    (*p_env)->what(p_env, p_awh->st->jtexture, jfields.SurfaceTexture.method, ##__VA_ARGS__)
 
 /*
  * Andoid JNIEnv helper
@@ -460,9 +460,11 @@ JNISurfaceTexture_attachToGLContext(
     handle->env = p_env;
     AWindowHandler *p_awh = handle->awh;
 
-    // TODO
-    return JNI_STEXCALL(CallBooleanMethod, attachToGLContext, tex_name) ?
-           VLC_SUCCESS : VLC_EGENERIC;
+    (*p_env)->CallVoidMethod(p_env, handle->jtexture,
+                             jfields.SurfaceTexture.attachToGLContext,
+                             tex_name);
+
+    return VLC_SUCCESS;
 }
 
 static void
@@ -478,8 +480,8 @@ JNISurfaceTexture_detachFromGLContext(
     AWindowHandler *p_awh = handle->awh;
 
 
-    // TODO
-    JNI_STEXCALL(CallVoidMethod, detachFromGLContext);
+    (*p_env)->CallVoidMethod(p_env, handle->jtexture,
+                             jfields.SurfaceTexture.detachFromGLContext);
 
     if (handle->awh->stex.jtransform_mtx != NULL)
     {
@@ -504,8 +506,11 @@ JNISurfaceTexture_waitAndUpdateTexImage(
     /* The surface must have been attached before, so env
      * must exist already. */
     assert(handle->env);
-    JNIEnv *p_env = handle->env;
     AWindowHandler *p_awh = handle->awh;
+
+    JNIEnv *p_env = android_getEnvCommon(NULL, handle->awh->p_jvm, "SurfaceTexture");
+    if (!p_env)
+        return VLC_EGENERIC;
 
     if (handle->awh->stex.jtransform_mtx != NULL)
         (*p_env)->ReleaseFloatArrayElements(p_env, handle->awh->stex.jtransform_mtx_array,
@@ -513,20 +518,17 @@ JNISurfaceTexture_waitAndUpdateTexImage(
                                             JNI_ABORT);
 
     // TODO
-    bool ret = JNI_STEXCALL(CallBooleanMethod, UpdateTexImage,
-                            handle->awh->stex.jtransform_mtx_array);
-    if (ret)
-    {
-        handle->awh->stex.jtransform_mtx = (*p_env)->GetFloatArrayElements(p_env,
-                                            handle->awh->stex.jtransform_mtx_array, NULL);
-        *pp_transform_mtx = handle->awh->stex.jtransform_mtx;
-        return VLC_SUCCESS;
-    }
-    else
-    {
-        handle->awh->stex.jtransform_mtx = NULL;
-        return VLC_EGENERIC;
-    }
+    (*p_env)->CallVoidMethod(p_env, handle->jtexture,
+                             jfields.SurfaceTexture.updateTexImage);
+
+    (*p_env)->CallVoidMethod(p_env, handle->jtexture,
+                             jfields.SurfaceTexture.getTransformMatrix,
+                             handle->awh->stex.jtransform_mtx_array);
+    handle->awh->stex.jtransform_mtx = (*p_env)->GetFloatArrayElements(p_env,
+                                        handle->awh->stex.jtransform_mtx_array, NULL);
+    //TODO
+    *pp_transform_mtx = handle->awh->stex.jtransform_mtx;
+    return VLC_SUCCESS;
 }
 
 static const struct vlc_android_surfacetexture JNISurfaceAPI =
