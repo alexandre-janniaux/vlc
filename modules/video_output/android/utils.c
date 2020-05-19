@@ -136,6 +136,10 @@ static struct
           jmethodID init_i;
           jmethodID init_iz;
           jmethodID init_z;
+          jmethodID updateTexImage;
+          jmethodID getTransformMatrix;
+          jmethodID detachFromGLContext;
+          jmethodID attachToGLContext;
     } SurfaceTexture;
     struct {
         jclass clazz;
@@ -641,6 +645,14 @@ LoadNativeWindowAPI(AWindowHandler *p_awh, JNIEnv *p_env)
                                jfields.SurfaceTexture.clazz, "<init>", "(IZ)V");
     jfields.SurfaceTexture.init_z = (*p_env)->GetMethodID(p_env,
                                jfields.SurfaceTexture.clazz, "<init>", "(Z)V");
+    jfields.SurfaceTexture.updateTexImage = (*p_env)->GetMethodID(p_env,
+                               jfields.SurfaceTexture.clazz, "updateTexImage", "()V");
+    jfields.SurfaceTexture.getTransformMatrix = (*p_env)->GetMethodID(p_env,
+                               jfields.SurfaceTexture.clazz, "getTransformMatrix", "([F)V");
+    jfields.SurfaceTexture.attachToGLContext = (*p_env)->GetMethodID(p_env,
+                               jfields.SurfaceTexture.clazz, "attachToGLContext", "(I)V");
+    jfields.SurfaceTexture.detachFromGLContext = (*p_env)->GetMethodID(p_env,
+                               jfields.SurfaceTexture.clazz, "detachFromGLContext", "()V");
 
     if (!jfields.SurfaceTexture.init_i)
         return; // TODO
