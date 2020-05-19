@@ -1112,6 +1112,13 @@ error:
     return NULL;
 }
 
+struct vlc_asurfacetexture *
+vlc_asurfacetexture_New(AWindowHandler *p_awh)
+{
+    JNIEnv *p_env = android_getEnvCommon(NULL, p_awh->p_jvm, "SurfaceTexture");
+    return &SurfaceTextureHandle_Create(p_awh, p_env)->surface;
+}
+
 static int
 WindowHandler_NewSurfaceEnv(AWindowHandler *p_awh, JNIEnv *p_env,
                             enum AWindow_ID id)
