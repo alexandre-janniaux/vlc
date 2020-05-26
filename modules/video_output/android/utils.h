@@ -79,6 +79,9 @@ struct android_video_context_t
     void *dec_opaque;
     bool (*render)(struct picture_context_t *ctx);
     bool (*render_ts)(struct picture_context_t *ctx, vlc_tick_t ts);
+
+    struct vlc_android_surfacetexture *
+        (*get_texture)(struct picture_context_t *ctx);
 };
 
 /**

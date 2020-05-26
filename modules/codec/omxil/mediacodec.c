@@ -543,6 +543,17 @@ static bool PictureContextRenderPicTs(struct picture_context_t *ctx,
     return false;
 }
 
+static struct vlc_android_surfacetexture *
+PictureContextGetTexture(picture_context_t *context)
+{
+    fprintf(stderr, "MEDIACODEC GETTEXTURE\n");
+    android_video_context_t *avctx =
+        vlc_video_context_GetPrivate(context->vctx, VLC_VIDEO_CONTEXT_AWINDOW);
+    decoder_sys_t *p_sys = avctx->dec_opaque;
+
+    return p_sys->video.surfacetexture;
+}
+
 static void PictureContextDestroy(struct picture_context_t *ctx)
 {
     struct android_picture_ctx *apctx =
@@ -660,6 +671,7 @@ CreateVideoContext(decoder_t *p_dec)
     }
     else
     {
+        p_sys->video.surfacetexture = NULL;
         p_sys->video.p_surface = AWindowHandler_getANativeWindow(awh, id);
         p_sys->video.p_jsurface = AWindowHandler_getSurface(awh, id);
         assert (p_sys->video.p_surface);
@@ -690,6 +702,7 @@ CreateVideoContext(decoder_t *p_dec)
     avctx->dec_opaque = p_dec->p_sys;
     avctx->render = PictureContextRenderPic;
     avctx->render_ts = p_sys->api.release_out_ts ? PictureContextRenderPicTs : NULL;
+    avctx->get_texture = PictureContextGetTexture;
 
     for (size_t i = 0; i < ARRAY_SIZE(p_sys->video.apic_ctxs); ++i)
     {
