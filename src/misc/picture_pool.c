@@ -90,8 +90,10 @@ static picture_t *picture_pool_ClonePicture(picture_pool_t *pool,
     picture_t *picture = pool->picture[offset];
     uintptr_t sys = ((uintptr_t)pool) + offset;
 
-    return picture_InternalClone(picture, picture_pool_ReleasePicture,
-                                 (void*)sys);
+    picture_t *clone = picture_InternalClone(picture,
+                                             picture_pool_ReleasePicture,
+                                             (void*)sys);
+    return clone;
 }
 
 picture_pool_t *picture_pool_New(unsigned count, picture_t *const *tab)
