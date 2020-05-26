@@ -979,7 +979,7 @@ init_iz:
 
     msg_Info(p_awh->wnd, "Using SurfaceTexture constructor init_iz");
     surfacetexture = (*p_env)->NewObject(p_env,
-      jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_iz, texture, false);
+      jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_iz, texture, true);
 
     if (surfacetexture == NULL)
         goto error;
