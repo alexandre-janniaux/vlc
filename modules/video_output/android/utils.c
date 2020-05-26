@@ -136,6 +136,7 @@ static struct
           jmethodID init_iz;
           jmethodID init_z;
           jmethodID updateTexImage;
+          jmethodID releaseTexImage;
           jmethodID getTransformMatrix;
           jmethodID detachFromGLContext;
           jmethodID attachToGLContext;
@@ -442,11 +443,21 @@ NDKSurfaceTexture_updateTexImage(
     return VLC_SUCCESS;
 }
 
+static void NDKSurfaceTexture_releaseTexImage(
+        struct vlc_android_surfacetexture *surface)
+{
+    struct SurfaceTextureHandle *handle =
+        container_of(surface, struct SurfaceTextureHandle, surface);
+
+    //handle->awh->ndk_ast_api.pf_releaseTexImage(handle->texture);
+}
+
 static const struct vlc_android_surfacetexture NDKSurfaceAPI =
 {
     .attach_to_gl_context = NDKSurfaceTexture_attachToGLContext,
     .update_tex_image = NDKSurfaceTexture_updateTexImage,
     .detach_from_gl_context = NDKSurfaceTexture_detachFromGLContext,
+    .release_tex_image = NDKSurfaceTexture_releaseTexImage,
 };
 
 static int
@@ -527,11 +538,28 @@ JNISurfaceTexture_waitAndUpdateTexImage(
     return VLC_SUCCESS;
 }
 
+static void
+JNISurfaceTexture_releaseTexImage(
+        struct vlc_android_surfacetexture *surface)
+{
+    struct SurfaceTextureHandle *handle =
+        container_of(surface, struct SurfaceTextureHandle, surface);
+
+    AWindowHandler *p_awh = handle->awh;
+    JNIEnv *p_env = android_getEnvCommon(NULL, handle->awh->p_jvm, "SurfaceTexture");
+    if (!p_env)
+        return;
+
+    (*p_env)->CallVoidMethod(p_env, handle->jtexture,
+                             jfields.SurfaceTexture.releaseTexImage);
+}
+
 static const struct vlc_android_surfacetexture JNISurfaceAPI =
 {
     .attach_to_gl_context = JNISurfaceTexture_attachToGLContext,
     .update_tex_image = JNISurfaceTexture_waitAndUpdateTexImage,
     .detach_from_gl_context = JNISurfaceTexture_detachFromGLContext,
+    .release_tex_image = JNISurfaceTexture_releaseTexImage,
 };
 
 static int
@@ -628,6 +656,8 @@ LoadNativeWindowAPI(AWindowHandler *p_awh, JNIEnv *p_env)
                                jfields.SurfaceTexture.clazz, "<init>", "(Z)V");
     jfields.SurfaceTexture.updateTexImage = (*p_env)->GetMethodID(p_env,
                                jfields.SurfaceTexture.clazz, "updateTexImage", "()V");
+    jfields.SurfaceTexture.releaseTexImage = (*p_env)->GetMethodID(p_env,
+                               jfields.SurfaceTexture.clazz, "releaseTexImage", "()V");
     jfields.SurfaceTexture.getTransformMatrix = (*p_env)->GetMethodID(p_env,
                                jfields.SurfaceTexture.clazz, "getTransformMatrix", "([F)V");
     jfields.SurfaceTexture.attachToGLContext = (*p_env)->GetMethodID(p_env,
@@ -909,7 +939,7 @@ static struct SurfaceTextureHandle* SurfaceTextureHandle_Create(
 
     /* We can create a SurfaceTexture in detached mode directly */
     surfacetexture = (*p_env)->NewObject(p_env,
-      jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_z, false);
+      jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_z, true);
 
     if (surfacetexture == NULL)
         goto error;
@@ -1240,4 +1270,10 @@ int
 SurfaceTexture_updateTexImage(struct vlc_android_surfacetexture *st, const float **pp_transform_mtx)
 {
     return st->update_tex_image(st, pp_transform_mtx);
+}
+
+void
+SurfaceTexture_releaseTexImage(struct vlc_android_surfacetexture *st)
+{
+    return st->release_tex_image(st);
 }

@@ -101,6 +101,9 @@ struct vlc_android_surfacetexture
     int (*update_tex_image)(
             struct vlc_android_surfacetexture *surface,
             const float **pp_transform_mtx);
+
+    void (*release_tex_image)(
+            struct vlc_android_surfacetexture *st);
 };
 
 /**
@@ -243,3 +246,6 @@ SurfaceTexture_getANativeWindow(AWindowHandler *p_awh)
  */
 int
 SurfaceTexture_updateTexImage(struct vlc_android_surfacetexture *st, const float **pp_transform_mtx);
+
+void
+SurfaceTexture_releaseTexImage(struct vlc_android_surfacetexture *st);

@@ -91,6 +91,9 @@ tc_anop_update(const struct vlc_gl_interop *interop, GLuint *textures,
 
     assert(texture);
 
+    if (priv->previous_texture)
+        SurfaceTexture_releaseTexImage(priv->previous_texture);
+
     if (priv->previous_texture != texture)
     {
         msg_Info(interop->gl, "New SurfaceTexture, attaching");
