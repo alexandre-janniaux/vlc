@@ -635,7 +635,7 @@ static void AccessGetMeta(stream_t *access, vlc_meta_t *meta)
             vlc_meta_SetGenre(meta, str);
 
         const unsigned year = cddb_disc_get_year(sys->cddb);
-        if (year != 0)
+        if (year != 0 && year <= 9999)
         {
             char yearbuf[5];
 
