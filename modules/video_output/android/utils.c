@@ -1046,11 +1046,13 @@ success:
     {
         msg_Info(p_awh->wnd, "Using JNI API to init SurfaceTextureHandle");
         handle->texture = NULL;
+        /* Create Surface(SurfaceTexture), ie. producer side of the buffer
+         * queue in Android. */
         jobject jsurface = (*p_env)->NewObject(p_env,
             jfields.Surface.clazz, jfields.Surface.init_st, handle->jtexture);
         if (!jsurface)
-            goto error; // TODO
-        handle->jsurface = (*p_env)->NewGlobalRef(p_env, jsurface); // TODO
+            goto error;
+        handle->jsurface = (*p_env)->NewGlobalRef(p_env, jsurface);
         (*p_env)->DeleteLocalRef(p_env, jsurface);
 
         handle->window = p_awh->pf_winFromSurface(p_env, handle->jsurface);
@@ -1074,6 +1076,10 @@ success:
     return handle;
 
 error:
+    // TODO free texture/window/jsurface
+    if (handle->jtexture != NULL)
+        (*p_env)->DeleteGlobalRef(p_env, handle->jtexture);
+
     if (context != EGL_NO_CONTEXT)
     {
         glDeleteTextures(1, &texture);
