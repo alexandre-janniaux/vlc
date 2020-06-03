@@ -148,7 +148,7 @@ static struct
 #define JNI_ANWCALL(what, method, ...) \
     (*p_env)->what(p_env, p_awh->jobj, jfields.AWindow.method, ##__VA_ARGS__)
 #define JNI_STEXCALL(what, method, ...) \
-    (*p_env)->what(p_env, p_awh->jobj, jfields.AWindow.method, ##__VA_ARGS__)
+    (*p_env)->what(p_env, p_awh->views[AWindow_SurfaceTexture].jsurface, jfields.SurfaceTexture.method, ##__VA_ARGS__)
 
 /*
  * Andoid JNIEnv helper
@@ -513,7 +513,7 @@ JNISurfaceTexture_waitAndUpdateTexImage(
                                             JNI_ABORT);
 
     // TODO
-    bool ret = JNI_STEXCALL(CallBooleanMethod, waitAndUpdateTexImage,
+    bool ret = JNI_STEXCALL(CallBooleanMethod, UpdateTexImage,
                             handle->awh->stex.jtransform_mtx_array);
     if (ret)
     {
@@ -572,42 +572,6 @@ LoadNDKSurfaceTextureAPI(AWindowHandler *p_awh, void *p_library, JNIEnv *p_env)
         dlsym(p_library, "ANativeWindow_toSurface");
     if (p_awh->ndk_ast_api.pf_anwToSurface == NULL) return VLC_EGENERIC;
 
-    jclass surfacetexture_class = (*p_env)->FindClass(p_env,
-                                            "android/graphics/SurfaceTexture");
-    if (!surfacetexture_class)
-        return VLC_EGENERIC;
-
-    jfields.SurfaceTexture.clazz = (*p_env)->NewGlobalRef(p_env,
-                                                         surfacetexture_class);
-    (*p_env)->DeleteLocalRef(p_env, surfacetexture_class);
-    if (!jfields.SurfaceTexture.clazz)
-        return VLC_EGENERIC;
-
-    jfields.SurfaceTexture.init_i = (*p_env)->GetMethodID(p_env,
-                               jfields.SurfaceTexture.clazz, "<init>", "(I)V");
-    jfields.SurfaceTexture.init_iz = (*p_env)->GetMethodID(p_env,
-                               jfields.SurfaceTexture.clazz, "<init>", "(IZ)V");
-    jfields.SurfaceTexture.init_z = (*p_env)->GetMethodID(p_env,
-                               jfields.SurfaceTexture.clazz, "<init>", "(Z)V");
-
-    if (!jfields.SurfaceTexture.init_i)
-        goto error;
-
-    // TODO: only load when NDK surfacetexture API is not available
-    jclass surface_class = (*p_env)->FindClass(p_env, "android/view/Surface");
-    if (!surface_class)
-        return VLC_EGENERIC; // TODO
-
-    jfields.Surface.clazz = (*p_env)->NewGlobalRef(p_env, surface_class);
-    (*p_env)->DeleteLocalRef(p_env, surface_class);
-    if (!jfields.Surface.clazz)
-        return VLC_EGENERIC; // TODO
-
-    jfields.Surface.init_st = (*p_env)->GetMethodID(p_env,
-                            jfields.Surface.clazz, "<init>", "(Landroid/graphics/SurfaceTexture;)V");
-    if (!jfields.Surface.init_st)
-        return VLC_EGENERIC; // TODO
-
     return VLC_SUCCESS;
 
 error:
@@ -647,6 +611,42 @@ LoadNativeWindowAPI(AWindowHandler *p_awh, JNIEnv *p_env)
         dlclose(p_library);
         LoadNativeSurfaceAPI(p_awh);
     }
+
+    jclass surfacetexture_class = (*p_env)->FindClass(p_env,
+                                            "android/graphics/SurfaceTexture");
+    if (!surfacetexture_class)
+        return; // TODO
+
+    jfields.SurfaceTexture.clazz = (*p_env)->NewGlobalRef(p_env,
+                                                         surfacetexture_class);
+    (*p_env)->DeleteLocalRef(p_env, surfacetexture_class);
+    if (!jfields.SurfaceTexture.clazz)
+        return; // TODO
+
+    jfields.SurfaceTexture.init_i = (*p_env)->GetMethodID(p_env,
+                               jfields.SurfaceTexture.clazz, "<init>", "(I)V");
+    jfields.SurfaceTexture.init_iz = (*p_env)->GetMethodID(p_env,
+                               jfields.SurfaceTexture.clazz, "<init>", "(IZ)V");
+    jfields.SurfaceTexture.init_z = (*p_env)->GetMethodID(p_env,
+                               jfields.SurfaceTexture.clazz, "<init>", "(Z)V");
+
+    if (!jfields.SurfaceTexture.init_i)
+        return; // TODO
+
+    // TODO: only load when NDK surfacetexture API is not available
+    jclass surface_class = (*p_env)->FindClass(p_env, "android/view/Surface");
+    if (!surface_class)
+        return; // TODO
+
+    jfields.Surface.clazz = (*p_env)->NewGlobalRef(p_env, surface_class);
+    (*p_env)->DeleteLocalRef(p_env, surface_class);
+    if (!jfields.Surface.clazz)
+        return; // TODO
+
+    jfields.Surface.init_st = (*p_env)->GetMethodID(p_env,
+                            jfields.Surface.clazz, "<init>", "(Landroid/graphics/SurfaceTexture;)V");
+    if (!jfields.Surface.init_st)
+        return; // TODO
 }
 
 static void
@@ -900,6 +900,8 @@ static struct SurfaceTextureHandle* SurfaceTextureHandle_Create(
     if (jfields.SurfaceTexture.init_z == NULL)
         goto init_iz;
 
+    msg_Info(p_awh->wnd, "Using SurfaceTexture constructor init_z");
+
     /* We can create a SurfaceTexture in detached mode directly */
     surfacetexture = (*p_env)->NewObject(p_env,
       jfields.SurfaceTexture.clazz, jfields.SurfaceTexture.init_z, false);
@@ -910,6 +912,7 @@ static struct SurfaceTextureHandle* SurfaceTextureHandle_Create(
     goto success;
 
 init_iz:
+    msg_Info(p_awh->wnd, "Initializing OpenGL context to create SurfaceTexture");
     /* Old Android APIs are constructing SurfaceTexture in an attached state
      * so we need a dummy context before detaching it, for any other
      * constructor than the previous one. That's crap.
@@ -1164,8 +1167,6 @@ AWindowHandler_getANativeWindow(AWindowHandler *p_awh, enum AWindow_ID id)
     if (!p_awh->views[id].p_anw)
         p_awh->views[id].p_anw = p_awh->pf_winFromSurface(p_env,
                                                     p_awh->views[id].jsurface);
-    else
-        assert(p_awh->b_has_ndk_ast_api && id == AWindow_SurfaceTexture);
 
     return p_awh->views[id].p_anw;
 }
