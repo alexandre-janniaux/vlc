@@ -478,9 +478,11 @@ JNISurfaceTexture_attachToGLContext(
 
     AWindowHandler *p_awh = handle->awh;
 
-    // TODO
-    return JNI_STEXCALL(CallBooleanMethod, attachToGLContext, tex_name) ?
-           VLC_SUCCESS : VLC_EGENERIC;
+    (*p_env)->CallVoidMethod(p_env, handle->jtexture,
+                             jfields.SurfaceTexture.attachToGLContext,
+                             tex_name);
+
+    return VLC_SUCCESS;
 }
 
 static void
@@ -495,8 +497,8 @@ JNISurfaceTexture_detachFromGLContext(
     if (!p_env)
         return;
 
-    // TODO
-    JNI_STEXCALL(CallVoidMethod, detachFromGLContext);
+    (*p_env)->CallVoidMethod(p_env, handle->jtexture,
+                             jfields.SurfaceTexture.detachFromGLContext);
 
     if (handle->awh->stex.jtransform_mtx != NULL)
     {
@@ -520,27 +522,23 @@ JNISurfaceTexture_waitAndUpdateTexImage(
     if (!p_env)
         return VLC_EGENERIC;
 
-
     if (handle->awh->stex.jtransform_mtx != NULL)
         (*p_env)->ReleaseFloatArrayElements(p_env, handle->awh->stex.jtransform_mtx_array,
                                             handle->awh->stex.jtransform_mtx,
                                             JNI_ABORT);
 
     // TODO
-    bool ret = JNI_STEXCALL(CallBooleanMethod, waitAndUpdateTexImage,
-                            handle->awh->stex.jtransform_mtx_array);
-    if (ret)
-    {
-        handle->awh->stex.jtransform_mtx = (*p_env)->GetFloatArrayElements(p_env,
-                                            handle->awh->stex.jtransform_mtx_array, NULL);
-        *pp_transform_mtx = handle->awh->stex.jtransform_mtx;
-        return VLC_SUCCESS;
-    }
-    else
-    {
-        handle->awh->stex.jtransform_mtx = NULL;
-        return VLC_EGENERIC;
-    }
+    (*p_env)->CallVoidMethod(p_env, handle->jtexture,
+                             jfields.SurfaceTexture.updateTexImage);
+
+    (*p_env)->CallVoidMethod(p_env, handle->jtexture,
+                             jfields.SurfaceTexture.getTransformMatrix,
+                             handle->awh->stex.jtransform_mtx_array);
+    handle->awh->stex.jtransform_mtx = (*p_env)->GetFloatArrayElements(p_env,
+                                        handle->awh->stex.jtransform_mtx_array, NULL);
+    //TODO
+    *pp_transform_mtx = handle->awh->stex.jtransform_mtx;
+    return VLC_SUCCESS;
 }
 
 static void JNISurfaceTexture_destroy(
@@ -559,7 +557,6 @@ static const struct vlc_asurfacetexture_operations JNISurfaceAPI =
     .detach_from_gl_context = JNISurfaceTexture_detachFromGLContext,
     .destroy = JNISurfaceTexture_destroy,
 };
-
 
 static int
 LoadNDKSurfaceTextureAPI(AWindowHandler *p_awh, void *p_library, JNIEnv *p_env)
