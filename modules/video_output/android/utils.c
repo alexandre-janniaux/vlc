@@ -433,10 +433,11 @@ NDKSurfaceTexture_updateTexImage(
     struct SurfaceTextureHandle *handle =
         container_of(surface, struct SurfaceTextureHandle, surface);
 
+    /* ASurfaceTexture_updateTexImage can fail, for example if calling it
+     * before having produced a new image. */
     if (handle->awh->ndk_ast_api.pf_updateTexImage(handle->texture))
         return VLC_EGENERIC;
 
-    // TODO
     handle->awh->ndk_ast_api.pf_getTransMatrix(handle->texture,
                                                handle->awh->ndk_ast_api.transMat);
     *pp_transform_mtx = handle->awh->ndk_ast_api.transMat;
