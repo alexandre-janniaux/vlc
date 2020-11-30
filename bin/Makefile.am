@@ -7,6 +7,10 @@ noinst_PROGRAMS = vlc-osx-static
 else
 bin_PROGRAMS = vlc
 noinst_PROGRAMS = vlc-static
+
+if HAVE_RPC
+noinst_PROGRAMS += vlc-access-service
+endif
 endif
 endif
 EXTRA_DIST = vlc_win32_rc.rc.in
@@ -83,6 +87,24 @@ vlc_static_CPPFLAGS = $(vlc_CPPFLAGS)
 vlc_static_DEPENDENCIES = $(vlc_DEPENDENCIES)
 vlc_static_LDADD = $(vlc_LDADD)
 vlc_static_LDFLAGS = $(vlc_LDFLAGS) -no-install -static
+
+#
+# RPC Services
+#
+if HAVE_RPC
+vlc_access_service_SOURCES = rpc-services/vlc-access-service.cpp \
+							 rpc-services/access.cpp
+vlc_access_service_CFLAGS = $(AM_CFLAGS) \
+	-DTOP_BUILDDIR=\"$$(cd "$(top_builddir)"; pwd)\" \
+	-DTOP_SRCDIR=\"$$(cd "$(top_srcdir)"; pwd)\" \
+	$(NULL)
+vlc_access_service_CXXFLAGS = $(AM_CXXFLAGS) \
+							  -I$(top_builddir)/rpc/include \
+							  -std=c++17
+vlc_access_service_DEPENDENCIES = $(vlc_DEPENDENCIES)
+vlc_access_service_LDADD = $(vlc_LDADD) $(top_builddir)/rpc/libvlcrpc_messages.la
+vlc_access_service_LDFLAGS = $(vlc_LDFLAGS) -no-install -static -lstdc++
+endif
 
 #
 # Root wrapper
