@@ -6,7 +6,7 @@
 # something. DIST_SUBDIRS stores the directories where nothing is built but
 # which have makefiles with distribution information.
 #  - src (libvlccore) is nedeed by modules
-SUBDIRS = compat doc po share src modules lib bin test
+SUBDIRS = compat doc po share rpc src modules lib bin test
 DIST_SUBDIRS = m4 $(SUBDIRS)
 
 EXTRA_DIST = \

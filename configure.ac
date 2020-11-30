@@ -4334,6 +4334,19 @@ dnl mDNS using libmicrodns
 dnl
 PKG_ENABLE_MODULES_VLC([MICRODNS], [], [microdns >= 0.1.2], [mDNS services discovery], [auto])
 
+dnl
+dnl protorpc integration
+dnl
+AC_ARG_ENABLE([protorpc],
+  AS_HELP_STRING([--enable-protorpc], [Enables protorpc support (default disabled)]))
+
+AS_IF([test "$enable_protorpc" = "yes"], [
+  PKG_CHECK_MODULES(PROTORPC, [protoipc, protorpc])
+  AC_DEFINE([HAVE_RPC], 1, [Defined if rpc is enabled])
+])
+
+AM_CONDITIONAL([HAVE_RPC], [test "$enable_protorpc" = "yes"])
+
 
 EXTEND_HELP_STRING([Misc options:])
 
@@ -4626,6 +4639,7 @@ AC_CONFIG_FILES([
   po/Makefile.in
   share/Makefile
   compat/Makefile
+  rpc/Makefile
   src/Makefile
   lib/Makefile
   bin/Makefile
