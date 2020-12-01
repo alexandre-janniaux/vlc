@@ -62,11 +62,29 @@ bool AccessFactory::create(std::string type, std::vector<std::string> options, s
         return true;
     }
 
-    if (options.size() != 1)
+    if (options.size() != 2)
     {
-        std::printf("[ACCESSFACTORY] Expected arguments { mrl }\n");
+        std::printf("[ACCESSFACTORY] Expected arguments { url, preparse }\n");
         return true;
     }
+
+    std::string file_url = options[0];
+    std::string preparse = options[1];
+
+    std::printf("[ACCESSFACTORY] Creating access for url: %s\n", file_url.c_str());
+
+    stream_t* stream = capi_vlc_stream_NewURLEx(vlc_instance_, file_url.c_str(), preparse == "true");
+
+    if (!stream)
+    {
+        *receiver_id = 0;
+        return true;
+    }
+
+    rpc::ObjectId access_id = channel_->bind<Access>(stream);
+    *receiver_id = access_id;
+
+    std::printf("[ACCESSFACTORY] Created access id: %lu\n", access_id);
 
     return true;
 }

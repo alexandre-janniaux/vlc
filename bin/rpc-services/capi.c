@@ -1,12 +1,20 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stddef.h>
 #include "capi.h"
 
+#include <vlc_common.h>
+#include <vlc_stream.h>
+#include "../../lib/libvlc_internal.h"
+
 libvlc_instance_t* capi_libvlc_new(int argc, const char *const *argv)
 {
-    return NULL;
+    return libvlc_new(argc, argv);
 }
 
-stream_t* capi_vlc_stream_NewURLEx(libvlc_instance_t* vlc, const char* mrl, int preparse)
+stream_t* capi_vlc_stream_NewURLEx(libvlc_instance_t* vlc, const char* url, int preparse)
 {
-    return NULL;
+    return vlc_stream_NewURLEx(vlc->p_libvlc_int, url, preparse);
 }

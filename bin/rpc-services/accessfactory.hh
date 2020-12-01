@@ -11,7 +11,6 @@ void start_factory(int channel_fd, int port_id);
 
 #ifdef __cplusplus
 #include "vlc_rpc/objectfactory.sidl.hh"
-#include "vlc_rpc/stream.sidl.hh"
 
 struct libvlc_instance_t;
 
@@ -23,7 +22,6 @@ public:
 
 private:
     rpc::Channel* channel_;
-    std::vector<rpc::Receiver<vlc::StreamReceiver>> accesses_;
     libvlc_instance_t* vlc_instance_;
 };
 
