@@ -4,6 +4,6 @@
 
 int main(int argc, char** argv)
 {
-    Access acc(NULL, 0, NULL);
+    Access acc(NULL);
     return 0;
 }

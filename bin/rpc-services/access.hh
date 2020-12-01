@@ -8,8 +8,8 @@ struct stream_t;
 class Access: public vlc::StreamReceiver
 {
 public:
-    Access(rpc::Channel* chan, std::uint64_t object_id, stream_t* access)
-        : vlc::StreamReceiver(chan, object_id), access_(access)
+    Access(stream_t* access)
+        : access_(access)
     {}
 
     bool read(std::size_t length, std::int64_t* status, std::vector<std::uint8_t>* buffer) override;
