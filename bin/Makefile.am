@@ -93,7 +93,8 @@ vlc_static_LDFLAGS = $(vlc_LDFLAGS) -no-install -static
 #
 if HAVE_RPC
 vlc_access_service_SOURCES = rpc-services/vlc-access-service.cpp \
-							 rpc-services/access.cpp
+							 rpc-services/access.cpp \
+							 rpc-services/accessfactory.cpp
 vlc_access_service_CFLAGS = $(AM_CFLAGS) \
 	-DTOP_BUILDDIR=\"$$(cd "$(top_builddir)"; pwd)\" \
 	-DTOP_SRCDIR=\"$$(cd "$(top_srcdir)"; pwd)\" \

@@ -1,0 +1,20 @@
+namespace vlc
+{
+    struct Block
+    {
+        vec<u8> buffer;
+        u32 flags;
+        usize nb_samples;
+        i64 pts;
+        i64 dts;
+        i64 length;
+    }
+
+    interface Stream
+    {
+        read(usize length) -> (i64 status, vec<u8> buffer);
+        block() -> (u8 eof, optional<Block> block);
+        seek(u64 offset) -> (i32 status);
+        destroy();
+    }
+}
