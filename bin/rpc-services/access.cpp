@@ -1,11 +1,12 @@
-#include "access.hh"
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include <vlc_common.h>
 #include <vlc_stream.h>
+
+#include <cstdio>
+#include "access.hh"
 
 bool Access::read(std::uint64_t length, std::int64_t* status, std::vector<std::uint8_t>* buffer)
 {
