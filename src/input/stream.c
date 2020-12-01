@@ -151,6 +151,19 @@ stream_t *(vlc_stream_NewURL)(vlc_object_t *p_parent, const char *psz_url)
     return s;
 }
 
+stream_t *(vlc_stream_NewURLEx)(vlc_object_t *p_parent, const char *psz_url, bool preparse)
+{
+    if( !psz_url )
+        return NULL;
+
+    stream_t *s = stream_AccessNew( p_parent, NULL, NULL, preparse, psz_url );
+    if( s == NULL )
+        msg_Err( p_parent, "no suitable access module for `%s'", psz_url );
+    else
+        s = stream_FilterAutoNew(s);
+    return s;
+}
+
 stream_t *(vlc_stream_NewMRL)(vlc_object_t* parent, const char* mrl )
 {
     stream_t* stream = vlc_stream_NewURL( parent, mrl );

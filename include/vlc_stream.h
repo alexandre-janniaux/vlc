@@ -429,6 +429,16 @@ VLC_API stream_t * vlc_stream_NewURL(vlc_object_t *obj, const char *url)
 VLC_USED;
 #define vlc_stream_NewURL(a, b) vlc_stream_NewURL(VLC_OBJECT(a), b)
 
+
+/**
+ * Create a stream_t reading from a URL but with more parameters.
+ * XXX: Temporary hack.
+ */
+VLC_API stream_t * vlc_stream_NewURLEx(vlc_object_t *obj, const char *url, bool preparse)
+VLC_USED;
+#define vlc_stream_NewURLEx(a, b, c) vlc_stream_NewURLEx(VLC_OBJECT(a), b, c)
+
+
 /**
  * \defgroup stream_fifo FIFO stream
  * In-memory anonymous pipe
