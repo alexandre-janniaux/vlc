@@ -1,5 +1,7 @@
 # Building vlc
-#
+
+AUTOMAKE_OPTIONS = subdir-objects
+
 if BUILD_VLC
 if HAVE_OSX
 bin_PROGRAMS = vlc-osx

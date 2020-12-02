@@ -4,6 +4,8 @@
 
 AUTOMAKE_OPTIONS = subdir-objects
 
+SUBDIRS = rpc
+
 NULL =
 EXTRA_DIST = \
 	vlc-plugin.pc.in \
@@ -550,6 +552,10 @@ libvlccore_objc_la_OBJCFLAGS = $(AM_OBJCFLAGS) -fobjc-arc
 libvlccore_objc_la_LDFLAGS = -static
 libvlccore_la_LIBADD += libvlccore_objc.la
 libvlccore_la_LDFLAGS +=  -Wl,-framework,Foundation -Xlinker -install_name -Xlinker @rpath/libvlccore.dylib -Wl,-U,_vlc_static_modules
+endif
+if HAVE_RPC
+libvlccore_la_LIBADD += rpc/libvlcrpc.la
+libvlccore_la_LDFLAGS += -lstdc++
 endif
 
 libvlc_win32_rc.$(OBJEXT): libvlc_win32_rc.rc $(top_srcdir)/extras/package/win32/libvlc.dll.manifest

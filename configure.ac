@@ -4641,6 +4641,7 @@ AC_CONFIG_FILES([
   compat/Makefile
   rpc/Makefile
   src/Makefile
+  src/rpc/Makefile
   lib/Makefile
   bin/Makefile
   test/Makefile
