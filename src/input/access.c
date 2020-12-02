@@ -37,6 +37,8 @@
 #include "stream.h"
 #include "input_internal.h"
 
+#include "../rpc/broker.h"
+
 struct vlc_access_private
 {
     module_t *module;
@@ -117,6 +119,16 @@ static stream_t *access_New(vlc_object_t *parent, input_thread_t *input,
     if (unlikely(access == NULL))
         return NULL;
 
+    if (var_InheritBool(access, "rpc"))
+    {
+        int id = vlc_broker_CreateAccess(mrl, preparsing);
+
+        if (id == -1)
+            goto error;
+
+        access->object_id = id;
+    }
+
     access->p_input_item = input ? input_GetItem(input) : NULL;
     access->out = out;
     access->psz_name = NULL;
@@ -127,6 +139,23 @@ static stream_t *access_New(vlc_object_t *parent, input_thread_t *input,
 
     if (unlikely(access->psz_url == NULL))
         goto error;
+
+#define INSTALL_HOOK(obj, pf, fn) obj->pf_ ## pf = fn;
+
+    // Install function hooks
+    if (var_InheritBool(access, "rpc"))
+    {
+        INSTALL_HOOK(access, read, vlc_RemoteStream_Read);
+        INSTALL_HOOK(access, block, vlc_RemoteStream_Block);
+        INSTALL_HOOK(access, readdir, vlc_RemoteStream_Readdir);
+        INSTALL_HOOK(access, demux, vlc_RemoteStream_Demux);
+        INSTALL_HOOK(access, seek, vlc_RemoteStream_Seek);
+        INSTALL_HOOK(access, control, vlc_RemoteStream_Control);
+
+        return access;
+    }
+
+#undef INSTALL_HOOK
 
     while (redirc < MAX_REDIR)
     {

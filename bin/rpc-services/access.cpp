@@ -12,6 +12,7 @@ bool Access::read(std::uint64_t length, std::int64_t* status, std::vector<std::u
 {
     buffer->resize(length);
     *status = vlc_stream_Read(access_, buffer->data(), buffer->size());
+    std::printf("[ACCESS] Read(length=%lu) = %li\n", length, *status);
 
     return true;
 }
@@ -42,12 +43,15 @@ bool Access::block(std::uint8_t* eof, std::optional<vlc::Block>* result_block)
 
     *eof = vlc_stream_Eof(access_);
 
+    std::printf("[ACCESS] Block(); eof = %u\n", *eof);
+
     return true;
 }
 
 bool Access::seek(std::uint64_t offset, std::int32_t* status)
 {
     *status = vlc_stream_Seek(access_, offset);
+    std::printf("[ACCESS] Seed(offset=%lu) = %i\n", offset, *status);
     return true;
 }
 
