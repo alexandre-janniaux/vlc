@@ -103,6 +103,17 @@ static const char *const ppsz_snap_formats[] =
     "When this is enabled, the interface will show a dialog box each time " \
     "some user input is required." )
 
+/*****************************************************************************
+ * RPC
+ ****************************************************************************/
+#define RPC_CAT_LONGTEXT N_( \
+    "These options are used by the rpc subsystem to configure itself." )
+
+#define RPC_ENABLED_TEXT N_("Enable the rpc subsystem")
+#define RPC_ENABLED_LONGTEXT N_ ( \
+        "This option when used alone will consider the current process as a" \
+        "broker." )
+
 
 /*****************************************************************************
  * Audio
@@ -1534,6 +1545,11 @@ static const char *const mouse_wheel_texts[] = {
  */
 
 vlc_module_begin ()
+/* RPC options */
+    set_category( CAT_ADVANCED )
+    add_category_hint( N_("rpc"), RPC_CAT_LONGTEXT)
+    add_bool( "rpc", false, RPC_ENABLED_TEXT, RPC_ENABLED_LONGTEXT, true)
+
 /* Audio options */
     set_category( CAT_AUDIO )
     set_subcategory( SUBCAT_AUDIO_GENERAL )

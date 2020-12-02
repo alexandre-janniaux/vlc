@@ -79,7 +79,17 @@ static void GetFilenames  ( libvlc_int_t *, unsigned, const char *const [] );
 
 static int libvlc_InitBroker(libvlc_int_t* p_libvlc)
 {
-    vlc_broker_Init();
+    if (!var_InheritBool(p_libvlc, "rpc"))
+        return 0;
+
+    if (vlc_broker_Init() == -1)
+    {
+        msg_Err(p_libvlc, "[BROKER] Could not start broker");
+        return -1;
+    }
+
+    msg_Dbg(p_libvlc, "[BROKER] Broker started");
+
     return 0;
 }
 
