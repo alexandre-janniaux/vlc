@@ -32,7 +32,6 @@ bool Access::block(std::uint8_t* eof, std::optional<vlc::Block>* result_block)
         tmp_block.dts = block->i_dts;
         tmp_block.length = block->i_length;
 
-        *eof = vlc_stream_Eof(access_);
         *result_block = std::move(tmp_block);
         block_Release(block);
     }

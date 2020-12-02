@@ -75,6 +75,9 @@ struct stream_t
     /* es output */
     es_out_t    *out;   /* our p_es_out */
 
+    /* Associated rpc object id */
+    size_t object_id;
+
     /**
      * Read data.
      *

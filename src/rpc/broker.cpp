@@ -1,15 +1,20 @@
 #include <thread>
+#include <vector>
 #include <filesystem>
 #include <charconv>
 #include <cstdio>
+#include <cstring>
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+
 #include "protoipc/router.hh"
 #include "protorpc/channel.hh"
-#include "broker.h"
 #include "vlc_rpc/objectfactory.sidl.hh"
+#include "vlc_rpc/stream.sidl.hh"
+#include "broker.h"
 
 namespace
 {
@@ -19,6 +24,7 @@ static rpc::PortId broker_port_id = 0;
 
 rpc::Proxy<vlc::ObjectFactoryProxy> access_factory = nullptr;
 rpc::PortId access_factory_port = 0;
+std::vector<rpc::Proxy<vlc::StreamProxy>> remote_streams_;
 
 bool resolve_helper_path(const char* program_name, std::string& output)
 {
@@ -118,6 +124,18 @@ rpc::PortId vlc_broker_CreateProcess(const char* program_name)
 
     return child_port_id;
 }
+
+rpc::Proxy<vlc::StreamProxy> get_stream_for_id(size_t id)
+{
+    for (auto& obj : remote_streams_)
+    {
+        if (obj->id() == id)
+            return obj;
+    }
+
+    return nullptr;
+}
+
 }
 
 int vlc_broker_Init(void)
@@ -167,5 +185,78 @@ int vlc_broker_CreateAccess(const char* url, bool preparse)
     std::printf("[BROKER] Created access for url: %s (port: %lu, object id: %lu)\n",
             url, access_factory_port, access_obj);
 
-    return 0;
+    // We create the proxy and store the id for future use
+    auto proxy = broker_channel->connect<vlc::StreamProxy>(access_factory_port, access_obj);
+    remote_streams_.push_back(proxy);
+
+    return proxy->id();
 }
+
+/*
+ * Stream apis.
+ */
+int vlc_RemoteStream_Read(stream_t* s, void* buf, size_t len)
+{
+    auto stream = get_stream_for_id(s->object_id);
+
+    if (!stream)
+        return -1;
+
+    std::vector<std::uint8_t> data;
+    int64_t status = 0;
+
+    if (!stream->read(len, &status, &data))
+        return -1;
+
+    std::memcpy(buf, data.data(), data.size());
+
+    return status;
+}
+
+int vlc_RemoteStream_Seek(stream_t* s, uint64_t offset)
+{
+    auto stream = get_stream_for_id(s->object_id);
+
+    if (!stream)
+        return -1;
+
+    int32_t status = 0;
+
+    if (!stream->seek(offset, &status))
+        return -1;
+
+    return status;
+}
+
+block_t* vlc_RemoteStream_Block(stream_t* s, bool* out_eof)
+{
+    auto stream = get_stream_for_id(s->object_id);
+
+    if (!stream)
+        return NULL;
+
+    std::optional<vlc::Block> block;
+    std::uint8_t eof = 0;
+
+    if (!stream->block(&eof, &block))
+        return NULL;
+
+    *out_eof = eof;
+
+    if (!block)
+        return NULL;
+
+    block_t* result = block_Alloc(block->buffer.size());
+    result->i_flags = block->flags;
+    result->i_nb_samples = block->nb_samples;
+    result->i_pts = block->pts;
+    result->i_dts = block->dts;
+    result->i_length = block->length;
+
+    std::memcpy(result->p_buffer, block->buffer.data(), block->buffer.size());
+
+    return result;
+}
+
+void vlc_RemoteStream_Destroy(stream_t* s)
+{}

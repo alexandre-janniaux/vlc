@@ -73,7 +73,7 @@ bool AccessFactory::create(std::string type, std::vector<std::string> options, s
 
     std::printf("[ACCESSFACTORY] Creating access for url: %s\n", file_url.c_str());
 
-    stream_t* stream = capi_vlc_stream_NewURLEx(vlc_instance_, file_url.c_str(), preparse == "true");
+    stream_t* stream = capi_vlc_stream_NewURLEx(vlc_instance_, file_url.c_str(), preparse == "preparse");
 
     if (!stream)
     {
