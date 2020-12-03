@@ -83,22 +83,19 @@ rpc::PortId vlc_broker_CreateProcess(const char* program_name)
     if (!resolve_helper_path(program_name, bin_path))
         return 0;
 
-    int socks[2];
+    // Create the ports for communication with the child process.
+    ipc::Port tmp;
+    ipc::Port child_to_broker;
 
-    if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) == -1)
-        return 0; // Port cannot be 0 as it is the broker
-
-    // We don't want child processes to inherit the broker's fds.
-    int child_fd = fcntl(socks[0], F_DUPFD_CLOEXEC, 0);
-
-    if (child_fd == -1)
+    if (!ipc::Port::create_pair(tmp, child_to_broker))
         return 0;
 
-    close(socks[0]);
+    ipc::Port broker_to_child(fcntl(tmp.handle(), F_DUPFD_CLOEXEC, 0));
 
-    ipc::Port broker_to_child(child_fd);
-    ipc::Port child_to_broker(socks[1]);
+    if (broker_to_child.handle() == -1)
+        return 0;
 
+    tmp.close();
     rpc::PortId child_port_id = main_router->add_port(broker_to_child);
 
     pid_t pid = fork();
@@ -111,7 +108,7 @@ rpc::PortId vlc_broker_CreateProcess(const char* program_name)
         char fd_str[32] = {0};
         char channel_port_str[32] = {0};
 
-        std::to_chars(fd_str, fd_str + sizeof(fd_str), socks[1]);
+        std::to_chars(fd_str, fd_str + sizeof(fd_str), child_to_broker.handle());
         std::to_chars(channel_port_str, channel_port_str + sizeof(channel_port_str), child_port_id);
 
         execl(bin_path.c_str(),
@@ -123,7 +120,7 @@ rpc::PortId vlc_broker_CreateProcess(const char* program_name)
         throw std::runtime_error("execl failed");
     }
 
-    close(socks[1]);
+    child_to_broker.close();
 
     return child_port_id;
 }
@@ -143,15 +140,15 @@ rpc::Proxy<vlc::StreamProxy> get_stream_for_id(size_t id)
 
 int vlc_broker_Init(void)
 {
-    int broker_socks[2];
-    int err = socketpair(AF_UNIX, SOCK_DGRAM, 0, broker_socks);
+    ipc::Port router_to_broker;
+    ipc::Port broker_to_router;
 
-    if (err == -1)
+    if (!ipc::Port::create_pair(router_to_broker, broker_to_router))
         return -1;
 
     main_router = new ipc::Router();
-    broker_port_id = main_router->add_port(ipc::Port(broker_socks[0]));
-    broker_channel = new rpc::Channel(broker_port_id, ipc::Port(broker_socks[1]));
+    broker_port_id = main_router->add_port(router_to_broker);
+    broker_channel = new rpc::Channel(broker_port_id, broker_to_router);
 
     std::thread router_thread([&]() {
         main_router->loop();
