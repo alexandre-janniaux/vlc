@@ -11,6 +11,7 @@
 #include "protorpc/channel.hh"
 #include "accessfactory.hh"
 #include "access.hh"
+#include "control.hh"
 
 #include "capi.h"
 
@@ -53,12 +54,12 @@ AccessFactory::AccessFactory(rpc::Channel* chan)
         throw std::runtime_error("[ACCESSFACTORY] Could not create vlc instance");
 }
 
-bool AccessFactory::create(std::string type, std::vector<std::string> options, std::uint64_t* receiver_id)
+bool AccessFactory::create(std::string type, std::vector<std::string> options, std::vector<std::uint64_t>* receiver_ids)
 {
     if (type != "access")
     {
         std::printf("[ACCESSFACTORY] Invalid object type requested: %s\n", type.c_str());
-        *receiver_id = 0; // 0 is not possible as the Factory is the object 0
+        *receiver_ids = {};
         return true;
     }
 
@@ -77,12 +78,13 @@ bool AccessFactory::create(std::string type, std::vector<std::string> options, s
 
     if (!stream)
     {
-        *receiver_id = 0;
+        *receiver_ids = {};
         return true;
     }
 
     rpc::ObjectId access_id = channel_->bind<Access>(stream);
-    *receiver_id = access_id;
+    rpc::ObjectId control_id = channel_->bind<Control>(stream);
+    *receiver_ids = {access_id, control_id};
 
     std::printf("[ACCESSFACTORY] Created access id: %lu\n", access_id);
 

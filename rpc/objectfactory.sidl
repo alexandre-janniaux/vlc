@@ -2,6 +2,6 @@ namespace vlc
 {
     interface ObjectFactory
     {
-        create(string type, vec<string> options) -> (u64 receiver_id);
+        create(string type, vec<string> options) -> (vec<u64> receiver_ids);
     }
 }

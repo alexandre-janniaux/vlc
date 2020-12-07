@@ -95,6 +95,7 @@ vlc_static_LDFLAGS = $(vlc_LDFLAGS) -no-install -static
 #
 if HAVE_RPC
 vlc_access_service_SOURCES = rpc-services/vlc-access-service.c \
+							 rpc-services/control.cpp \
 							 rpc-services/access.cpp \
 							 rpc-services/accessfactory.cpp \
 							 rpc-services/capi.c

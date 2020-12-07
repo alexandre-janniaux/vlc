@@ -18,7 +18,7 @@ class AccessFactory: public vlc::ObjectFactoryReceiver
 {
 public:
     AccessFactory(rpc::Channel* chan);
-    bool create(std::string type, std::vector<std::string> options, std::uint64_t* receiver_id) override;
+    bool create(std::string type, std::vector<std::string> options, std::vector<std::uint64_t>* receiver_ids) override;
 
 private:
     rpc::Channel* channel_;
