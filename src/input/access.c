@@ -322,7 +322,7 @@ stream_t *stream_AccessNew(vlc_object_t *parent, input_thread_t *input,
 
     stream_t *s;
 
-    if (access->pf_block != NULL || access->pf_read != NULL)
+    if ((access->pf_block != NULL || access->pf_read != NULL) && !var_InheritBool(parent, "rpc"))
     {
         struct vlc_access_stream_private *priv;
         s = vlc_stream_CustomNew(VLC_OBJECT(access), AStreamDestroy,
