@@ -75,8 +75,11 @@ struct stream_t
     /* es output */
     es_out_t    *out;   /* our p_es_out */
 
-    /* Associated rpc object id */
-    size_t object_id;
+    /* Opaque pointer to object proxy */
+    void *object_proxy;
+
+    /* Object pointer to object control proxy */
+    void *control_proxy;
 
     /**
      * Read data.

@@ -24,28 +24,8 @@ static ipc::Router* main_router = nullptr;
 static rpc::Channel* broker_channel = nullptr;
 static rpc::PortId broker_port_id = 0;
 
-// XXX: Temporary hack
-struct RemoteStream
-{
-    using stream_proxy_t = rpc::Proxy<vlc::StreamProxy>;
-    using control_proxy_t = rpc::Proxy<vlc::StreamControlProxy>;
-
-    RemoteStream(stream_proxy_t s, control_proxy_t c)
-        : stream(s), control(c)
-    {}
-
-    rpc::ObjectId id() const
-    {
-        return stream->id();
-    }
-
-    stream_proxy_t stream;
-    control_proxy_t control;
-};
-
 rpc::Proxy<vlc::ObjectFactoryProxy> access_factory = nullptr;
 rpc::PortId access_factory_port = 0;
-std::vector<RemoteStream> remote_streams_;
 std::mutex remote_stream_lock_;
 
 
@@ -146,28 +126,6 @@ rpc::PortId vlc_broker_CreateProcess(const char* program_name)
     return child_port_id;
 }
 
-rpc::Proxy<vlc::StreamProxy> get_stream_for_id(size_t id)
-{
-    for (auto& obj : remote_streams_)
-    {
-        if (obj.id() == id)
-            return obj.stream;
-    }
-
-    return nullptr;
-}
-
-rpc::Proxy<vlc::StreamControlProxy> get_control_for_id(size_t id)
-{
-    for (auto& obj : remote_streams_)
-    {
-        if (obj.id() == id)
-            return obj.control;
-    }
-
-    return nullptr;
-}
-
 }
 
 int vlc_broker_Init(void)
@@ -191,7 +149,7 @@ int vlc_broker_Init(void)
     return 0;
 }
 
-int vlc_broker_CreateAccess(const char* url, bool preparse)
+int vlc_broker_CreateAccess(stream_t* s, const char* url, bool preparse)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
 
@@ -232,9 +190,10 @@ int vlc_broker_CreateAccess(const char* url, bool preparse)
     auto access_proxy = broker_channel->connect<vlc::StreamProxy>(access_factory_port, access_object);
     auto control_proxy = broker_channel->connect<vlc::StreamControlProxy>(access_factory_port, control_object);
 
-    remote_streams_.emplace_back(access_proxy, control_proxy);
+    s->object_proxy = new rpc::Proxy<vlc::StreamProxy>(std::move(access_proxy));
+    s->control_proxy = new rpc::Proxy<vlc::StreamControlProxy>(std::move(control_proxy));
 
-    return access_proxy->id();
+    return 0;
 }
 
 /*
@@ -243,12 +202,9 @@ int vlc_broker_CreateAccess(const char* url, bool preparse)
 ssize_t vlc_RemoteStream_Read(stream_t* s, void* buf, size_t len)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto stream = get_stream_for_id(s->object_id);
+    auto& stream = *reinterpret_cast<rpc::Proxy<vlc::StreamProxy>*>(s->object_proxy);
 
-    if (!stream)
-        return -1;
-
-    std::printf("[STREAM-PROXY] Read request to #%lu\n", s->object_id);
+    std::printf("[STREAM-PROXY] Read request to #%lu\n", stream->remote_id());
     std::vector<std::uint8_t> data;
     int64_t status = 0;
 
@@ -263,12 +219,9 @@ ssize_t vlc_RemoteStream_Read(stream_t* s, void* buf, size_t len)
 int vlc_RemoteStream_Seek(stream_t* s, uint64_t offset)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto stream = get_stream_for_id(s->object_id);
+    auto& stream = *reinterpret_cast<rpc::Proxy<vlc::StreamProxy>*>(s->object_proxy);
 
-    if (!stream)
-        return -1;
-
-    std::printf("[STREAM-PROXY] Seek request to #%lu\n", s->object_id);
+    std::printf("[STREAM-PROXY] Seek request to #%lu\n", stream->remote_id());
     int32_t status = 0;
 
     if (!stream->seek(offset, &status))
@@ -280,12 +233,9 @@ int vlc_RemoteStream_Seek(stream_t* s, uint64_t offset)
 block_t* vlc_RemoteStream_Block(stream_t* s, bool* out_eof)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto stream = get_stream_for_id(s->object_id);
+    auto& stream = *reinterpret_cast<rpc::Proxy<vlc::StreamProxy>*>(s->object_proxy);
 
-    if (!stream)
-        return NULL;
-
-    std::printf("[STREAM-PROXY] Block #%lu\n", s->object_id);
+    std::printf("[STREAM-PROXY] Block #%lu\n", stream->remote_id());
     std::optional<vlc::Block> block;
     std::uint8_t eof = 0;
 
@@ -312,34 +262,28 @@ block_t* vlc_RemoteStream_Block(stream_t* s, bool* out_eof)
 void vlc_RemoteStream_Destroy(stream_t* s)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto stream = get_stream_for_id(s->object_id);
+    auto& stream = *reinterpret_cast<rpc::Proxy<vlc::StreamProxy>*>(s->object_proxy);
 
-    if (!stream)
-        return;
-
-    std::printf("[STREAM-PROXY] Destroy #%lu\n", s->object_id);
+    std::printf("[STREAM-PROXY] Destroy #%lu\n", stream->remote_id());
     stream->destroy();
 }
 
 int vlc_RemoteStream_Readdir(stream_t* s, input_item_node_t*)
 {
-    std::printf("[STREAM-PROXY] Stream #%lu tried to call Readdir\n", s->object_id);
+    std::printf("[STREAM-PROXY] Stream %p tried to call Readdir\n", s->object_proxy);
     return -1;
 }
 
 int vlc_RemoteStream_Demux(stream_t* s)
 {
-    std::printf("[STREAM-PROXY] Stream #%lu tried to call Demux\n", s->object_id);
+    std::printf("[STREAM-PROXY] Stream %p tried to call Demux\n", s->object_proxy);
     return -1;
 }
 
 int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto control = get_control_for_id(s->object_id);
-
-    if (!control)
-        return VLC_EGENERIC;
+    auto& control = *reinterpret_cast<rpc::Proxy<vlc::StreamControlProxy>*>(s->control_proxy);
 
     std::int64_t ret = VLC_EGENERIC;
 

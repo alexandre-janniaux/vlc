@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 int vlc_broker_Init(void);
-int vlc_broker_CreateAccess(const char* url, bool preparse);
+int vlc_broker_CreateAccess(stream_t* s, const char* url, bool preparse);
 
 /*
  * stream apis

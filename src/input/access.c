@@ -121,12 +121,8 @@ static stream_t *access_New(vlc_object_t *parent, input_thread_t *input,
 
     if (var_InheritBool(access, "rpc"))
     {
-        int id = vlc_broker_CreateAccess(mrl, preparsing);
-
-        if (id == -1)
+        if (vlc_broker_CreateAccess(access, mrl, preparsing) == -1)
             goto error;
-
-        access->object_id = id;
     }
 
     access->p_input_item = input ? input_GetItem(input) : NULL;
