@@ -85,8 +85,6 @@ stream_t *vlc_stream_CustomNew(vlc_object_t *parent,
     s->pf_control = NULL;
     s->p_sys = NULL;
     s->p_input_item = NULL;
-    s->object_proxy = NULL;
-    s->control_proxy = NULL;
     assert(destroy != NULL);
     priv->destroy = destroy;
     priv->block = NULL;

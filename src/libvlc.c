@@ -77,22 +77,6 @@
  *****************************************************************************/
 static void GetFilenames  ( libvlc_int_t *, unsigned, const char *const [] );
 
-static int libvlc_InitBroker(libvlc_int_t* p_libvlc)
-{
-    if (!var_InheritBool(p_libvlc, "rpc"))
-        return 0;
-
-    if (vlc_broker_Init() == -1)
-    {
-        msg_Err(p_libvlc, "[BROKER] Could not start broker");
-        return -1;
-    }
-
-    msg_Dbg(p_libvlc, "[BROKER] Broker started");
-
-    return 0;
-}
-
 /**
  * Allocate a blank libvlc instance, also setting the exit handler.
  * Vlc's threading system must have been initialized first
@@ -340,12 +324,14 @@ int libvlc_InternalInit( libvlc_int_t *p_libvlc, int i_argc,
     /* Create a variable for showing the main interface */
     var_Create(p_libvlc, "intf-show", VLC_VAR_VOID);
 
+#ifdef HAVE_RPC
     /* Initialize the broker if rpc is enabled */
-    if (libvlc_InitBroker(p_libvlc) == -1)
+    if (var_InheritBool(p_libvlc, "rpc"))
     {
-        i_ret = VLC_EGENERIC;
-        goto error;
+        if (vlc_broker_Init(p_libvlc) == -1)
+            goto error;
     }
+#endif
 
     return VLC_SUCCESS;
 

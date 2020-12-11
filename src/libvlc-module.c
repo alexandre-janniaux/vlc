@@ -1545,10 +1545,12 @@ static const char *const mouse_wheel_texts[] = {
  */
 
 vlc_module_begin ()
+#ifdef HAVE_RPC
 /* RPC options */
     set_category( CAT_ADVANCED )
     add_category_hint( N_("rpc"), RPC_CAT_LONGTEXT)
     add_bool( "rpc", false, RPC_ENABLED_TEXT, RPC_ENABLED_LONGTEXT, true)
+#endif
 
 /* Audio options */
     set_category( CAT_AUDIO )

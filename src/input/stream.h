@@ -40,6 +40,12 @@ stream_t *vlc_stream_AttachmentNew(vlc_object_t *p_this,
                                    input_attachment_t *attachement);
 
 /**
+ * This function wraps a stream into prefetch/cache streams.
+ * For use by the rpc to wrap a proxyfied stream.
+ */
+stream_t *stream_SetupPrefetch(stream_t* access, input_thread_t* input);
+
+/**
  * This function creates a raw stream_t from an URL.
  */
 stream_t *stream_AccessNew(vlc_object_t *, input_thread_t *, es_out_t *, bool,

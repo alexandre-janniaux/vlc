@@ -76,6 +76,31 @@ demux_t *demux_New( vlc_object_t *p_obj, const char *psz_name,
     return demux_NewAdvanced( p_obj, NULL, psz_name, "", s, out, false );
 }
 
+demux_t *demux_NewEx ( vlc_object_t* p_obj, const char* psz_name,
+                    stream_t* s, es_out_t* out, bool b_preparsing )
+{
+    assert( s != NULL );
+
+    // Prepare the proxyfied stream by wrapping it into cache/prefetch streams.
+    s = stream_SetupPrefetch(s, NULL);
+
+    // Wrap it again with given target stream filters.
+    // XXX: This is mostly copy and paste from InputDemuxNew, refractor needed.
+    s = stream_FilterAutoNew(s);
+
+    if (s->pf_read == NULL && s->pf_block == NULL && s->pf_readdir == NULL)
+        return s;
+
+    char *psz_filters = var_InheritString(p_obj, "stream-filter");
+    if( psz_filters )
+    {
+        s = stream_FilterChainNew(s, psz_filters );
+        free( psz_filters );
+    }
+
+    return demux_NewAdvanced( p_obj, NULL, psz_name, "", s, out, b_preparsing);
+}
+
 struct vlc_demux_private
 {
     module_t *module;

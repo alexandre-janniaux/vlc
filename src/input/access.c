@@ -119,12 +119,6 @@ static stream_t *access_New(vlc_object_t *parent, input_thread_t *input,
     if (unlikely(access == NULL))
         return NULL;
 
-    if (var_InheritBool(access, "rpc"))
-    {
-        if (vlc_broker_CreateAccess(access, mrl, preparsing) == -1)
-            goto error;
-    }
-
     access->p_input_item = input ? input_GetItem(input) : NULL;
     access->out = out;
     access->psz_name = NULL;
@@ -136,22 +130,16 @@ static stream_t *access_New(vlc_object_t *parent, input_thread_t *input,
     if (unlikely(access->psz_url == NULL))
         goto error;
 
-#define INSTALL_HOOK(obj, pf, fn) obj->pf_ ## pf = fn;
-
-    // Install function hooks
+#ifdef HAVE_RPC
+    // Proxyfy the access
     if (var_InheritBool(access, "rpc"))
     {
-        INSTALL_HOOK(access, read, vlc_RemoteStream_Read);
-        INSTALL_HOOK(access, block, vlc_RemoteStream_Block);
-        INSTALL_HOOK(access, readdir, vlc_RemoteStream_Readdir);
-        INSTALL_HOOK(access, demux, vlc_RemoteStream_Demux);
-        INSTALL_HOOK(access, seek, vlc_RemoteStream_Seek);
-        INSTALL_HOOK(access, control, vlc_RemoteStream_Control);
+        if (vlc_broker_CreateAccess(access, mrl, preparsing) == -1)
+            goto error;
 
         return access;
     }
-
-#undef INSTALL_HOOK
+#endif
 
     while (redirc < MAX_REDIR)
     {
@@ -313,16 +301,13 @@ static void AStreamDestroy(stream_t *s)
     vlc_stream_Delete(access);
 }
 
-stream_t *stream_AccessNew(vlc_object_t *parent, input_thread_t *input,
-                           es_out_t *out, bool preparsing, const char *url)
+// Wraps a given stream by cache/prefetch stream filters.
+// Used by the rpc to wrap a proxyfied stream.
+stream_t *stream_SetupPrefetch(stream_t* access, input_thread_t* input)
 {
-    stream_t *access = access_New(parent, input, out, preparsing, url);
-    if (access == NULL)
-        return NULL;
+    stream_t* s = access;
 
-    stream_t *s;
-
-    if ((access->pf_block != NULL || access->pf_read != NULL) && !var_InheritBool(parent, "rpc"))
+    if ((access->pf_block != NULL || access->pf_read != NULL))
     {
         struct vlc_access_stream_private *priv;
         s = vlc_stream_CustomNew(VLC_OBJECT(access), AStreamDestroy,
@@ -356,8 +341,16 @@ stream_t *stream_AccessNew(vlc_object_t *parent, input_thread_t *input,
 
         s = stream_FilterChainNew(s, "prefetch,cache");
     }
-    else
-        s = access;
 
     return s;
+}
+
+stream_t *stream_AccessNew(vlc_object_t *parent, input_thread_t *input,
+                           es_out_t *out, bool preparsing, const char *url)
+{
+    stream_t *access = access_New(parent, input, out, preparsing, url);
+    if (access == NULL)
+        return NULL;
+
+    return stream_SetupPrefetch(access, input);
 }
