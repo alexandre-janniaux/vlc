@@ -44,8 +44,8 @@ AccessFactory::AccessFactory(rpc::Channel* chan)
         "-I",
         "dummy",
         "--no-media-library",
-        "--vout=dummy",
-        "--aout=dummy",
+        "--vout=none",
+        "--aout=none",
     };
 
     vlc_instance_ = capi_libvlc_new(sizeof(args) / sizeof(args[0]), args);
