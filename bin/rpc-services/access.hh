@@ -1,7 +1,7 @@
 #ifndef RPC_VLC_ACCESS_HH
 #define RPC_VLC_ACCESS_HH
 
-#include "vlc_rpc/stream.sidl.hh"
+#include "stream.sidl.hh"
 
 struct stream_t;
 

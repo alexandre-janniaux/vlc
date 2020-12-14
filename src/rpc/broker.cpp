@@ -13,9 +13,9 @@
 
 #include "protoipc/router.hh"
 #include "protorpc/channel.hh"
-#include "vlc_rpc/objectfactory.sidl.hh"
-#include "vlc_rpc/stream.sidl.hh"
-#include "vlc_rpc/streamcontrol.sidl.hh"
+#include "objectfactory.sidl.hh"
+#include "stream.sidl.hh"
+#include "streamcontrol.sidl.hh"
 #include "broker.h"
 
 namespace

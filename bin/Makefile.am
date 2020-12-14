@@ -94,21 +94,22 @@ vlc_static_LDFLAGS = $(vlc_LDFLAGS) -no-install -static
 # RPC Services
 #
 if HAVE_RPC
-vlc_access_service_SOURCES = rpc-services/vlc-access-service.c \
-							 rpc-services/control.cpp \
-							 rpc-services/access.cpp \
-							 rpc-services/accessfactory.cpp \
-							 rpc-services/capi.c
+vlc_access_service_SOURCES = \
+	rpc-services/vlc-access-service.c \
+	rpc-services/control.cpp \
+	rpc-services/access.cpp \
+	rpc-services/accessfactory.cpp \
+	rpc-services/capi.c
 vlc_access_service_CFLAGS = $(AM_CFLAGS) \
 	-DTOP_BUILDDIR=\"$$(cd "$(top_builddir)"; pwd)\" \
 	-DTOP_SRCDIR=\"$$(cd "$(top_srcdir)"; pwd)\" \
 	$(NULL)
 vlc_access_service_CXXFLAGS = $(AM_CXXFLAGS) \
-							  -I$(top_builddir)/rpc/include \
-							  -std=c++17
+	-I$(top_builddir)/rpc \
+	-std=c++17
 vlc_access_service_DEPENDENCIES = $(vlc_DEPENDENCIES)
 vlc_access_service_LDADD = $(vlc_LDADD) $(top_builddir)/rpc/libvlcrpc_messages.la
-vlc_access_service_LDFLAGS = $(vlc_LDFLAGS) -no-install -static -lstdc++
+vlc_access_service_LDFLAGS = $(vlc_LDFLAGS) -static
 endif
 
 #

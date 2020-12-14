@@ -10,7 +10,7 @@ void start_factory(int channel_fd, int port_id);
 #endif
 
 #ifdef __cplusplus
-#include "vlc_rpc/objectfactory.sidl.hh"
+#include "objectfactory.sidl.hh"
 
 struct libvlc_instance_t;
 

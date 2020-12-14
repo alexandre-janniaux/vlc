@@ -1,7 +1,7 @@
 #ifndef RPC_VLC_CONTROL_HH
 #define RPC_VLC_CONTROL_HH
 
-#include "vlc_rpc/streamcontrol.sidl.hh"
+#include "streamcontrol.sidl.hh"
 
 struct stream_t;
 
