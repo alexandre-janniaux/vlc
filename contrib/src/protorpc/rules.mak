@@ -1,4 +1,4 @@
-PROTORPC_HASH := 06f434f6352ab1d72db082417d4d0a17df4c4447
+PROTORPC_HASH := b9095ff079fed2c8a29a0876f4a4a092d6a6b3d1
 PROTORPC_VERSION := dev
 PROTORPC_GITURL := https://gitlab.com/Sideway/protorpc.git
 

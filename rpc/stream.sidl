@@ -1,5 +1,6 @@
 namespace vlc
 {
+    # IDL representation of vlc's block_t struct
     struct Block
     {
         vec<u8> buffer;
