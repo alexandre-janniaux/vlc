@@ -305,9 +305,21 @@ int vlc_broker_Init(libvlc_int_t* libvlc)
     if (!ipc::Port::create_pair(router_to_broker, broker_to_router))
         return -1;
 
+    ipc::Port router_to_esout;
+    ipc::Port esout_to_router;
+
+    if (!ipc::Port::create_pair(router_to_esout, esout_to_router))
+    {
+        router_to_broker.close();
+        broker_to_router.close();
+        return -1;
+    }
+
     auto* router = new ipc::Router;
     ipc::PortId broker_port_id = router->add_port(router_to_broker);
-    auto* chan = new rpc::Channel(broker_port_id, broker_to_router);
+    ipc::PortId esout_port_id = router->add_port(router_to_esout);
+    auto* broker_chan = new rpc::Channel(broker_port_id, broker_to_router);
+    auto* esout_chan = new rpc::Channel(esout_port_id, esout_to_router);
 
     std::thread router_thread([router]() {
         ipc::PortError error = router->loop();
@@ -321,16 +333,25 @@ int vlc_broker_Init(libvlc_int_t* libvlc)
             throw std::runtime_error("ipc router: Unknown error");
     });
 
+    std::thread esout_thread([esout_chan]() {
+        esout_chan->loop();
+    });
+
     // Add the rpc objects to the vlc instance
     var_Create(libvlc, "rpc-broker-router", VLC_VAR_ADDRESS);
     var_Create(libvlc, "rpc-broker-portid", VLC_VAR_INTEGER);
     var_Create(libvlc, "rpc-broker-channel", VLC_VAR_ADDRESS);
+    var_Create(libvlc, "rpc-esout-channel", VLC_VAR_ADDRESS);
+    var_Create(libvlc, "rpc-esout-portid", VLC_VAR_INTEGER);
 
     var_SetAddress(libvlc, "rpc-broker-router", router);
     var_SetInteger(libvlc, "rpc-broker-portid", broker_port_id);
-    var_SetAddress(libvlc, "rpc-broker-channel", chan);
+    var_SetAddress(libvlc, "rpc-broker-channel", broker_chan);
+    var_SetInteger(libvlc, "rpc-esout-portid", esout_port_id);
+    var_SetAddress(libvlc, "rpc-esout-channel", esout_chan);
 
     router_thread.detach();
+    esout_thread.detach();
 
     return 0;
 }
