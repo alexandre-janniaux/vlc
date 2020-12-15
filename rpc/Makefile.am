@@ -8,7 +8,9 @@ IDL_SOURCES = \
 	objectfactory.sidl.hh \
 	objectfactory.sidl.cpp \
 	streamcontrol.sidl.hh \
-	streamcontrol.sidl.cpp
+	streamcontrol.sidl.cpp \
+	esout.sidl.hh \
+	esout.sidl.cpp
 
 BUILT_SOURCES = $(IDL_SOURCES)
 CLEANFILES = $(BUILT_SOURCES)

@@ -1,0 +1,33 @@
+namespace vlc
+{
+    struct EsFormat
+    {
+        # Raw memcpy of es_format_t bytes
+        vec<u8> raw_struct;
+        # Extra languages data if it exists
+        optional<vec<u8>> extra_languages;
+        # Extra data if it exists
+        optional<vec<u8>> extra;
+    }
+
+    # XXX: block_t but we have a name collision with Block in stream.sidl.
+    #      As imports are not supported we need to duplicate the struct.
+    struct EsBlock
+    {
+        vec<u8> buffer;
+        u32 flags;
+        usize nb_samples;
+        i64 pts;
+        i64 dts;
+        i64 length;
+    }
+
+    interface EsOut
+    {
+        # fake_es_out_id > 0 == no error
+        add(optional<EsFormat> fmt) -> (u64 fake_es_out_id);
+        send(u64 fake_es_out_id, optional<EsBlock> block) -> (i32 ret);
+        del(u64 fake_es_out_id) -> ();
+        destroy() -> ();
+    }
+}
