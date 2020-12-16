@@ -35,6 +35,7 @@
 #include <vlc_modules.h>
 #include <vlc_strings.h>
 #include "input_internal.h"
+#include "../rpc/broker.h"
 
 typedef const struct
 {
@@ -173,6 +174,15 @@ demux_t *demux_NewAdvanced( vlc_object_t *p_obj, input_thread_t *p_input,
     p_demux->s              = s;
     p_demux->out            = out;
     p_demux->b_preparsing   = b_preparsing;
+
+    // vlc_broker_CreateDemux(p_demux)
+#ifdef HAVE_RPC
+    if (var_InheritBool(p_demux, "rpc"))
+    {
+        if (vlc_broker_CreateDemux(p_demux, module) == -1)
+            goto error;
+    }
+#endif
 
     p_demux->pf_readdir = NULL;
     p_demux->pf_demux   = NULL;

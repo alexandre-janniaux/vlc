@@ -99,7 +99,6 @@ vlc_access_service_SOURCES = \
 	rpc-services/control.cpp \
 	rpc-services/access.cpp \
 	rpc-services/accessfactory.cpp \
-	rpc-services/esout.cpp \
 	rpc-services/capi.c
 vlc_access_service_CFLAGS = $(AM_CFLAGS) \
 	-DTOP_BUILDDIR=\"$$(cd "$(top_builddir)"; pwd)\" \

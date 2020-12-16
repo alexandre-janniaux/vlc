@@ -134,7 +134,7 @@ static stream_t *access_New(vlc_object_t *parent, input_thread_t *input,
     // Proxyfy the access
     if (var_InheritBool(access, "rpc"))
     {
-        if (vlc_broker_CreateAccess(access, mrl, preparsing) == -1)
+        if (vlc_broker_CreateAccess(access) == -1)
             goto error;
 
         return access;
