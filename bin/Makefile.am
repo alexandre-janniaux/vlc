@@ -11,7 +11,7 @@ bin_PROGRAMS = vlc
 noinst_PROGRAMS = vlc-static
 
 if HAVE_RPC
-noinst_PROGRAMS += vlc-access-service
+noinst_PROGRAMS += vlc-access-service vlc-demux-service
 endif
 endif
 endif
@@ -110,6 +110,21 @@ vlc_access_service_CXXFLAGS = $(AM_CXXFLAGS) \
 vlc_access_service_DEPENDENCIES = $(vlc_DEPENDENCIES)
 vlc_access_service_LDADD = $(vlc_LDADD) $(top_builddir)/rpc/libvlcrpc_messages.la
 vlc_access_service_LDFLAGS = $(vlc_LDFLAGS) -static
+
+vlc_demux_service_SOURCES = \
+	rpc-services/vlc-demux-service.c \
+	rpc-services/demuxfactory.cpp \
+	rpc-services/capi.c
+vlc_demux_service_CFLAGS = $(AM_CFLAGS) \
+	-DTOP_BUILDDIR=\"$$(cd "$(top_builddir)"; pwd)\" \
+	-DTOP_SRCDIR=\"$$(cd "$(top_srcdir)"; pwd)\" \
+	$(NULL)
+vlc_demux_service_CXXFLAGS = $(AM_CXXFLAGS) \
+	-I$(top_builddir)/rpc \
+	-std=c++17
+vlc_demux_service_DEPENDENCIES = $(vlc_DEPENDENCIES)
+vlc_demux_service_LDADD = $(vlc_LDADD) $(top_builddir)/rpc/libvlcrpc_messages.la
+vlc_demux_service_LDFLAGS = $(vlc_LDFLAGS) -static
 endif
 
 #

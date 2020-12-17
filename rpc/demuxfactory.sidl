@@ -1,0 +1,25 @@
+namespace vlc
+{
+    struct RemoteAccess
+    {
+        u64 port;
+        u64 object_id;
+    }
+
+    struct RemoteControl
+    {
+        u64 port;
+        u64 object_id;
+    }
+
+    struct RemoteEsOut
+    {
+        u64 port;
+        u64 object_id;
+    }
+
+    interface DemuxFactory
+    {
+        create(RemoteAccess access, RemoteControl control, RemoteEsOut out) -> (u64 demux_object);
+    }
+}

@@ -10,15 +10,15 @@ void start_factory(int channel_fd, int port_id);
 #endif
 
 #ifdef __cplusplus
-#include "objectfactory.sidl.hh"
+#include "demuxfactory.sidl.hh"
 
 struct libvlc_instance_t;
 
-class DemuxFactory : public vlc::ObjectFactoryReceiver
+class DemuxFactory : public vlc::DemuxFactoryReceiver
 {
 public:
     DemuxFactory(rpc::Channel* chan);
-    bool create(std::string type, std::vector<std::string> options, std::vector<std::uint64_t>* receiver_ids) override;
+    bool create(vlc::RemoteAccess access, vlc::RemoteControl control, vlc::RemoteEsOut out, std::uint64_t* demux_object) override;
 
 private:
     rpc::Channel* channel_;
