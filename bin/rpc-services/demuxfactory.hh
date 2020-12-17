@@ -18,7 +18,8 @@ class DemuxFactory : public vlc::DemuxFactoryReceiver
 {
 public:
     DemuxFactory(rpc::Channel* chan);
-    bool create(vlc::RemoteAccess access, vlc::RemoteControl control, vlc::RemoteEsOut out, std::uint64_t* demux_object) override;
+    bool create(vlc::RemoteAccess access, vlc::RemoteControl control, vlc::RemoteEsOut out, std::string module,
+            bool preparsing, std::uint64_t* demux_object) override;
 
 private:
     rpc::Channel* channel_;

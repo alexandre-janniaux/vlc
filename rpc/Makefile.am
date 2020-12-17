@@ -11,6 +11,8 @@ IDL_SOURCES = \
 	streamfactory.sidl.cpp \
 	demuxfactory.sidl.hh \
 	demuxfactory.sidl.cpp \
+	demux.sidl.hh \
+	demux.sidl.cpp \
 	esout.sidl.hh \
 	esout.sidl.cpp
 
