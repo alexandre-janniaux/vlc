@@ -1,0 +1,7 @@
+namespace vlc
+{
+    interface StreamFactory
+    {
+        create(string url, bool preparsing) -> (u64 stream_object, u64 control_object);
+    }
+}

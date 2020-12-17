@@ -13,7 +13,7 @@
 
 #include "protoipc/router.hh"
 #include "protorpc/channel.hh"
-#include "objectfactory.sidl.hh"
+#include "streamfactory.sidl.hh"
 #include "stream.sidl.hh"
 #include "streamcontrol.sidl.hh"
 #include "broker.h"
@@ -400,7 +400,7 @@ int vlc_broker_CreateAccess(stream_t* s)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
     auto* broker_channel = static_cast<rpc::Channel*>(var_InheritAddress(s, "rpc-broker-channel"));
-    auto* access_factory_ptr = static_cast<rpc::Proxy<vlc::ObjectFactoryProxy>*>(var_InheritAddress(s, "rpc-broker-access_factory"));
+    auto* access_factory_ptr = static_cast<rpc::Proxy<vlc::StreamFactoryProxy>*>(var_InheritAddress(s, "rpc-broker-access_factory"));
 
     if (!access_factory_ptr)
     {
@@ -411,8 +411,8 @@ int vlc_broker_CreateAccess(stream_t* s)
             return -1;
 
         // We connect to the remote process ObjectFactory
-        auto factory = broker_channel->connect<vlc::ObjectFactoryProxy>(access_factory_port, 0);
-        access_factory_ptr = new rpc::Proxy<vlc::ObjectFactoryProxy>(std::move(factory));
+        auto factory = broker_channel->connect<vlc::StreamFactoryProxy>(access_factory_port, 0);
+        access_factory_ptr = new rpc::Proxy<vlc::StreamFactoryProxy>(std::move(factory));
 
         // Get the root object and register the access factory
         var_Create(libvlc, "rpc-broker-access_factory", VLC_VAR_ADDRESS);
@@ -426,21 +426,11 @@ int vlc_broker_CreateAccess(stream_t* s)
     auto& access_factory = *access_factory_ptr;
     ipc::PortId access_factory_port = var_InheritInteger(s, "rpc-broker-access_factory_port");
 
-    std::vector<rpc::ObjectId> objects;
-    std::vector<std::string> args = {
-        s->psz_url,
-        (s->b_preparsing) ? "preparse" : "nopreparse"
-    };
+    rpc::ObjectId access_object = 0;
+    rpc::ObjectId control_object = 0;
 
-    if (!access_factory->create("access", args, &objects))
+    if (!access_factory->create(s->psz_url, s->b_preparsing, &access_object, &control_object))
         return -1;
-
-    // We did not receive the couple (access object + control object)
-    if (objects.size() != 2)
-        return -1;
-
-    rpc::ObjectId access_object = objects[0];
-    rpc::ObjectId control_object = objects[1];
 
     std::printf("[BROKER] Created access for url: %s (port: %lu, object id: %lu)\n",
             s->psz_url, access_factory_port, access_object);
@@ -449,8 +439,8 @@ int vlc_broker_CreateAccess(stream_t* s)
 
     remote_stream_t remote_info;
     remote_info.port = access_factory_port;
-    remote_info.object_id = objects[0];
-    remote_info.control_id = objects[1];
+    remote_info.object_id = access_object;
+    remote_info.control_id = control_object;
 
     // Install the rpc proxies on the current channel and bind them to the C object.
     vlc_rpc_ProxifyStream(s, &remote_info, broker_channel);
@@ -658,23 +648,42 @@ int vlc_broker_CreateDemux(demux_t* demux, const char* module)
             control_proxy->remote_id());
     /*
     // Step 3: Initialize remote demux factory.
+    auto* broker_channel = static_cast<rpc::Channel*>(var_InheritAddress(demux, "rpc-broker-channel"));
     auto* demux_factory_ptr = static_cast<rpc::Proxy<vlc::ObjectFactoryProxy>*>(var_InheritAddress(demux, "rpc-broker-demux_factory"));
 
-    if (!demux_factory)
+    if (!demux_factory_ptr)
     {
         libvlc_int_t* libvlc = vlc_object_instance(demux);
-        // TODO: Do magic
+        ipc::PortId demux_factory_port = vlc_broker_CreateProcess(libvlc, "vlc-demux-service");
+
+        if (!demux_factory_port)
+            return -1;
+
+        auto factory = broker_channel->connect<vlc::ObjectFactoryProxy>(access_factory_port, 0);
+        demux_factory_ptr = new rpc::Proxy<vlc::ObjectFactoryProxy>(std::move(factory));
+
+        // Register the factory
+        var_Create(libvlc, "rpc-broker-demux_factory", VLC_VAR_ADDRESS);
+        var_Create(libvlc, "rpc-broker-demux_factory_port", VLC_VAR_INTEGER);
+
+        var_SetAddress(libvlc, "rpc-broker-demux_factory", demux_factory_ptr);
+        var_SetInteger(libvlc, "rpc-broker-demux_factory_port", demux_factory_port);
     }
 
     auto& demux_factory = *demux_factory_ptr;
-    std::vector<std::string> args = {
-        // access port
-        // access id
-        // access control port
-        // access control id
-        // esout port
-        // esout id
-    };
+    ipc::PortId demux_factory_port = var_InheritInteger(demux, "rpc-broker-demux_factory_port");
+
+    // auto& demux_factory = *demux_factory_ptr;
+    // std::vector<std::string> args = {
+    //     // access port
+    //     // access id
+    //     // access control port
+    //     // access control id
+    //     // esout port
+    //     // esout id
+    //     // module
+    //     // preparsing
+    // };
     */
 
     // Step 4: Serialize partial demux and create remote object.

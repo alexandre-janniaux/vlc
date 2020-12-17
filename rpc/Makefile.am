@@ -5,10 +5,10 @@ endif
 IDL_SOURCES = \
 	stream.sidl.hh \
 	stream.sidl.cpp \
-	objectfactory.sidl.hh \
-	objectfactory.sidl.cpp \
 	streamcontrol.sidl.hh \
 	streamcontrol.sidl.cpp \
+	streamfactory.sidl.hh \
+	streamfactory.sidl.cpp \
 	esout.sidl.hh \
 	esout.sidl.cpp
 

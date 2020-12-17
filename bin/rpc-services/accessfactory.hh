@@ -10,15 +10,15 @@ void start_factory(int channel_fd, int port_id);
 #endif
 
 #ifdef __cplusplus
-#include "objectfactory.sidl.hh"
+#include "streamfactory.sidl.hh"
 
 struct libvlc_instance_t;
 
-class AccessFactory: public vlc::ObjectFactoryReceiver
+class AccessFactory: public vlc::StreamFactoryReceiver
 {
 public:
     AccessFactory(rpc::Channel* chan);
-    bool create(std::string type, std::vector<std::string> options, std::vector<std::uint64_t>* receiver_ids) override;
+    bool create(std::string url, bool preparsing, std::uint64_t* stream_object, std::uint64_t* control_object) override;
 
 private:
     rpc::Channel* channel_;

@@ -54,39 +54,15 @@ AccessFactory::AccessFactory(rpc::Channel* chan)
         throw std::runtime_error("[ACCESSFACTORY] Could not create vlc instance");
 }
 
-bool AccessFactory::create(std::string type, std::vector<std::string> options, std::vector<std::uint64_t>* receiver_ids)
+bool AccessFactory::create(std::string url, bool preparsing, std::uint64_t* stream_object, std::uint64_t* control_object)
 {
-    if (type != "access")
-    {
-        std::printf("[ACCESSFACTORY] Invalid object type requested: %s\n", type.c_str());
-        *receiver_ids = {};
-        return true;
-    }
+    std::printf("[ACCESSFACTORY] Creating access for url: %s\n", url.c_str());
 
-    if (options.size() != 2)
-    {
-        std::printf("[ACCESSFACTORY] Expected arguments { url, preparse }\n");
-        return true;
-    }
+    stream_t* stream = capi_vlc_stream_NewURLEx(vlc_instance_, url.c_str(), preparsing);
+    *stream_object = channel_->bind<Access>(stream);
+    *control_object = channel_->bind<Control>(stream);
 
-    std::string file_url = options[0];
-    std::string preparse = options[1];
-
-    std::printf("[ACCESSFACTORY] Creating access for url: %s\n", file_url.c_str());
-
-    stream_t* stream = capi_vlc_stream_NewURLEx(vlc_instance_, file_url.c_str(), preparse == "preparse");
-
-    if (!stream)
-    {
-        *receiver_ids = {};
-        return true;
-    }
-
-    rpc::ObjectId access_id = channel_->bind<Access>(stream);
-    rpc::ObjectId control_id = channel_->bind<Control>(stream);
-    *receiver_ids = {access_id, control_id};
-
-    std::printf("[ACCESSFACTORY] Created access id: %lu\n", access_id);
+    std::printf("[ACCESSFACTORY] Created access id: %lu with control %lu\n", *stream_object, *control_object);
 
     return true;
 }
