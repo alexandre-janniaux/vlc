@@ -74,6 +74,16 @@ static void vlc_access_Destroy(stream_t *access)
     free(access->psz_name);
 }
 
+/*
+ * A proxified object has no module so we don't call the module destructor.
+ */
+static void vlc_rpc_access_Destroy(stream_t* access)
+{
+    struct vlc_access_private* priv = vlc_stream_Private(access);
+    free(access->psz_filepath);
+    free(access->psz_name);
+}
+
 #define MAX_REDIR 5
 
 static stream_t *accessNewAttachment(vlc_object_t *parent,
@@ -114,8 +124,19 @@ static stream_t *access_New(vlc_object_t *parent, input_thread_t *input,
     if (strncmp(mrl, "attachment://", 13) == 0)
         return accessNewAttachment(parent, input, mrl);
 
+#ifdef HAVE_RPC
+    void* destroy_fn = vlc_access_Destroy;
+
+    if (var_InheritBool(parent, "rpc"))
+        destroy_fn = vlc_rpc_access_Destroy;
+
+    stream_t *access = vlc_stream_CustomNew(parent, destroy_fn,
+            sizeof (*priv), "access");
+#else
     stream_t *access = vlc_stream_CustomNew(parent, vlc_access_Destroy,
                                             sizeof (*priv), "access");
+#endif
+
     if (unlikely(access == NULL))
         return NULL;
 
@@ -310,6 +331,7 @@ stream_t *stream_SetupPrefetch(stream_t* access, input_thread_t* input)
     if ((access->pf_block != NULL || access->pf_read != NULL))
     {
         struct vlc_access_stream_private *priv;
+
         s = vlc_stream_CustomNew(VLC_OBJECT(access), AStreamDestroy,
                                  sizeof(*priv), "stream");
 

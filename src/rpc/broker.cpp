@@ -342,6 +342,7 @@ int vlc_broker_Init(libvlc_int_t* libvlc)
     auto* router = new ipc::Router;
     ipc::PortId broker_port_id = router->add_port(router_to_broker);
     ipc::PortId esout_port_id = router->add_port(router_to_esout);
+
     auto* broker_chan = new rpc::Channel(broker_port_id, broker_to_router);
     auto* esout_chan = new rpc::Channel(esout_port_id, esout_to_router);
 
@@ -625,6 +626,8 @@ void vlc_rpc_ProxifyDemux(demux_t* local, remote_demux_t* remote, rpc::Channel* 
 
 int vlc_broker_CreateDemux(demux_t* demux, const char* module)
 {
+    std::lock_guard<std::mutex> lock(remote_stream_lock_);
+
     // Step 1: Create a esout rpc object for the demux.
     auto* esout_channel = reinterpret_cast<rpc::Channel*>(var_InheritAddress(demux, "rpc-esout-channel"));
     ipc::PortId esout_port = var_InheritInteger(demux, "rpc-esout-portid");
@@ -640,7 +643,7 @@ int vlc_broker_CreateDemux(demux_t* demux, const char* module)
     }
 
     rpc::Proxy<vlc::StreamProxy>& stream_proxy = stream_proxies->object_proxy;
-    rpc::Proxy<vlc::StreamControlProxy> control_proxy = stream_proxies->control_proxy;
+    rpc::Proxy<vlc::StreamControlProxy>& control_proxy = stream_proxies->control_proxy;
 
     std::printf("[BROKER] Using remote stream [object=(%lu,%lu), control=(%lu,%lu)] for demux\n",
             stream_proxy->remote_port(),
@@ -675,17 +678,21 @@ int vlc_broker_CreateDemux(demux_t* demux, const char* module)
     ipc::PortId demux_factory_port = var_InheritInteger(demux, "rpc-broker-demux_factory_port");
 
     // Step 4: Serialize partial demux and create remote object.
-    vlc::RemoteAccess remote_access = { stream_proxy->remote_id(), stream_proxy->remote_port() };
-    vlc::RemoteControl remote_control = { control_proxy->remote_id(), control_proxy->remote_port() };
-    vlc::RemoteEsOut remote_esout = { esout_id, esout_port };
+    vlc::RemoteAccess remote_access = { stream_proxy->remote_port(), stream_proxy->remote_id() };
+    vlc::RemoteControl remote_control = { control_proxy->remote_port(), control_proxy->remote_id() };
+    vlc::RemoteEsOut remote_esout = { esout_port, esout_id };
 
     rpc::ObjectId demux_object = 0;
+
+    std::printf("[BROKER] Demux factory [id=%lu, port=%lu]\n", demux_factory->remote_id(), demux_factory_port);
 
     if (!demux_factory->create(remote_access, remote_control, remote_esout, module, demux->b_preparsing, &demux_object))
     {
         std::printf("[BROKER] Call to DemuxFactory::create(...) failed\n");
         return -1;
     }
+
+    std::printf("[BROKER] demux object id: %lu\n", demux_object);
 
     // Step 5: Proxify the passed demux object
     // TODO: Cleanup, this is a bit repetitive

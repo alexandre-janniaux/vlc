@@ -21,6 +21,7 @@ extern "C" {
 #endif
 
 libvlc_instance_t* capi_libvlc_new(int argc, const char *const *argv);
+vlc_object_t* capi_libvlc_instance_obj(libvlc_instance_t* instance);
 stream_t* capi_vlc_stream_NewURLEx(libvlc_instance_t* vlc, const char* mrl, int preparse);
 demux_t* capi_vlc_demux_NewEx(vlc_object_t* obj, const char* name,
         stream_t* s, es_out_t* out, bool preparsing);

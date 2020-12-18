@@ -4,6 +4,7 @@
 
 #include <vlc_common.h>
 #include <vlc_demux.h>
+#include <vlc_stream.h>
 
 #include <stdexcept>
 #include <cstdio>
@@ -22,7 +23,7 @@ void start_factory(int channel_fd, int port_val)
     ipc::Port port(channel_fd);
     rpc::PortId port_id = port_val;
 
-    std::printf("[DEMUXFACTORY] Starting out of process demux factory [port_fd=%i, port_id%lu]\n",
+    std::printf("[DEMUXFACTORY] Starting out of process demux factory [port_fd=%i, port_id=%lu]\n",
             port.handle(),
             port_id);
 
@@ -56,6 +57,8 @@ DemuxFactory::DemuxFactory(rpc::Channel* chan)
 bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteControl control, vlc::RemoteEsOut out,
         std::string module, bool preparsing, std::uint64_t* demux_object)
 {
+    vlc_object_t* instance_obj = capi_libvlc_instance_obj(vlc_instance_);
+
     // We assume that the access and its control are in the same process (as it should be).
     remote_stream_t remote_access =
     {
@@ -64,7 +67,13 @@ bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteControl control, 
         access.port
     };
 
-    stream_t* remote_stream_obj = reinterpret_cast<stream_t*>(std::malloc(sizeof(stream_t)));
+    std::printf("[DEMUXFACTORY] Remote access [access_id=%lu, control_id=%lu, port=%lu]\n",
+            remote_access.object_id, remote_access.control_id, remote_access.port);
+
+    // Destroy ptr can be anything as it will be set by vlc_rpc_ProxifyStream
+    stream_t* remote_stream_obj = vlc_stream_CommonNew(instance_obj, (void (*)(stream_t*))0xdeadbeef);
+    remote_stream_obj->psz_url = "fake://lol";
+
     vlc_rpc_ProxifyStream(remote_stream_obj, &remote_access, channel_);
 
     remote_esout_t remote_esout =
@@ -73,11 +82,22 @@ bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteControl control, 
         out.port
     };
 
+    std::printf("[DEMUXFACTORY] Remote esout [esout_id=%lu, port=%lu]\n",
+            remote_esout.object_id, remote_esout.port);
+
     es_out_t* remote_esout_obj = vlc_rpc_ProxifyEsOut(&remote_esout, channel_);
 
-    // Now create the demux object
-    demux_t* result = capi_vlc_demux_NewEx(NULL, module.c_str(), remote_stream_obj, remote_esout_obj, preparsing);
+    std::printf("[DEMUXFACTORY] Proxified esout\n");
+    std::fflush(stdout);
+
+    demux_t* result = capi_vlc_demux_NewEx(instance_obj, module.c_str(), remote_stream_obj, remote_esout_obj, preparsing);
+
+    std::printf("[DEMUXFACTORY] Created the demux object: %p\n", result);
+    std::fflush(stdout);
+
     *demux_object = channel_->bind<Demux>(result);
+
+    std::printf("[DEMUXFACTORY] Created demux object [id=%lu]\n", *demux_object);
 
     return true;
 }

@@ -119,6 +119,17 @@ static void demux_DestroyDemux(demux_t *demux)
     vlc_stream_Delete(demux->s);
 }
 
+/*
+ * Destructor for proxified demux objects.
+ */
+static void vlc_rpc_demux_Destroy(demux_t *demux)
+{
+    free(demux->psz_filepath);
+    free(demux->psz_name);
+
+    assert(demux->s != NULL);
+}
+
 static int demux_Probe(void *func, bool forced, va_list ap)
 {
     int (*probe)(vlc_object_t *) = func;
@@ -145,8 +156,20 @@ demux_t *demux_NewAdvanced( vlc_object_t *p_obj, input_thread_t *p_input,
                             stream_t *s, es_out_t *out, bool b_preparsing )
 {
     struct vlc_demux_private *priv;
+
+
+#ifdef HAVE_RPC
+    void* destroy_fn = demux_DestroyDemux;
+
+    if (var_InheritBool(p_obj, "rpc"))
+        destroy_fn = vlc_rpc_demux_Destroy;
+
+    demux_t *p_demux = vlc_stream_CustomNew(p_obj, destroy_fn,
+                                            sizeof (*priv), "demux");
+#else
     demux_t *p_demux = vlc_stream_CustomNew(p_obj, demux_DestroyDemux,
                                             sizeof (*priv), "demux");
+#endif
 
     if (unlikely(p_demux == NULL))
         return NULL;
@@ -175,12 +198,13 @@ demux_t *demux_NewAdvanced( vlc_object_t *p_obj, input_thread_t *p_input,
     p_demux->out            = out;
     p_demux->b_preparsing   = b_preparsing;
 
-    // vlc_broker_CreateDemux(p_demux)
 #ifdef HAVE_RPC
     if (var_InheritBool(p_demux, "rpc"))
     {
         if (vlc_broker_CreateDemux(p_demux, module) == -1)
             goto error;
+
+        return p_demux;
     }
 #endif
 
