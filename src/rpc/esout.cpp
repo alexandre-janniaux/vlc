@@ -92,7 +92,6 @@ bool EsOut::send(std::uint64_t fake_es_out_id, std::optional<vlc::EsBlock> block
     std::memcpy(result->p_buffer, block->buffer.data(), block->buffer.size());
 
     *ret = es_out_Send(esout_, esout_id, result);
-    block_Release(result);
 
     return true;
 }

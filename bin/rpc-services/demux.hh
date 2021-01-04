@@ -9,7 +9,10 @@ typedef struct stream_t demux_t;
 class Demux : public vlc::DemuxReceiver
 {
 public:
-    Demux(demux_t* demux);
+    Demux(demux_t* demux)
+        : demux_(demux)
+    {}
+
     bool demux(std::int32_t* result) override;
 
 private:

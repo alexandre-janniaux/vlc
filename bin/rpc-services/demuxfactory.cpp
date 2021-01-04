@@ -11,6 +11,7 @@
 #include "protoipc/port.hh"
 #include "protorpc/channel.hh"
 #include "demuxfactory.hh"
+#include "demuxcontrol.hh"
 #include "demux.hh"
 
 // Big hax
@@ -55,7 +56,7 @@ DemuxFactory::DemuxFactory(rpc::Channel* chan)
 };
 
 bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteControl control, vlc::RemoteEsOut out,
-        std::string module, bool preparsing, std::uint64_t* demux_object)
+        std::string module, bool preparsing, std::uint64_t* demux_object, std::uint64_t* control_object)
 {
     vlc_object_t* instance_obj = capi_libvlc_instance_obj(vlc_instance_);
 
@@ -92,12 +93,10 @@ bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteControl control, 
 
     demux_t* result = capi_vlc_demux_NewEx(instance_obj, module.c_str(), remote_stream_obj, remote_esout_obj, preparsing);
 
-    std::printf("[DEMUXFACTORY] Created the demux object: %p\n", result);
-    std::fflush(stdout);
-
     *demux_object = channel_->bind<Demux>(result);
+    *control_object = channel_->bind<DemuxControl>(result);
 
-    std::printf("[DEMUXFACTORY] Created demux object [id=%lu]\n", *demux_object);
+    std::printf("[DEMUXFACTORY] Created demux id=%lu with control %lu\n", *demux_object, *control_object);
 
     return true;
 }

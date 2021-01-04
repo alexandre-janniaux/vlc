@@ -27,8 +27,11 @@ struct remote_esout_t
 
 struct remote_demux_t
 {
+    rpc::PortId port;
     remote_stream_t stream;
     remote_esout_t esout;
+    rpc::ObjectId object_id;
+    rpc::ObjectId control_id;
 };
 
 VLC_API void vlc_rpc_ProxifyStream(stream_t* local, remote_stream_t* remote, rpc::Channel* chan);

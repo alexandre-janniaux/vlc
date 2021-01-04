@@ -9,10 +9,6 @@
 
 #include "demux.hh"
 
-Demux::Demux(demux_t* demux)
-    : demux_(demux)
-{}
-
 bool Demux::demux(std::int32_t* result)
 {
     std::printf("[DEMUX] Demux() called\n");
