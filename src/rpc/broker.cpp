@@ -470,6 +470,7 @@ struct vlc_es_out_proxy_object
 
 es_out_id_t* vlc_RemoteEsOut_Add(es_out_t* out, input_source_t*, const es_format_t* fmt)
 {
+    std::lock_guard<std::mutex> lock(remote_stream_lock_);
     auto* esout = reinterpret_cast<vlc_es_out_proxy_object*>(out);
     auto& remote = esout->object;
     std::uint64_t fake_es_out_id = 0;
@@ -519,6 +520,7 @@ es_out_id_t* vlc_RemoteEsOut_Add(es_out_t* out, input_source_t*, const es_format
 
 int vlc_RemoteEsOut_Send(es_out_t* out, es_out_id_t* id, block_t* block)
 {
+    std::lock_guard<std::mutex> lock(remote_stream_lock_);
     auto* esout = reinterpret_cast<vlc_es_out_proxy_object*>(out);
     auto& remote = esout->object;
     std::uint64_t fake_es_out_id = reinterpret_cast<std::uint64_t>(id);
@@ -548,6 +550,7 @@ int vlc_RemoteEsOut_Send(es_out_t* out, es_out_id_t* id, block_t* block)
 
 void vlc_RemoteEsOut_Del(es_out_t* out, es_out_id_t* id)
 {
+    std::lock_guard<std::mutex> lock(remote_stream_lock_);
     auto* esout = reinterpret_cast<vlc_es_out_proxy_object*>(out);
     auto& remote = esout->object;
     std::uint64_t fake_es_out_id = reinterpret_cast<std::uint64_t>(id);
@@ -558,12 +561,14 @@ void vlc_RemoteEsOut_Del(es_out_t* out, es_out_id_t* id)
 
 int vlc_RemoteEsOut_Control(es_out_t*, input_source_t*, int query, va_list)
 {
+    std::lock_guard<std::mutex> lock(remote_stream_lock_);
     std::printf("[ESOUT-PROXY] Stubbed control command = %i\n", query);
     return VLC_EGENERIC;
 }
 
 void vlc_RemoteEsOut_Destroy(es_out_t* out)
 {
+    std::lock_guard<std::mutex> lock(remote_stream_lock_);
     std::printf("[ESOUT-PROXY] Destroy()\n");
     auto* esout = reinterpret_cast<vlc_es_out_proxy_object*>(out);
     auto& remote = esout->object;
@@ -609,6 +614,7 @@ int vlc_RemoteDemux_Readdir(stream_t*, input_item_node_t*)
 
 int vlc_RemoteDemux_Demux(stream_t* s)
 {
+    std::lock_guard<std::mutex> lock(remote_stream_lock_);
     std::printf("[DEMUX-PROXY] Demux()\n");
 
     auto* sys = reinterpret_cast<vlc_demux_proxy_objects*>(s->p_sys);
