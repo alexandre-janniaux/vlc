@@ -25,6 +25,7 @@ public:
     bool control_get_size(std::int64_t* status, std::uint64_t* result) override;
     bool control_get_pts_delay(std::int64_t* status, std::int64_t* result) override;
     bool control_set_pause_state(bool state, std::int64_t* status) override;
+    bool control_get_content_type(std::int64_t* status, std::optional<std::string>* type) override;
 
 private:
     stream_t* access_;

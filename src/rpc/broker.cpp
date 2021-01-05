@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -292,6 +293,21 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
 
             if (!control->control_set_pause_state(state, &ret))
                 return VLC_EGENERIC;
+
+            return ret;
+        }
+        case STREAM_GET_CONTENT_TYPE:
+        {
+            char** result = va_arg(args, char**);
+            std::optional<std::string> content_type;
+
+            if (!control->control_get_content_type(&ret, &content_type))
+                return VLC_EGENERIC;
+
+            if (content_type)
+                *result = strdup(content_type->c_str());
+            else
+                *result = NULL;
 
             return ret;
         }

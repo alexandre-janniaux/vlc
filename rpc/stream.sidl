@@ -26,5 +26,6 @@ namespace vlc
         control_get_size() -> (i64 status, u64 result);
         control_get_pts_delay() -> (i64 status, i64 result);
         control_set_pause_state(bool pause) -> (i64 status);
+        control_get_content_type() -> (i64 status, optional<string> result);
     }
 }

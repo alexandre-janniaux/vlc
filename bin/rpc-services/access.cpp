@@ -51,7 +51,7 @@ bool Access::block(std::uint8_t* eof, std::optional<vlc::Block>* result_block)
 bool Access::seek(std::uint64_t offset, std::int32_t* status)
 {
     *status = vlc_stream_Seek(access_, offset);
-    std::printf("[ACCESS] Seed(offset=%lu) = %i\n", offset, *status);
+    std::printf("[ACCESS] Seek(offset=%lu) = %i\n", offset, *status);
     return true;
 }
 
@@ -63,7 +63,6 @@ bool Access::destroy()
 bool Access::control_can_seek(std::int64_t* status, bool* result)
 {
     *status = vlc_stream_Control(access_, STREAM_CAN_SEEK, result);
-
     std::printf("[ACCESS] control can_seek(result=%i) = %li\n", *result, *status);
     return true;
 }
@@ -107,5 +106,20 @@ bool Access::control_set_pause_state(bool state, std::int64_t* status)
 {
     *status = vlc_stream_Control(access_, STREAM_SET_PAUSE_STATE, state);
     std::printf("[ACCESS] control set_pause_state(%i) = %li\n", state, *status);
+    return true;
+}
+
+bool Access::control_get_content_type(std::int64_t* status, std::optional<std::string>* type)
+{
+    char* content_type = NULL;
+    *status = vlc_stream_Control(access_, STREAM_GET_CONTENT_TYPE, &content_type);
+
+    if (content_type)
+    {
+        std::printf("[ACCESS] Got content type: %s\n", content_type);
+        *type = std::string(content_type);
+        std::free(content_type);
+    }
+
     return true;
 }
