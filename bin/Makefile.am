@@ -113,7 +113,6 @@ vlc_access_service_LDFLAGS = $(vlc_LDFLAGS) -static
 
 vlc_demux_service_SOURCES = \
 	rpc-services/vlc-demux-service.c \
-	rpc-services/demuxcontrol.cpp \
 	rpc-services/demuxfactory.cpp \
 	rpc-services/demux.cpp \
 	rpc-services/capi.c

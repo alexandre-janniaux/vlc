@@ -15,6 +15,13 @@ public:
 
     bool demux(std::int32_t* result) override;
 
+    // Control part
+    bool control_can_seek(std::int64_t* status, bool* result) override;
+    bool control_can_pause(std::int64_t* status, bool* result) override;
+    bool control_can_control_pace(std::int64_t* status, bool* result) override;
+    bool control_get_pts_delay(std::int64_t* status, std::int64_t* result) override;
+    bool control_set_pause_state(bool state, std::int64_t* status) override;
+
 private:
     demux_t* demux_;
 };

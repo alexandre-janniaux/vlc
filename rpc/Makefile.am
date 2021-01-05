@@ -13,8 +13,6 @@ IDL_SOURCES = \
 	demuxfactory.sidl.cpp \
 	demux.sidl.hh \
 	demux.sidl.cpp \
-	demuxcontrol.sidl.hh \
-	demuxcontrol.sidl.cpp \
 	esout.sidl.hh \
 	esout.sidl.cpp
 

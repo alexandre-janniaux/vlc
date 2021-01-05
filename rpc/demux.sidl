@@ -3,5 +3,12 @@ namespace vlc
     interface Demux
     {
         demux() -> (i32 result);
+
+        # Control part
+        control_can_seek() -> (i64 status, bool result);
+        control_can_pause() -> (i64 status, bool result);
+        control_can_control_pace() -> (i64 status, bool result);
+        control_get_pts_delay() -> (i64 status, i64 result);
+        control_set_pause_state(bool pause) -> (i64 status);
     }
 }
