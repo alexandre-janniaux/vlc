@@ -5,14 +5,12 @@ endif
 IDL_SOURCES = \
 	stream.sidl.hh \
 	stream.sidl.cpp \
-	streamcontrol.sidl.hh \
-	streamcontrol.sidl.cpp \
 	streamfactory.sidl.hh \
 	streamfactory.sidl.cpp \
-	demuxfactory.sidl.hh \
-	demuxfactory.sidl.cpp \
 	demux.sidl.hh \
 	demux.sidl.cpp \
+	demuxfactory.sidl.hh \
+	demuxfactory.sidl.cpp \
 	esout.sidl.hh \
 	esout.sidl.cpp
 

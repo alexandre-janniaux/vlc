@@ -14,9 +14,7 @@
 #include "protoipc/router.hh"
 #include "protorpc/channel.hh"
 #include "streamfactory.sidl.hh"
-#include "streamcontrol.sidl.hh"
 #include "demuxfactory.sidl.hh"
-#include "demuxcontrol.sidl.hh"
 #include "demux.sidl.hh"
 #include "stream.sidl.hh"
 #include "broker.h"
@@ -29,7 +27,6 @@ namespace
 struct vlc_stream_proxy_objects
 {
     rpc::Proxy<vlc::StreamProxy> object_proxy;
-    rpc::Proxy<vlc::StreamControlProxy> control_proxy;
 };
 
 struct vlc_demux_proxy_objects
@@ -229,7 +226,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
     auto* sys = reinterpret_cast<vlc_stream_proxy_objects*>(s->p_sys);
-    auto& control = sys->control_proxy;
+    auto& control = sys->object_proxy;
 
     std::int64_t ret = VLC_EGENERIC;
 
@@ -239,7 +236,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->can_seek(&ret, result))
+            if (!control->control_can_seek(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -248,7 +245,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->can_fastseek(&ret, result))
+            if (!control->control_can_fastseek(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -257,7 +254,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->can_pause(&ret, result))
+            if (!control->control_can_pause(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -266,7 +263,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->can_control_pace(&ret, result))
+            if (!control->control_can_control_pace(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -275,7 +272,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             std::uint64_t* result = va_arg(args, std::uint64_t*);
 
-            if (!control->get_size(&ret, result))
+            if (!control->control_get_size(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -284,7 +281,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             vlc_tick_t* result = va_arg(args, vlc_tick_t*);
 
-            if (!control->get_pts_delay(&ret, result))
+            if (!control->control_get_pts_delay(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -293,7 +290,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             int state = va_arg(args, int);
 
-            if (!control->set_pause_state(state, &ret))
+            if (!control->control_set_pause_state(state, &ret))
                 return VLC_EGENERIC;
 
             return ret;
@@ -393,7 +390,6 @@ void vlc_rpc_ProxifyStream(stream_t* local, remote_stream_t* remote, rpc::Channe
     vlc_stream_proxy_objects* proxies = new vlc_stream_proxy_objects;
 
     proxies->object_proxy = chan->connect<vlc::StreamProxy>(remote->port, remote->object_id);
-    proxies->control_proxy = chan->connect<vlc::StreamControlProxy>(remote->port, remote->control_id);
     local->p_sys = proxies;
 
     // Install hooks
@@ -436,20 +432,16 @@ int vlc_broker_CreateAccess(stream_t* s)
     ipc::PortId access_factory_port = var_InheritInteger(s, "rpc-broker-access_factory_port");
 
     rpc::ObjectId access_object = 0;
-    rpc::ObjectId control_object = 0;
 
-    if (!access_factory->create(s->psz_url, s->b_preparsing, &access_object, &control_object))
+    if (!access_factory->create(s->psz_url, s->b_preparsing, &access_object))
         return -1;
 
     std::printf("[BROKER] Created access for url: %s (port: %lu, object id: %lu)\n",
             s->psz_url, access_factory_port, access_object);
-    std::printf("[BROKER] Created control for access #%lu (object id: %lu)\n",
-            access_object, control_object);
 
     remote_stream_t remote_info;
     remote_info.port = access_factory_port;
     remote_info.object_id = access_object;
-    remote_info.control_id = control_object;
 
     // Install the rpc proxies on the current channel and bind them to the C object.
     vlc_rpc_ProxifyStream(s, &remote_info, broker_channel);
@@ -746,13 +738,10 @@ int vlc_broker_CreateDemux(demux_t* demux, const char* module)
     }
 
     rpc::Proxy<vlc::StreamProxy>& stream_proxy = stream_proxies->object_proxy;
-    rpc::Proxy<vlc::StreamControlProxy>& control_proxy = stream_proxies->control_proxy;
 
-    std::printf("[BROKER] Using remote stream [object=(%lu,%lu), control=(%lu,%lu)] for demux\n",
+    std::printf("[BROKER] Using remote stream [object=(%lu,%lu) for demux\n",
             stream_proxy->remote_port(),
-            stream_proxy->remote_id(),
-            control_proxy->remote_port(),
-            control_proxy->remote_id());
+            stream_proxy->remote_id());
 
     // Step 3: Initialize remote demux factory.
     auto* broker_channel = static_cast<rpc::Channel*>(var_InheritAddress(demux, "rpc-broker-channel"));
@@ -782,15 +771,12 @@ int vlc_broker_CreateDemux(demux_t* demux, const char* module)
 
     // Step 4: Serialize partial demux and create remote object.
     vlc::RemoteAccess remote_access = { stream_proxy->remote_port(), stream_proxy->remote_id() };
-    vlc::RemoteControl remote_control = { control_proxy->remote_port(), control_proxy->remote_id() };
     vlc::RemoteEsOut remote_esout = { esout_port, esout_id };
 
     rpc::ObjectId demux_object = 0;
-    rpc::ObjectId demux_control_object = 0;
-
     std::printf("[BROKER] Demux factory [id=%lu, port=%lu]\n", demux_factory->remote_id(), demux_factory_port);
 
-    if (!demux_factory->create(remote_access, remote_control, remote_esout, module, demux->b_preparsing, &demux_object))
+    if (!demux_factory->create(remote_access, remote_esout, module, demux->b_preparsing, &demux_object))
     {
         std::printf("[BROKER] Call to DemuxFactory::create(...) failed\n");
         return -1;
@@ -800,7 +786,7 @@ int vlc_broker_CreateDemux(demux_t* demux, const char* module)
 
     // Step 5: Proxify the passed demux object
     // TODO: Cleanup, this is a bit repetitive
-    remote_stream_t rs = { remote_access.object_id, remote_control.object_id, remote_access.port };
+    remote_stream_t rs = { remote_access.object_id, remote_access.port };
     remote_esout_t re = { remote_esout.object_id, remote_esout.port };
     remote_demux_t rd;
     rd.port = demux_factory_port;

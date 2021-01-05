@@ -18,7 +18,7 @@ class AccessFactory: public vlc::StreamFactoryReceiver
 {
 public:
     AccessFactory(rpc::Channel* chan);
-    bool create(std::string url, bool preparsing, std::uint64_t* stream_object, std::uint64_t* control_object) override;
+    bool create(std::string url, bool preparsing, std::uint64_t* stream_object) override;
 
 private:
     rpc::Channel* channel_;

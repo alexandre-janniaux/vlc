@@ -11,7 +11,6 @@
 #include "protoipc/port.hh"
 #include "protorpc/channel.hh"
 #include "demuxfactory.hh"
-#include "demuxcontrol.hh"
 #include "demux.hh"
 
 // Big hax
@@ -55,7 +54,7 @@ DemuxFactory::DemuxFactory(rpc::Channel* chan)
         throw std::runtime_error("[DEMUXFACTORY] Could not create vlc instance");
 };
 
-bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteControl control, vlc::RemoteEsOut out,
+bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteEsOut out,
         std::string module, bool preparsing, std::uint64_t* demux_object)
 {
     vlc_object_t* instance_obj = capi_libvlc_instance_obj(vlc_instance_);
@@ -64,12 +63,11 @@ bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteControl control, 
     remote_stream_t remote_access =
     {
         access.object_id,
-        control.object_id,
         access.port
     };
 
-    std::printf("[DEMUXFACTORY] Remote access [access_id=%lu, control_id=%lu, port=%lu]\n",
-            remote_access.object_id, remote_access.control_id, remote_access.port);
+    std::printf("[DEMUXFACTORY] Remote access [access_id=%lu, port=%lu]\n",
+            remote_access.object_id, remote_access.port);
 
     // Destroy ptr can be anything as it will be set by vlc_rpc_ProxifyStream
     stream_t* remote_stream_obj = vlc_stream_CommonNew(instance_obj, (void (*)(stream_t*))0xdeadbeef);

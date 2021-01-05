@@ -11,7 +11,6 @@
 #include "protorpc/channel.hh"
 #include "accessfactory.hh"
 #include "access.hh"
-#include "control.hh"
 
 #include "capi.h"
 
@@ -54,15 +53,14 @@ AccessFactory::AccessFactory(rpc::Channel* chan)
         throw std::runtime_error("[ACCESSFACTORY] Could not create vlc instance");
 }
 
-bool AccessFactory::create(std::string url, bool preparsing, std::uint64_t* stream_object, std::uint64_t* control_object)
+bool AccessFactory::create(std::string url, bool preparsing, std::uint64_t* stream_object)
 {
     std::printf("[ACCESSFACTORY] Creating access for url: %s\n", url.c_str());
 
     stream_t* stream = capi_vlc_stream_NewURLEx(vlc_instance_, url.c_str(), preparsing);
     *stream_object = channel_->bind<Access>(stream);
-    *control_object = channel_->bind<Control>(stream);
 
-    std::printf("[ACCESSFACTORY] Created access id: %lu with control %lu\n", *stream_object, *control_object);
+    std::printf("[ACCESSFACTORY] Created access id: %lu\n", *stream_object);
 
     return true;
 }
