@@ -29,5 +29,8 @@ namespace vlc
         send(u64 fake_es_out_id, optional<EsBlock> block) -> (i32 ret);
         del(u64 fake_es_out_id) -> ();
         destroy() -> ();
+
+        # Control part
+        control_set_pcr(i64 i_pcr) -> (i64 status);
     }
 }

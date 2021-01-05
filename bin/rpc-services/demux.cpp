@@ -11,7 +11,6 @@
 
 bool Demux::demux(std::int32_t* result)
 {
-    std::printf("[DEMUX] Demux() called\n");
     *result = demux_Demux(demux_);
     return true;
 }

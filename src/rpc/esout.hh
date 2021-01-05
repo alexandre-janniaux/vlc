@@ -19,6 +19,9 @@ public:
     bool del(std::uint64_t fake_es_out_id) override;
     bool destroy();
 
+    // Control part
+    bool control_set_pcr(std::int64_t i_pcr, std::int64_t* status) override;
+
 private:
     es_out_t* esout_;
     std::vector<es_out_id_t*> esout_ids_;

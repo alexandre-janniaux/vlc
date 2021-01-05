@@ -112,3 +112,12 @@ bool EsOut::destroy()
     es_out_Delete(esout_);
     return true;
 }
+
+// Control
+
+bool EsOut::control_set_pcr(std::int64_t i_pcr, std::int64_t* status)
+{
+    *status = es_out_SetPCR(esout_, i_pcr);
+    std::printf("[ESOUT-CONTROL] SetPcr(%li) = %li\n", i_pcr, *status);
+    return true;
+}

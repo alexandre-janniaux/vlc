@@ -559,10 +559,29 @@ void vlc_RemoteEsOut_Del(es_out_t* out, es_out_id_t* id)
     remote->del(reinterpret_cast<std::uint64_t>(id));
 }
 
-int vlc_RemoteEsOut_Control(es_out_t*, input_source_t*, int query, va_list)
+int vlc_RemoteEsOut_Control(es_out_t* out, input_source_t*, int query, va_list args)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    std::printf("[ESOUT-PROXY] Stubbed control command = %i\n", query);
+    auto* esout = reinterpret_cast<vlc_es_out_proxy_object*>(out);
+    auto& remote = esout->object;
+    std::int64_t ret = VLC_EGENERIC;
+
+    switch (query)
+    {
+        case ES_OUT_SET_PCR:
+        {
+            std::int64_t i_pcr = va_arg(args, std::int64_t);
+
+            if (!remote->control_set_pcr(i_pcr, &ret))
+                return VLC_EGENERIC;
+
+            return ret;
+        }
+        default:
+            std::printf("[ESOUT-PROXY] Stubbed control command = %i\n", query);
+            break;
+    }
+
     return VLC_EGENERIC;
 }
 
