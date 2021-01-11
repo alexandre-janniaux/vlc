@@ -587,6 +587,15 @@ int vlc_RemoteEsOut_Control(es_out_t* out, input_source_t*, int query, va_list a
 
             return ret;
         }
+        case ES_OUT_SET_NEXT_DISPLAY_TIME:
+        {
+            std::int64_t i_pts = va_arg(args, std::int64_t);
+
+            if (!remote->control_set_next_display_time(i_pts, &ret))
+                return VLC_EGENERIC;
+
+            return ret;
+        }
         default:
             std::printf("[ESOUT-PROXY] Stubbed control command = %i\n", query);
             break;

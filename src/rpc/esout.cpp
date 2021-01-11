@@ -121,3 +121,10 @@ bool EsOut::control_set_pcr(std::int64_t i_pcr, std::int64_t* status)
     std::printf("[ESOUT-CONTROL] SetPcr(%li) = %li\n", i_pcr, *status);
     return true;
 }
+
+bool EsOut::control_set_next_display_time(std::int64_t i_pts, std::int64_t* status)
+{
+    *status = es_out_Control(esout_, ES_OUT_SET_NEXT_DISPLAY_TIME, i_pts);
+    std::printf("[ESOUT-CONTROL] SetNextDisplayTime(%li) = %li\n", i_pts, *status);
+    return true;
+}

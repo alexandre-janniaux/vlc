@@ -21,6 +21,7 @@ public:
 
     // Control part
     bool control_set_pcr(std::int64_t i_pcr, std::int64_t* status) override;
+    bool control_set_next_display_time(std::int64_t i_pts, std::int64_t* status) override;
 
 private:
     es_out_t* esout_;
