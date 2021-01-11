@@ -45,6 +45,9 @@ bool resolve_helper_path(const char* program_name, std::string& output)
     if (count < 0)
         return false;
 
+    // readlink does not append a null byte
+    path_buff[count] = 0;
+
     std::filesystem::path bin_path(path_buff);
     std::filesystem::path bin_folder = bin_path.parent_path();
     std::filesystem::path prog_path = bin_folder / program_name;
