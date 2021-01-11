@@ -10,5 +10,9 @@ namespace vlc
         control_can_control_pace() -> (i64 status, bool result);
         control_get_pts_delay() -> (i64 status, i64 result);
         control_set_pause_state(bool pause) -> (i64 status);
+        control_test_and_clear_flags(u32 in_flags) -> (i64 status, u32 out_flags);
+        control_get_length() -> (i64 status, i64 ticks);
+        control_get_time() -> (i64 status, i64 ticks);
+        control_get_normal_time() -> (i64 status, i64 ticks);
     }
 }

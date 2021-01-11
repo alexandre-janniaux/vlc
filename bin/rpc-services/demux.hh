@@ -21,6 +21,10 @@ public:
     bool control_can_control_pace(std::int64_t* status, bool* result) override;
     bool control_get_pts_delay(std::int64_t* status, std::int64_t* result) override;
     bool control_set_pause_state(bool state, std::int64_t* status) override;
+    bool control_test_and_clear_flags(std::uint32_t in_flags, std::int64_t* status, std::uint32_t* out_flags) override;
+    bool control_get_length(std::int64_t* status, std::int64_t* ticks) override;
+    bool control_get_time(std::int64_t* status, std::int64_t* ticks) override;
+    bool control_get_normal_time(std::int64_t* status, std::int64_t* ticks) override;
 
 private:
     demux_t* demux_;

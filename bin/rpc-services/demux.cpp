@@ -51,3 +51,32 @@ bool Demux::control_set_pause_state(bool state, std::int64_t* status)
     std::printf("[DEMUX] control set_pause_state(%i) = %li\n", state, *status);
     return true;
 }
+
+bool Demux::control_test_and_clear_flags(std::uint32_t in_flags, std::int64_t* status, std::uint32_t* out_flags)
+{
+    *out_flags = in_flags;
+    *status = vlc_stream_Control(demux_, DEMUX_TEST_AND_CLEAR_FLAGS, out_flags);
+    std::printf("[DEMUX] control test_and_clear_flags(flags=%u) = %li\n", *out_flags, *status);
+    return true;
+}
+
+bool Demux::control_get_length(std::int64_t* status, std::int64_t* ticks)
+{
+    *status = vlc_stream_Control(demux_, DEMUX_GET_LENGTH, ticks);
+    std::printf("[DEMUX] control get_ticks(length=%li) = %li\n", *ticks, *status);
+    return true;
+}
+
+bool Demux::control_get_time(std::int64_t* status, std::int64_t* ticks)
+{
+    *status = vlc_stream_Control(demux_, DEMUX_GET_TIME, ticks);
+    std::printf("[DEMUX] control get_time(time=%li) = %li\n", *ticks, *status);
+    return true;
+}
+
+bool Demux::control_get_normal_time(std::int64_t* status, std::int64_t* ticks)
+{
+    *status = vlc_stream_Control(demux_, DEMUX_GET_NORMAL_TIME, ticks);
+    std::printf("[DEMUX] control get_normal_time(time=%li) = %li\n", *ticks, *status);
+    return true;
+}

@@ -721,6 +721,42 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
 
             return ret;
         }
+        case DEMUX_TEST_AND_CLEAR_FLAGS:
+        {
+            unsigned* flags = va_arg(args, unsigned*);
+
+            if (!control->control_test_and_clear_flags(*flags, &ret, flags))
+                return VLC_EGENERIC;
+
+            return ret;
+        }
+        case DEMUX_GET_TIME:
+        {
+            vlc_tick_t* ticks = va_arg(args, vlc_tick_t*);
+
+            if (!control->control_get_time(&ret, ticks))
+                return VLC_EGENERIC;
+
+            return ret;
+        }
+        case DEMUX_GET_LENGTH:
+        {
+            vlc_tick_t* ticks = va_arg(args, vlc_tick_t*);
+
+            if (!control->control_get_length(&ret, ticks))
+                return VLC_EGENERIC;
+
+            return ret;
+        }
+        case DEMUX_GET_NORMAL_TIME:
+        {
+            vlc_tick_t* ticks = va_arg(args, vlc_tick_t*);
+
+            if (!control->control_get_normal_time(&ret, ticks))
+                return VLC_EGENERIC;
+
+            return ret;
+        }
         default:
             std::printf("[DEMUX-CONTROL-PROXY] Unhandled command: %i\n", cmd);
             return VLC_EGENERIC;
