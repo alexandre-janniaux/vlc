@@ -17,7 +17,7 @@ extern "C" {
 
 int vlc_broker_Init(libvlc_int_t* libvlc);
 int vlc_broker_CreateAccess(stream_t* s);
-int vlc_broker_CreateDemux(demux_t* s, const char* module);
+int vlc_broker_CreateDemux(demux_t* s, const char* module, const char* filepath);
 
 #ifdef __cplusplus
 }

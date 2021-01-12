@@ -25,7 +25,7 @@ stream_t* capi_vlc_stream_NewURLEx(libvlc_instance_t* vlc, const char* url, int 
 }
 
 demux_t* capi_vlc_demux_NewEx(vlc_object_t* obj, const char* name,
-        stream_t* s, es_out_t* out, bool preparsing)
+        const char* url, stream_t* s, es_out_t* out, bool preparsing)
 {
-    return demux_NewEx(obj, name, s, out, preparsing);
+    return demux_NewEx(obj, name, url, s, out, preparsing);
 }

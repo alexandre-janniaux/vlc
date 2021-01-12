@@ -14,6 +14,6 @@ namespace vlc
 
     interface DemuxFactory
     {
-        create(RemoteAccess access, RemoteEsOut out, string module, bool preparsing) -> (u64 demux_object);
+        create(RemoteAccess access, RemoteEsOut out, string module, string filepath, bool preparsing) -> (u64 demux_object);
     }
 }

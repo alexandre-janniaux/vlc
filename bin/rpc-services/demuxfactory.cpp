@@ -55,7 +55,7 @@ DemuxFactory::DemuxFactory(rpc::Channel* chan)
 };
 
 bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteEsOut out,
-        std::string module, bool preparsing, std::uint64_t* demux_object)
+        std::string module, std::string filepath, bool preparsing, std::uint64_t* demux_object)
 {
     vlc_object_t* instance_obj = capi_libvlc_instance_obj(vlc_instance_);
 
@@ -89,7 +89,7 @@ bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteEsOut out,
     std::printf("[DEMUXFACTORY] Proxified esout\n");
     std::fflush(stdout);
 
-    demux_t* result = capi_vlc_demux_NewEx(instance_obj, module.c_str(), remote_stream_obj, remote_esout_obj, preparsing);
+    demux_t* result = capi_vlc_demux_NewEx(instance_obj, module.c_str(), filepath.c_str(), remote_stream_obj, remote_esout_obj, preparsing);
     *demux_object = channel_->bind<Demux>(result);
 
     std::printf("[DEMUXFACTORY] Created demux id=%lu\n", *demux_object);

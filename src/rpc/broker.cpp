@@ -784,7 +784,7 @@ void vlc_rpc_ProxifyDemux(demux_t* local, remote_demux_t* remote, rpc::Channel* 
 }
 
 
-int vlc_broker_CreateDemux(demux_t* demux, const char* module)
+int vlc_broker_CreateDemux(demux_t* demux, const char* module, const char* url)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
 
@@ -841,7 +841,7 @@ int vlc_broker_CreateDemux(demux_t* demux, const char* module)
     rpc::ObjectId demux_object = 0;
     std::printf("[BROKER] Demux factory [id=%lu, port=%lu]\n", demux_factory->remote_id(), demux_factory_port);
 
-    if (!demux_factory->create(remote_access, remote_esout, module, demux->b_preparsing, &demux_object))
+    if (!demux_factory->create(remote_access, remote_esout, module, url, demux->b_preparsing, &demux_object))
     {
         std::printf("[BROKER] Call to DemuxFactory::create(...) failed\n");
         return -1;

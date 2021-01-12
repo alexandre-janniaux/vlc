@@ -77,7 +77,7 @@ demux_t *demux_New( vlc_object_t *p_obj, const char *psz_name,
     return demux_NewAdvanced( p_obj, NULL, psz_name, "", s, out, false );
 }
 
-demux_t *demux_NewEx ( vlc_object_t* p_obj, const char* psz_name,
+demux_t *demux_NewEx ( vlc_object_t* p_obj, const char* psz_name, const char* url,
                     stream_t* s, es_out_t* out, bool b_preparsing )
 {
     assert( s != NULL );
@@ -99,7 +99,7 @@ demux_t *demux_NewEx ( vlc_object_t* p_obj, const char* psz_name,
         free( psz_filters );
     }
 
-    return demux_NewAdvanced( p_obj, NULL, psz_name, "", s, out, b_preparsing);
+    return demux_NewAdvanced( p_obj, NULL, psz_name, url, s, out, b_preparsing);
 }
 
 struct vlc_demux_private
@@ -157,7 +157,6 @@ demux_t *demux_NewAdvanced( vlc_object_t *p_obj, input_thread_t *p_input,
 {
     struct vlc_demux_private *priv;
 
-
 #ifdef HAVE_RPC
     void* destroy_fn = demux_DestroyDemux;
 
@@ -201,7 +200,7 @@ demux_t *demux_NewAdvanced( vlc_object_t *p_obj, input_thread_t *p_input,
 #ifdef HAVE_RPC
     if (var_InheritBool(p_demux, "rpc"))
     {
-        if (vlc_broker_CreateDemux(p_demux, module) == -1)
+        if (vlc_broker_CreateDemux(p_demux, module, url) == -1)
             goto error;
 
         return p_demux;

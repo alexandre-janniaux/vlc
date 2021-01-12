@@ -288,7 +288,7 @@ VLC_API demux_t *demux_New( vlc_object_t *p_obj, const char *psz_name,
 
 // API used by the rpc to create demux objects.
 VLC_API demux_t *demux_NewEx( vlc_object_t *p_obj, const char *psz_name,
-                            stream_t *s, es_out_t *out, bool b_preparsing );
+                            const char* url, stream_t *s, es_out_t *out, bool b_preparsing );
 
 static inline void demux_Delete(demux_t *demux)
 {
