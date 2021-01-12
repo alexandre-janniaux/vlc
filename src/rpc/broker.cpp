@@ -154,7 +154,8 @@ ssize_t vlc_RemoteStream_Read(stream_t* s, void* buf, size_t len)
     if (!stream->read(len, &status, &data))
         return -1;
 
-    std::memcpy(buf, data.data(), data.size());
+    if (status >= 0)
+        std::memcpy(buf, data.data(), data.size());
 
     return status;
 }

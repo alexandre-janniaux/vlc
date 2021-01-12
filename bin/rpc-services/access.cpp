@@ -12,7 +12,12 @@ bool Access::read(std::uint64_t length, std::int64_t* status, std::vector<std::u
 {
     buffer->resize(length);
     *status = vlc_stream_Read(access_, buffer->data(), buffer->size());
-    std::printf("[ACCESS] Read(length=%lu) = %li\n", length, *status);
+
+    // Resize the output to match the number of bytes read
+    if (*status >= 0)
+        buffer->resize(*status);
+
+    std::printf("[ACCESS] Read(requested_length=%lu) = read_length=%li\n", length, *status);
 
     return true;
 }
