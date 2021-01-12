@@ -25,16 +25,6 @@
 namespace
 {
 
-struct vlc_stream_proxy_objects
-{
-    rpc::Proxy<vlc::StreamProxy> object_proxy;
-};
-
-struct vlc_demux_proxy_objects
-{
-    rpc::Proxy<vlc::DemuxProxy> object_proxy;
-};
-
 std::mutex remote_stream_lock_;
 
 bool resolve_helper_path(const char* program_name, std::string& output)
@@ -144,8 +134,7 @@ rpc::PortId vlc_broker_CreateProcess(libvlc_int_t* libvlc, const char* program_n
 ssize_t vlc_RemoteStream_Read(stream_t* s, void* buf, size_t len)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto* sys = reinterpret_cast<vlc_stream_proxy_objects*>(s->p_sys);
-    auto& stream = sys->object_proxy;
+    auto& stream = *reinterpret_cast<rpc::Proxy<vlc::StreamProxy>*>(s->p_sys);
 
     std::printf("[STREAM-PROXY] Read request to #%lu\n", stream->remote_id());
     std::vector<std::uint8_t> data;
@@ -163,8 +152,7 @@ ssize_t vlc_RemoteStream_Read(stream_t* s, void* buf, size_t len)
 int vlc_RemoteStream_Seek(stream_t* s, uint64_t offset)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto* sys = reinterpret_cast<vlc_stream_proxy_objects*>(s->p_sys);
-    auto& stream = sys->object_proxy;
+    auto& stream = *reinterpret_cast<rpc::Proxy<vlc::StreamProxy>*>(s->p_sys);
 
     std::printf("[STREAM-PROXY] Seek request to #%lu\n", stream->remote_id());
     int32_t status = 0;
@@ -178,8 +166,7 @@ int vlc_RemoteStream_Seek(stream_t* s, uint64_t offset)
 block_t* vlc_RemoteStream_Block(stream_t* s, bool* out_eof)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto* sys = reinterpret_cast<vlc_stream_proxy_objects*>(s->p_sys);
-    auto& stream = sys->object_proxy;
+    auto& stream = *reinterpret_cast<rpc::Proxy<vlc::StreamProxy>*>(s->p_sys);
 
     std::printf("[STREAM-PROXY] Block #%lu\n", stream->remote_id());
     std::optional<vlc::Block> block;
@@ -208,8 +195,7 @@ block_t* vlc_RemoteStream_Block(stream_t* s, bool* out_eof)
 void vlc_RemoteStream_Destroy(stream_t* s)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto* sys = reinterpret_cast<vlc_stream_proxy_objects*>(s->p_sys);
-    auto& stream = sys->object_proxy;
+    auto& stream = *reinterpret_cast<rpc::Proxy<vlc::StreamProxy>*>(s->p_sys);
 
     std::printf("[STREAM-PROXY] Destroy #%lu\n", stream->remote_id());
     stream->destroy();
@@ -230,8 +216,7 @@ int vlc_RemoteStream_Demux(stream_t* s)
 int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto* sys = reinterpret_cast<vlc_stream_proxy_objects*>(s->p_sys);
-    auto& control = sys->object_proxy;
+    auto& stream = *reinterpret_cast<rpc::Proxy<vlc::StreamProxy>*>(s->p_sys);
 
     std::int64_t ret = VLC_EGENERIC;
 
@@ -241,7 +226,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->control_can_seek(&ret, result))
+            if (!stream->control_can_seek(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -250,7 +235,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->control_can_fastseek(&ret, result))
+            if (!stream->control_can_fastseek(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -259,7 +244,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->control_can_pause(&ret, result))
+            if (!stream->control_can_pause(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -268,7 +253,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->control_can_control_pace(&ret, result))
+            if (!stream->control_can_control_pace(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -277,7 +262,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             std::uint64_t* result = va_arg(args, std::uint64_t*);
 
-            if (!control->control_get_size(&ret, result))
+            if (!stream->control_get_size(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -286,7 +271,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             vlc_tick_t* result = va_arg(args, vlc_tick_t*);
 
-            if (!control->control_get_pts_delay(&ret, result))
+            if (!stream->control_get_pts_delay(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -295,7 +280,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
         {
             int state = va_arg(args, int);
 
-            if (!control->control_set_pause_state(state, &ret))
+            if (!stream->control_set_pause_state(state, &ret))
                 return VLC_EGENERIC;
 
             return ret;
@@ -305,7 +290,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
             char** result = va_arg(args, char**);
             std::optional<std::string> content_type;
 
-            if (!control->control_get_content_type(&ret, &content_type))
+            if (!stream->control_get_content_type(&ret, &content_type))
                 return VLC_EGENERIC;
 
             if (content_type)
@@ -324,7 +309,7 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
 }
 
 // Attempts to recover the rpc objects associated with a proxyfied stream.
-vlc_stream_proxy_objects* stream_get_access_proxies(stream_t* s)
+rpc::Proxy<vlc::StreamProxy>* stream_get_access_proxies(stream_t* s)
 {
     // Seek to the last stream (should be the proxyfied access).
     while (s->s)
@@ -340,7 +325,7 @@ vlc_stream_proxy_objects* stream_get_access_proxies(stream_t* s)
     if (s->pf_read != &vlc_RemoteStream_Read)
         return nullptr;
 
-    return static_cast<vlc_stream_proxy_objects*>(s->p_sys);
+    return static_cast<rpc::Proxy<vlc::StreamProxy>*>(s->p_sys);
 }
 
 }
@@ -407,10 +392,7 @@ int vlc_broker_Init(libvlc_int_t* libvlc)
 
 void vlc_rpc_ProxifyStream(stream_t* local, remote_stream_t* remote, rpc::Channel* chan)
 {
-    vlc_stream_proxy_objects* proxies = new vlc_stream_proxy_objects;
-
-    proxies->object_proxy = chan->connect<vlc::StreamProxy>(remote->port, remote->object_id);
-    local->p_sys = proxies;
+    local->p_sys = new rpc::Proxy<vlc::StreamProxy>(std::move(chan->connect<vlc::StreamProxy>(remote->port, remote->object_id)));
 
     // Install hooks
     local->pf_read = static_cast<decltype(stream_t::pf_read)>(vlc_RemoteStream_Read);
@@ -656,9 +638,7 @@ int vlc_RemoteDemux_Demux(stream_t* s)
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
     std::printf("[DEMUX-PROXY] Demux()\n");
 
-    auto* sys = reinterpret_cast<vlc_demux_proxy_objects*>(s->p_sys);
-    auto& demux = sys->object_proxy;
-
+    auto& demux = *reinterpret_cast<rpc::Proxy<vlc::DemuxProxy>*>(s->p_sys);
     std::int32_t result = 0;
 
     if (!demux->demux(&result))
@@ -670,8 +650,7 @@ int vlc_RemoteDemux_Demux(stream_t* s)
 int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
 {
     std::lock_guard<std::mutex> lock(remote_stream_lock_);
-    auto* sys = reinterpret_cast<vlc_demux_proxy_objects*>(s->p_sys);
-    auto& control = sys->object_proxy;
+    auto& demux = *reinterpret_cast<rpc::Proxy<vlc::DemuxProxy>*>(s->p_sys);
 
     std::int64_t ret = VLC_EGENERIC;
 
@@ -681,7 +660,7 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->control_can_seek(&ret, result))
+            if (!demux->control_can_seek(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -690,7 +669,7 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->control_can_pause(&ret, result))
+            if (!demux->control_can_pause(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -699,7 +678,7 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
         {
             bool* result = va_arg(args, bool*);
 
-            if (!control->control_can_control_pace(&ret, result))
+            if (!demux->control_can_control_pace(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -708,7 +687,7 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
         {
             vlc_tick_t* result = va_arg(args, vlc_tick_t*);
 
-            if (!control->control_get_pts_delay(&ret, result))
+            if (!demux->control_get_pts_delay(&ret, result))
                 return VLC_EGENERIC;
 
             return ret;
@@ -717,7 +696,7 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
         {
             int state = va_arg(args, int);
 
-            if (!control->control_set_pause_state(state, &ret))
+            if (!demux->control_set_pause_state(state, &ret))
                 return VLC_EGENERIC;
 
             return ret;
@@ -726,7 +705,7 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
         {
             unsigned* flags = va_arg(args, unsigned*);
 
-            if (!control->control_test_and_clear_flags(*flags, &ret, flags))
+            if (!demux->control_test_and_clear_flags(*flags, &ret, flags))
                 return VLC_EGENERIC;
 
             return ret;
@@ -735,7 +714,7 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
         {
             vlc_tick_t* ticks = va_arg(args, vlc_tick_t*);
 
-            if (!control->control_get_time(&ret, ticks))
+            if (!demux->control_get_time(&ret, ticks))
                 return VLC_EGENERIC;
 
             return ret;
@@ -744,7 +723,7 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
         {
             vlc_tick_t* ticks = va_arg(args, vlc_tick_t*);
 
-            if (!control->control_get_length(&ret, ticks))
+            if (!demux->control_get_length(&ret, ticks))
                 return VLC_EGENERIC;
 
             return ret;
@@ -753,7 +732,7 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
         {
             vlc_tick_t* ticks = va_arg(args, vlc_tick_t*);
 
-            if (!control->control_get_normal_time(&ret, ticks))
+            if (!demux->control_get_normal_time(&ret, ticks))
                 return VLC_EGENERIC;
 
             return ret;
@@ -770,10 +749,7 @@ int vlc_RemoteDemux_Control(stream_t* s, int cmd, va_list args)
 
 void vlc_rpc_ProxifyDemux(demux_t* local, remote_demux_t* remote, rpc::Channel* chan)
 {
-    vlc_demux_proxy_objects* proxies = new vlc_demux_proxy_objects;
-
-    proxies->object_proxy = chan->connect<vlc::DemuxProxy>(remote->port, remote->object_id);
-    local->p_sys = proxies;
+    local->p_sys = new rpc::Proxy<vlc::DemuxProxy>(std::move(chan->connect<vlc::DemuxProxy>(remote->port, remote->object_id)));
 
     vlc_rpc_ProxifyStream(local->s, &remote->stream, chan);
     local->out = vlc_rpc_ProxifyEsOut(&remote->esout, chan);
@@ -794,15 +770,15 @@ int vlc_broker_CreateDemux(demux_t* demux, const char* module, const char* url)
     rpc::ObjectId esout_id = esout_channel->bind<EsOut>(demux->out);
 
     // Step 2: Recover access rpc objects
-    vlc_stream_proxy_objects* stream_proxies = stream_get_access_proxies(demux->s);
+    auto* stream_proxy_ptr = stream_get_access_proxies(demux->s);
 
-    if (!stream_proxies)
+    if (!stream_proxy_ptr)
     {
         std::printf("[BROKER] Trying to create demux using non proxyfied access\n");
         return -1;
     }
 
-    rpc::Proxy<vlc::StreamProxy>& stream_proxy = stream_proxies->object_proxy;
+    rpc::Proxy<vlc::StreamProxy>& stream_proxy = *stream_proxy_ptr;
 
     std::printf("[BROKER] Using remote stream [object=(%lu,%lu) for demux\n",
             stream_proxy->remote_port(),
