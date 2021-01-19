@@ -29,13 +29,15 @@ bool EsOut::add(std::optional<vlc::EsFormat> fmt, std::uint64_t* fake_es_out_id)
     c_fmt.p_extra_languages = nullptr;
     c_fmt.i_extra = 0;
     c_fmt.p_extra = nullptr;
+    c_fmt.psz_language = nullptr;
+    c_fmt.psz_description = nullptr;
 
-    if (fmt->extra_languages)
-    {
-        c_fmt.i_extra_languages = fmt->extra_languages->size();
-        c_fmt.p_extra_languages = reinterpret_cast<extra_languages_t*>(std::malloc(c_fmt.i_extra_languages));
-        std::memcpy(c_fmt.p_extra_languages, fmt->extra_languages->data(), c_fmt.i_extra_languages);
-    }
+    // if (fmt->extra_languages)
+    // {
+    //     c_fmt.i_extra_languages = fmt->extra_languages->size();
+    //     c_fmt.p_extra_languages = reinterpret_cast<extra_languages_t*>(std::malloc(c_fmt.i_extra_languages));
+    //     std::memcpy(c_fmt.p_extra_languages, fmt->extra_languages->data(), c_fmt.i_extra_languages);
+    // }
 
     if (fmt->extra)
     {
@@ -83,6 +85,7 @@ bool EsOut::send(std::uint64_t fake_es_out_id, std::optional<vlc::EsBlock> block
         return true;
     }
 
+
     block_t* result = block_Alloc(block->buffer.size());
     result->i_flags = block->flags;
     result->i_nb_samples = block->nb_samples;
@@ -126,5 +129,20 @@ bool EsOut::control_set_next_display_time(std::int64_t i_pts, std::int64_t* stat
 {
     *status = es_out_Control(esout_, ES_OUT_SET_NEXT_DISPLAY_TIME, i_pts);
     std::printf("[ESOUT-CONTROL] SetNextDisplayTime(%li) = %li\n", i_pts, *status);
+    return true;
+}
+
+bool EsOut::control_get_es_state(std::uint64_t fake_es_out_id, std::int64_t* status, bool* state)
+{
+    if (fake_es_out_id == 0 || fake_es_out_id > esout_ids_.size() || !esout_ids_[fake_es_out_id - 1])
+    {
+        *status = VLC_EGENERIC;
+        return true;
+    }
+
+    es_out_id_t* esout_id = esout_ids_[fake_es_out_id - 1];
+
+    *status = es_out_Control(esout_, ES_OUT_GET_ES_STATE, esout_id, state);
+    std::printf("[ESOUT-CONTROL] GetEsState(state=%i) = %i\n", *state);
     return true;
 }

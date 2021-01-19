@@ -545,7 +545,7 @@ int vlc_RemoteEsOut_Send(es_out_t* out, es_out_id_t* id, block_t* block)
     out_block.dts = block->i_dts;
     out_block.length = block->i_length;
 
-    std::printf("[ESOUT-PROXY] Send(block size=%lu)\n", block->i_length);
+    std::printf("[ESOUT-PROXY] Send(block size=%lu)\n", block->i_size);
     remote->send(fake_es_out_id, out_block, &ret);
     return ret;
 }
@@ -584,6 +584,16 @@ int vlc_RemoteEsOut_Control(es_out_t* out, input_source_t*, int query, va_list a
             std::int64_t i_pts = va_arg(args, std::int64_t);
 
             if (!remote->control_set_next_display_time(i_pts, &ret))
+                return VLC_EGENERIC;
+
+            return ret;
+        }
+        case ES_OUT_GET_ES_STATE:
+        {
+            std::uint64_t fake_es_out_id = va_arg(args, std::uint64_t);
+            bool* state = va_arg(args, bool*);
+
+            if (!remote->control_get_es_state(fake_es_out_id, &ret, state))
                 return VLC_EGENERIC;
 
             return ret;

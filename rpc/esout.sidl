@@ -33,5 +33,6 @@ namespace vlc
         # Control part
         control_set_pcr(i64 i_pcr) -> (i64 status);
         control_set_next_display_time(i64 i_pts) -> (i64 status);
+        control_get_es_state(u64 fake_es_out_id) -> (i64 status, bool state);
     }
 }
