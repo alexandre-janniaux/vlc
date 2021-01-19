@@ -693,6 +693,40 @@ int vlc_stream_Seek(stream_t *s, uint64_t offset)
 }
 
 /**
+ * Flushes local peek cache and hard seeks on the remote.
+ *
+ * XXX: This is a hack to fix cache synchronisation issues when proxifying inside
+ *      the demux process a stream created from the broker. vlc_stream_Seek cannot
+ *      be used as it could consider a confused offset to be the one we wanted to
+ *      seek to and would not propagate the call to the remote object.
+ */
+int vlc_stream_HardSeek(stream_t* s, uint64_t offset)
+{
+    stream_priv_t* priv = (stream_priv_t*)s;
+
+    int ret = s->pf_seek(s, offset);
+
+    if (ret != VLC_SUCCESS)
+        return ret;
+
+    priv->offset = offset;
+
+    if (priv->peek != NULL)
+    {
+        block_Release(priv->peek);
+        priv->peek = NULL;
+    }
+
+    if (priv->block != NULL)
+    {
+        block_Release(priv->block);
+        priv->block = NULL;
+    }
+
+    return ret;
+}
+
+/**
  * Use to control the "stream_t *". Look at #stream_query_e for
  * possible "i_query" value and format arguments.  Return VLC_SUCCESS
  * if ... succeed ;) and VLC_EGENERIC if failed or unimplemented

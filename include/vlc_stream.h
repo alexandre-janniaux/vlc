@@ -297,6 +297,8 @@ VLC_API bool vlc_stream_Eof(const stream_t *) VLC_USED;
  */
 VLC_API int vlc_stream_Seek(stream_t *, uint64_t offset) VLC_USED;
 
+VLC_API int vlc_stream_HardSeek(stream_t *, uint64_t offset) VLC_USED;
+
 VLC_API int vlc_stream_vaControl(stream_t *s, int query, va_list args);
 
 static inline int vlc_stream_Control(stream_t *s, int query, ...)

@@ -300,6 +300,15 @@ int vlc_RemoteStream_Control(stream_t* s, int cmd, va_list args)
 
             return ret;
         }
+        case STREAM_SET_SEEKPOINT:
+        {
+            int seek = va_arg(args, int);
+
+            if (!stream->control_set_seekpoint(seek, &ret))
+                return VLC_EGENERIC;
+
+            return ret;
+        }
         default:
             std::printf("[CONTROL-PROXY] Unhandled command: %i\n", cmd);
             return VLC_EGENERIC;

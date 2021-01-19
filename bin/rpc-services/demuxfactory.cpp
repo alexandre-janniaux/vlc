@@ -8,6 +8,7 @@
 
 #include <stdexcept>
 #include <cstdio>
+#include <string.h>
 #include "protoipc/port.hh"
 #include "protorpc/channel.hh"
 #include "demuxfactory.hh"
@@ -39,7 +40,7 @@ DemuxFactory::DemuxFactory(rpc::Channel* chan)
     : channel_(chan)
 {
     const char* args[] = {
-        "-v",
+        "-vvvv",
         "--ignore-config",
         "-I",
         "dummy",
@@ -71,9 +72,58 @@ bool DemuxFactory::create(vlc::RemoteAccess access, vlc::RemoteEsOut out,
 
     // Destroy ptr can be anything as it will be set by vlc_rpc_ProxifyStream
     stream_t* remote_stream_obj = vlc_stream_CommonNew(instance_obj, (void (*)(stream_t*))0xdeadbeef);
-    remote_stream_obj->psz_url = "fake://lol";
+    remote_stream_obj->psz_url = strdup(filepath.c_str());
 
     vlc_rpc_ProxifyStream(remote_stream_obj, &remote_access, channel_);
+
+    // XXX: Big hack
+    //
+    // Currently every stream is wrapped in caches. The access in its process has a
+    // cache, the access in the broker has its own cache and now the access in the
+    // demux has a cache as well. This creates a mismatch in the caches as there are
+    // two consumers (broker process and demux process) for a single producer
+    // (access process). Let me illustrate:
+    //
+    // 1) Remote access is created and loads cache page 0
+    // 2) Proxy is created in broker process and requests cache page 0. Remote delivers,
+    //    emptying its cache, and loads cache page 1.
+    // 3) Proxy access is forwarded to demux process. The stream is locally wrapped in a
+    //    cache and asks for a cache page. Instead of receiving cache page 0, it receives
+    //    cache page 1 from the remote access. The remote access then loads cache page 2.
+    //
+    // This creates an offset of the size of a cache page. Which makes the demux fail to
+    // parse some file format with hard structural constraints (but works for some like
+    // mp3). Removing the cache streams is also not a complete solution. Each stream
+    // maintains its own small cache in stream_priv_t::peek, we end up with the same issue.
+    //
+    // The big hack is to force a seek to the start of the file, which only works on seekable
+    // streams. Cache issues need to be considered in a future implementation.
+    bool can_seek = true;
+
+    if (vlc_stream_Control(remote_stream_obj, STREAM_CAN_SEEK, &can_seek) != VLC_SUCCESS)
+    {
+        std::printf("[HACK] Could not control remote stream\n");
+        std::fflush(stdout);
+        return false;
+    }
+
+    if (!can_seek)
+    {
+        std::printf("[HACK] Remote stream is not seekable\n");
+        std::fflush(stdout);
+        return false;
+    }
+
+    int ret = vlc_stream_HardSeek(remote_stream_obj, 0);
+
+    if (ret != VLC_SUCCESS)
+    {
+        std::printf("[HACK] Remote stream seek failed: %i\n", ret);
+        std::fflush(stdout);
+        return false;
+    }
+
+    std::printf("[HACK] Hard seek was a success !\n");
 
     remote_esout_t remote_esout =
     {

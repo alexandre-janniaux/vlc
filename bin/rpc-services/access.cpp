@@ -128,3 +128,10 @@ bool Access::control_get_content_type(std::int64_t* status, std::optional<std::s
 
     return true;
 }
+
+bool Access::control_set_seekpoint(std::int32_t seek, std::int64_t* status)
+{
+    *status = vlc_stream_Control(access_, STREAM_SET_SEEKPOINT, seek);
+    std::printf("[ACCESS] control set_seekpoint(%i) = %li\n", seek, *status);
+    return true;
+}
