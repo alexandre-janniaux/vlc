@@ -99,9 +99,10 @@ vlc_access_service_SOURCES = \
 	rpc-services/access.cpp \
 	rpc-services/accessfactory.cpp \
 	rpc-services/capi.c
-vlc_access_service_CFLAGS = $(AM_CFLAGS) \
+vlc_access_service_CPPFLAGS = $(AM_CFLAGS) \
 	-DTOP_BUILDDIR=\"$$(cd "$(top_builddir)"; pwd)\" \
 	-DTOP_SRCDIR=\"$$(cd "$(top_srcdir)"; pwd)\" \
+	$(PROTORPC_CFLAGS)
 	$(NULL)
 vlc_access_service_CXXFLAGS = $(AM_CXXFLAGS) \
 	-I$(top_builddir)/rpc \
@@ -115,9 +116,10 @@ vlc_demux_service_SOURCES = \
 	rpc-services/demuxfactory.cpp \
 	rpc-services/demux.cpp \
 	rpc-services/capi.c
-vlc_demux_service_CFLAGS = $(AM_CFLAGS) \
+vlc_demux_service_CPPFLAGS = $(AM_CFLAGS) \
 	-DTOP_BUILDDIR=\"$$(cd "$(top_builddir)"; pwd)\" \
 	-DTOP_SRCDIR=\"$$(cd "$(top_srcdir)"; pwd)\" \
+	$(PROTORPC_CFLAGS) \
 	$(NULL)
 vlc_demux_service_CXXFLAGS = $(AM_CXXFLAGS) \
 	-I$(top_builddir)/rpc \

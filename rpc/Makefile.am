@@ -18,11 +18,12 @@ BUILT_SOURCES = $(IDL_SOURCES)
 CLEANFILES = $(BUILT_SOURCES)
 
 libvlcrpc_messages_la_SOURCES = $(IDL_SOURCES)
-libvlcrpc_messages_la_LIBADD = -lprotorpc
+libvlcrpc_messages_la_LIBADD = $(PROTORPC_LIBS)
 libvlcrpc_messages_la_CXXFLAGS = $(AM_CXXFLAGS) -std=c++17
+libvlcrpc_messages_la_CPPFLAGS = $(PROTORPC_CFLAGS)
 
 %.sidl.cpp: $(srcdir)/%.sidl
-	$(CONTRIB_DIR)/bin/sidlcc.py --source-only $<
+	$(SIDLCC) --source-only $<
 
 %.sidl.hh: $(srcdir)/%.sidl
-	$(CONTRIB_DIR)/bin/sidlcc.py --header-only $<
+	$(SIDLCC) --header-only $<

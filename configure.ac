@@ -4341,7 +4341,12 @@ AC_ARG_ENABLE([protorpc],
   AS_HELP_STRING([--enable-protorpc], [Enables protorpc support (default disabled)]))
 
 AS_IF([test "$enable_protorpc" = "yes"], [
-  PKG_CHECK_MODULES(PROTORPC, [protoipc, protorpc])
+  PKG_CHECK_MODULES([PROTORPC], [protoipc protorpc])
+  AC_ARG_VAR([SIDLCC], [sidl compiler executable])
+  AC_CHECK_PROGS([SIDLCC], [sidlcc.py], [no])
+  AS_IF([test "$SIDLCC" = "no"], [
+    AC_MSG_ERROR([sidlcc.py not found])
+  ])
   AC_DEFINE([HAVE_RPC], 1, [Defined if rpc is enabled])
 ])
 
